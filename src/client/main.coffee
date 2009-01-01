@@ -9,11 +9,12 @@ scrollTop = ->
 			
 			# Check width
 			pleaseRotate = document.getElementById( 'please-rotate' )
-			if window.innerWidth < 350 && pleaseRotate
+			if window.innerWidth < 350 && pleaseRotate && window.innerWidth > window.innerHeight
 				pleaseRotate.style.display = 'block'
 			else if pleaseRotate
 				pleaseRotate.style.display = 'none'
 	, 200)
+	
 window.addEventListener 'orientationchange', ->
 	scrollTop()
 

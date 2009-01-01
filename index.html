@@ -43,6 +43,12 @@
 			display: none;
 			text-align: center;
 			font-size: 16px;
+			padding-top: 100px;
+			font-size: 2em;
+			font-weight: bold;
+		}
+		#please-rotate div {
+			max-width: 320px;
 		}
 		.info {
 			display: none;
@@ -89,7 +95,7 @@
   </head>
   <body style="margin:0px;">
   	<div id='please-rotate'>
-  		Please rotate your device to landscape mode.
+  		<div>Please rotate your device to landscape mode.</div>
   	</div>
   	<div id='center'>
 		<canvas id="canvas" width="480px" height="268px"></canvas>
@@ -113,6 +119,7 @@
 				Use the arrow keys to move (or WASD), hit the ball over the net.
 				<div><a href='javascript: void( 0 );' onclick='Social.showDemo();'>Demo Video of Multiplayer</a></div>
 				<div><a href='https://github.com/claydotio/Slime-Volley' target='_BLANK'>Source Code</a></div>
+				<div><a href='javascript: void( 0 );' onclick='Clay.Facebook.invite();'>Invite Your Friends</a></div>
 			</div>
 		</div>
 	</div>
