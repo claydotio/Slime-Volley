@@ -15,7 +15,7 @@ class @World
 		@box2dHeight = 10*aspect
 		@ctx.scale(@width / @box2dWidth, @height / @box2dHeight)
 		# @world is the box2d world we will use for physics
-		gravity = new Box2D.Common.Math.b2Vec2(0, 10)
+		gravity = new Box2D.Common.Math.b2Vec2(0, 14)
 		@world = new Box2D.Dynamics.b2World(gravity, true)
 		@sprites = []
 		@interval = interval / 1000

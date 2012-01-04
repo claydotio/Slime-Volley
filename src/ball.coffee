@@ -7,7 +7,7 @@ class @Ball extends Sprite
 		@fixture = new Box2D.Dynamics.b2FixtureDef()
 		@fixture.density = .4
 		@fixture.friction = 0.5
-		@fixture.restitution = 0.4
+		@fixture.restitution = 0.2
 		@fixture.shape = new Box2D.Collision.Shapes.b2CircleShape(@radius)
 		@body = new Box2D.Dynamics.b2BodyDef()
 		@body.type = Box2D.Dynamics.b2Body.b2_dynamicBody

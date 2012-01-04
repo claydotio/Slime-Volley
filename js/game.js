@@ -93,7 +93,7 @@
       this.box2dWidth = 10;
       this.box2dHeight = 10 * aspect;
       this.ctx.scale(this.width / this.box2dWidth, this.height / this.box2dHeight);
-      gravity = new Box2D.Common.Math.b2Vec2(0, 10);
+      gravity = new Box2D.Common.Math.b2Vec2(0, 14);
       this.world = new Box2D.Dynamics.b2World(gravity, true);
       this.sprites = [];
       this.interval = interval / 1000;
@@ -263,10 +263,8 @@
       }
       if (input.up(this.isP2)) {
         if (this.m_body.GetPosition().y > 5.7) {
-          this.m_body.m_linearVelocity.y = -5;
+          this.m_body.m_linearVelocity.y = -7;
           this.m_body.SetAwake(true);
-        } else if (this.m_body.GetPosition().y > 4.2 && this.m_body.m_linearVelocity.y < 0) {
-          this.m_body.m_linearVelocity.y = -4 + 5.7 - this.m_body.GetPosition().y;
         }
       }
       if (input.down(this.isP2)) {
@@ -274,7 +272,7 @@
           return this.m_body.m_linearVelocity.y *= 1.5;
         }
       } else if (this.m_body && this.m_body.GetPosition().y > 5.5) {
-        return this.m_body.m_linearVelocity.x /= 1.2;
+        return this.m_body.m_linearVelocity.x /= 1.1;
       }
     };
 
@@ -367,7 +365,7 @@
       this.fixture = new Box2D.Dynamics.b2FixtureDef();
       this.fixture.density = .4;
       this.fixture.friction = 0.5;
-      this.fixture.restitution = 0.4;
+      this.fixture.restitution = 0.2;
       this.fixture.shape = new Box2D.Collision.Shapes.b2CircleShape(this.radius);
       this.body = new Box2D.Dynamics.b2BodyDef();
       this.body.type = Box2D.Dynamics.b2Body.b2_dynamicBody;

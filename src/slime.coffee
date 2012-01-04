@@ -24,15 +24,13 @@ class @Slime extends Sprite
 			@m_body.SetAwake(true)
 		if input.up(@isP2)
 			if @m_body.GetPosition().y > 5.7
-				@m_body.m_linearVelocity.y = -5
+				@m_body.m_linearVelocity.y = -7
 				@m_body.SetAwake(true)
-			else if @m_body.GetPosition().y > 4.2 && @m_body.m_linearVelocity.y < 0
-				@m_body.m_linearVelocity.y = -4 + 5.7-@m_body.GetPosition().y
 		if input.down(@isP2)
 			if @m_body.m_linearVelocity.y > 0 && @m_body.GetPosition().y < 5 
 				@m_body.m_linearVelocity.y *= 1.5
 		else if @m_body && @m_body.GetPosition().y > 5.5
-			@m_body.m_linearVelocity.x /= 1.2
+			@m_body.m_linearVelocity.x /= 1.1
 
 	draw: (ctx) ->
 		# given a canvas 2d context, draw a semicircle
