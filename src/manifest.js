@@ -1,0 +1,8 @@
+//= require 'game'
+//= require 'input'
+//= require 'world'
+//= require 'slime_volleyball'
+//= require 'sprite'
+//= require 'slime'
+//= require 'box'
+//= require 'ball'
