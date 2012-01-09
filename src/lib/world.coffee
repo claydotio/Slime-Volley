@@ -7,9 +7,8 @@ class @World
 		@ctx = @canvas.getContext('2d')
 		@width = parseFloat(@canvas.width)
 		@height = parseFloat(@canvas.height)
-		# scale canvas so that box2d only deals with 0-10px
-		# as suggested in the docs, and translate to get rid of
-		# canvas's shitty coordinate system
+		# scale canvas so that box2d only deals with 0-10
+		# as suggested in the docs
 		aspect = @height / @width
 		@box2dWidth = 10
 		@box2dHeight = 10*aspect
@@ -29,13 +28,12 @@ class @World
 			body: body
 
 	draw: ->
-		@ctx.clearRect(0, 0, @box2dWidth, @box2dHeight);   # clear the canvas
+		@ctx.clearRect(0, 0, @box2dWidth, @box2dHeight)   # clear the canvas
 		@ctx.fillStyle = '#555'
 		@ctx.fillRect(0, @box2dHeight-.5, @width, .5)
 		for spriteData in @sprites               # drawin yer spritez 
 			spriteData.sprite.updateBody(spriteData.body)
 			spriteData.sprite.draw(@ctx) 
-		
 
 	step: ->
 		@world.Step(@interval, 10, 10)

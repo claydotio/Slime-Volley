@@ -4,10 +4,14 @@ class @Game
 	constructor: ->
 		@interval = 1/60.0*1000
 		@input = new Input
+		@loader = new Loader
 		# perform some awkward scope scooping so we can use window.setTimeout
 		_this = this
 		@step_callback = ->
 			_this.step()
+		@loader.loadComplete ->
+			_this.start()
+		
 
 	start: ->  # initialize vars for game loop
 		this.step()

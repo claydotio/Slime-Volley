@@ -1,5 +1,5 @@
 class @Slime extends Sprite
-	constructor: (@x, @y, @color) ->
+	constructor: (@x, @y, @color, @img) ->
 		@radius = .5
 		@isP2 = 0 # 0 means right
 		super(@x, @y, @radius*2, @radius*2)
@@ -39,6 +39,8 @@ class @Slime extends Sprite
 		ctx.arc(@x, @y, @radius, 0, Math.PI, true)
 		ctx.closePath()
 		ctx.fill()
+		# now draw the image 
+		ctx.drawImage(@img, @x, @y)
 		# draw the eyeball
 		if @isP2 == 0  # draw on left side for p2
 			eyeVec = new Box2D.Common.Math.b2Vec2(@x+@radius/2.0, @y-@radius/2.0)

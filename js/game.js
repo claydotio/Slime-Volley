@@ -6,10 +6,14 @@
       var _this;
       this.interval = 1 / 60.0 * 1000;
       this.input = new Input;
+      this.loader = new Loader;
       _this = this;
       this.step_callback = function() {
         return _this.step();
       };
+      this.loader.loadComplete(function() {
+        return _this.start();
+      });
     }
 
     Game.prototype.start = function() {
@@ -25,6 +29,63 @@
     };
 
     return Game;
+
+  })();
+
+}).call(this);
+(function() {
+
+  this.Loader = (function() {
+
+    function Loader() {
+      this.progress = 0;
+      this.assets = {};
+      this.totalAssets = 0;
+      this.loadedAssets = 0;
+    }
+
+    Loader.prototype.updateProgress = function() {
+      this.progress = this.loadedAssets / this.totalAssets;
+      if (this.progress === 1 && this.onload) return this.onload();
+    };
+
+    Loader.prototype.load = function(assets) {
+      var asset, name, _results;
+      _results = [];
+      for (name in assets) {
+        asset = assets[name];
+        _results.push(this.loadAsset(name, asset));
+      }
+      return _results;
+    };
+
+    Loader.prototype.loadAsset = function(name, asset) {
+      var img, loader;
+      img = new Image();
+      loader = this;
+      img.onload = function() {
+        this.loaded = true;
+        loader.loadedAssets++;
+        return loader.updateProgress();
+      };
+      this.assets[name] = {
+        loader: this,
+        src: asset,
+        image: img
+      };
+      this.totalAssets++;
+      return img.src = asset;
+    };
+
+    Loader.prototype.loadComplete = function(func) {
+      return this.onload = func;
+    };
+
+    Loader.prototype.getAsset = function(name) {
+      return this.assets[name]['image'];
+    };
+
+    return Loader;
 
   })();
 
@@ -135,61 +196,6 @@
 
 }).call(this);
 (function() {
-  var __hasProp = Object.prototype.hasOwnProperty,
-    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
-
-  this.SlimeVolleyball = (function(_super) {
-
-    __extends(SlimeVolleyball, _super);
-
-    function SlimeVolleyball() {
-      SlimeVolleyball.__super__.constructor.apply(this, arguments);
-    }
-
-    SlimeVolleyball.prototype.start = function() {
-      var wall, wall_width, walls, _i, _len;
-      this.world = new World('canvas', this.interval);
-      this.p1 = new Slime(2, 4, '#0f0');
-      this.p2 = new Slime(5, 5, '#00f');
-      this.ball = new Ball(2, 3, '#000');
-      this.p1.ball = this.ball;
-      this.p2.ball = this.ball;
-      this.p2.isP2 = 1;
-      this.world.addSprite(this.p1);
-      this.world.addSprite(this.p2);
-      this.world.addSprite(this.ball);
-      wall_width = .2;
-      walls = [new Box(-wall_width, 0, wall_width, this.world.box2dHeight), new Box(0, this.world.box2dHeight + wall_width, this.world.box2dWidth, wall_width), new Box(this.world.box2dWidth + wall_width, 0, wall_width, this.world.box2dHeight), new Box(0, -wall_width, this.world.box2dWidth, wall_width)];
-      for (_i = 0, _len = walls.length; _i < _len; _i++) {
-        wall = walls[_i];
-        this.world.addSprite(wall);
-      }
-      return SlimeVolleyball.__super__.start.call(this);
-    };
-
-    SlimeVolleyball.prototype.step = function() {
-      this.p1.handleInput(this.input);
-      this.p2.handleInput(this.input);
-      this.world.draw();
-      this.world.step();
-      if (this.ball.y + this.ball.radius > this.world.box2dHeight - this.p1.radius) {
-        return;
-      }
-      return this.next();
-    };
-
-    return SlimeVolleyball;
-
-  })(Game);
-
-  window.onload = function() {
-    var slime;
-    slime = new SlimeVolleyball();
-    return slime.start();
-  };
-
-}).call(this);
-(function() {
 
   this.Sprite = (function() {
 
@@ -228,14 +234,77 @@
   var __hasProp = Object.prototype.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
 
+  this.SlimeVolleyball = (function(_super) {
+
+    __extends(SlimeVolleyball, _super);
+
+    function SlimeVolleyball() {
+      SlimeVolleyball.__super__.constructor.apply(this, arguments);
+    }
+
+    SlimeVolleyball.prototype.load = function() {
+      return this.loader.load({
+        p1: 'assets/images/s_0.png',
+        p2: 'assets/images/s_1.png'
+      });
+    };
+
+    SlimeVolleyball.prototype.start = function() {
+      var wall, wall_width, walls, _i, _len;
+      this.world = new World('canvas', this.interval);
+      this.p1 = new Slime(2, 4, '#0f0', this.loader.getAsset('p1'));
+      this.p2 = new Slime(5, 5, '#00f', this.loader.getAsset('p2'));
+      this.ball = new Ball(2, 3, '#000');
+      this.p1.ball = this.ball;
+      this.p2.ball = this.ball;
+      this.p2.isP2 = 1;
+      this.world.addSprite(this.p1);
+      this.world.addSprite(this.p2);
+      this.world.addSprite(this.ball);
+      wall_width = .2;
+      walls = [new Box(-wall_width, 0, wall_width, this.world.box2dHeight), new Box(0, this.world.box2dHeight + wall_width, this.world.box2dWidth, wall_width), new Box(this.world.box2dWidth + wall_width, 0, wall_width, this.world.box2dHeight), new Box(0, -wall_width, this.world.box2dWidth, wall_width)];
+      for (_i = 0, _len = walls.length; _i < _len; _i++) {
+        wall = walls[_i];
+        this.world.addSprite(wall);
+      }
+      return SlimeVolleyball.__super__.start.call(this);
+    };
+
+    SlimeVolleyball.prototype.step = function() {
+      this.p1.handleInput(this.input);
+      this.p2.handleInput(this.input);
+      this.world.draw();
+      this.world.step();
+      if (this.ball.y + this.ball.radius > this.world.box2dHeight - this.p1.radius) {
+        return;
+      }
+      return this.next();
+    };
+
+    return SlimeVolleyball;
+
+  })(Game);
+
+  window.onload = function() {
+    var slime;
+    slime = new SlimeVolleyball();
+    return slime.load();
+  };
+
+}).call(this);
+(function() {
+  var __hasProp = Object.prototype.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
+
   this.Slime = (function(_super) {
 
     __extends(Slime, _super);
 
-    function Slime(x, y, color) {
+    function Slime(x, y, color, img) {
       this.x = x;
       this.y = y;
       this.color = color;
+      this.img = img;
       this.radius = .5;
       this.isP2 = 0;
       Slime.__super__.constructor.call(this, this.x, this.y, this.radius * 2, this.radius * 2);
@@ -283,6 +352,7 @@
       ctx.arc(this.x, this.y, this.radius, 0, Math.PI, true);
       ctx.closePath();
       ctx.fill();
+      ctx.drawImage(this.img, this.x, this.y);
       if (this.isP2 === 0) {
         eyeVec = new Box2D.Common.Math.b2Vec2(this.x + this.radius / 2.0, this.y - this.radius / 2.0);
       } else {
@@ -385,6 +455,7 @@
   })(Sprite);
 
 }).call(this);
+
 
 
 
