@@ -4,7 +4,7 @@
 
     function Game() {
       var _this;
-      this.interval = 1 / 60.0 * 1000;
+      this.interval = 1 / 30.0 * 1000;
       this.input = new Input;
       this.loader = new Loader;
       _this = this;
@@ -144,8 +144,9 @@
 
   this.World = (function() {
 
-    function World(selector, interval) {
+    function World(selector, interval, bg) {
       var aspect, gravity;
+      this.bg = bg;
       this.canvas = document.getElementById(selector);
       this.ctx = this.canvas.getContext('2d');
       this.width = parseFloat(this.canvas.width);
@@ -154,11 +155,20 @@
       this.box2dWidth = 10;
       this.box2dHeight = 10 * aspect;
       this.ctx.scale(this.width / this.box2dWidth, this.height / this.box2dHeight);
+      this.ctx._scaleWidth = this.width / this.box2dWidth;
+      this.ctx._scaleHeight = this.height / this.box2dHeight;
+      this.ctx._world = this;
       gravity = new Box2D.Common.Math.b2Vec2(0, 14);
       this.world = new Box2D.Dynamics.b2World(gravity, true);
       this.sprites = [];
       this.interval = interval / 1000;
     }
+
+    World.prototype.addStaticSprite = function(sprite) {
+      return this.sprites.push({
+        sprite: sprite
+      });
+    };
 
     World.prototype.addSprite = function(sprite) {
       var body;
@@ -173,13 +183,11 @@
     World.prototype.draw = function() {
       var spriteData, _i, _len, _ref, _results;
       this.ctx.clearRect(0, 0, this.box2dWidth, this.box2dHeight);
-      this.ctx.fillStyle = '#555';
-      this.ctx.fillRect(0, this.box2dHeight - .5, this.width, .5);
       _ref = this.sprites;
       _results = [];
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         spriteData = _ref[_i];
-        spriteData.sprite.updateBody(spriteData.body);
+        if (spriteData.body) spriteData.sprite.updateBody(spriteData.body);
         _results.push(spriteData.sprite.draw(this.ctx));
       }
       return _results;
@@ -231,6 +239,52 @@
 
 }).call(this);
 (function() {
+
+  this.Constants = (function() {
+
+    function Constants() {}
+
+    Constants.bottomHeight = .75;
+
+    return Constants;
+
+  })();
+
+}).call(this);
+(function() {
+  var __hasProp = Object.prototype.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
+
+  this.StretchySprite = (function(_super) {
+
+    __extends(StretchySprite, _super);
+
+    function StretchySprite(x, y, width, height, bg) {
+      this.x = x;
+      this.y = y;
+      this.width = width;
+      this.height = height;
+      this.bg = bg;
+      StretchySprite.__super__.constructor.call(this, this.x, this.y, this.width, this.height);
+    }
+
+    StretchySprite.prototype.draw = function(ctx) {
+      var h, w;
+      ctx.scale(1.0 / ctx._scaleWidth, 1.0 / ctx._scaleHeight);
+      w = ctx._world.width;
+      h = ctx._world.height;
+      ctx.scale(w / this.width, h / this.height);
+      ctx.drawImage(this.bg, 0, 0);
+      ctx.scale(this.width / w, this.height / h);
+      return ctx.scale(ctx._scaleWidth, ctx._scaleHeight);
+    };
+
+    return StretchySprite;
+
+  })(Sprite);
+
+}).call(this);
+(function() {
   var __hasProp = Object.prototype.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
 
@@ -245,16 +299,21 @@
     SlimeVolleyball.prototype.load = function() {
       return this.loader.load({
         p1: 'assets/images/s_0.png',
-        p2: 'assets/images/s_1.png'
+        p2: 'assets/images/s_1.png',
+        bg: 'assets/images/bg.png'
       });
     };
 
     SlimeVolleyball.prototype.start = function() {
-      var wall, wall_width, walls, _i, _len;
+      var bottom, wall, wall_width, walls, _i, _len;
       this.world = new World('canvas', this.interval);
-      this.p1 = new Slime(2, 4, '#0f0', this.loader.getAsset('p1'));
-      this.p2 = new Slime(5, 5, '#00f', this.loader.getAsset('p2'));
-      this.ball = new Ball(2, 3, '#000');
+      this.bg = new StretchySprite(0, 0, 480, 320, this.loader.getAsset('bg'));
+      this.world.addStaticSprite(this.bg);
+      bottom = Constants.bottomHeight;
+      this.p1 = new Slime(2, this.world.box2dHeight - bottom - 1, '#0f0', this.loader.getAsset('p1'));
+      this.p2 = new Slime(5, this.world.box2dHeight - bottom - 1, '#00f', this.loader.getAsset('p2'));
+      this.ball = new Ball(2, 0, '#000');
+      this.groundHeight;
       this.p1.ball = this.ball;
       this.p2.ball = this.ball;
       this.p2.isP2 = 1;
@@ -262,7 +321,7 @@
       this.world.addSprite(this.p2);
       this.world.addSprite(this.ball);
       wall_width = .2;
-      walls = [new Box(-wall_width, 0, wall_width, this.world.box2dHeight), new Box(0, this.world.box2dHeight + wall_width, this.world.box2dWidth, wall_width), new Box(this.world.box2dWidth + wall_width, 0, wall_width, this.world.box2dHeight), new Box(0, -wall_width, this.world.box2dWidth, wall_width)];
+      walls = [new Box(-wall_width, 0, wall_width, this.world.box2dHeight), new Box(0, this.world.box2dHeight - bottom + wall_width, this.world.box2dWidth, wall_width), new Box(this.world.box2dWidth + wall_width, 0, wall_width, this.world.box2dHeight), new Box(0, -wall_width, this.world.box2dWidth, wall_width)];
       for (_i = 0, _len = walls.length; _i < _len; _i++) {
         wall = walls[_i];
         this.world.addSprite(wall);
@@ -271,11 +330,11 @@
     };
 
     SlimeVolleyball.prototype.step = function() {
-      this.p1.handleInput(this.input);
-      this.p2.handleInput(this.input);
+      this.p1.handleInput(this.input, this.world);
+      this.p2.handleInput(this.input, this.world);
       this.world.draw();
       this.world.step();
-      if (this.ball.y + this.ball.radius > this.world.box2dHeight - this.p1.radius) {
+      if (this.ball.y + this.ball.radius > this.world.box2dHeight - Constants.bottomHeight - this.p1.radius) {
         return;
       }
       return this.next();
@@ -306,6 +365,7 @@
       this.color = color;
       this.img = img;
       this.radius = .5;
+      this.artSize = 64.0;
       this.isP2 = 0;
       Slime.__super__.constructor.call(this, this.x, this.y, this.radius * 2, this.radius * 2);
     }
@@ -321,7 +381,10 @@
       return this.body.position.Set(this.x, this.y);
     };
 
-    Slime.prototype.handleInput = function(input) {
+    Slime.prototype.handleInput = function(input, world) {
+      var bottom, y;
+      if (this.m_body) y = world.box2dHeight - this.m_body.GetPosition().y;
+      bottom = Constants.bottomHeight + this.radius + .1;
       if (input.left(this.isP2)) {
         this.m_body.m_linearVelocity.x = -4;
         this.m_body.SetAwake(true);
@@ -331,46 +394,45 @@
         this.m_body.SetAwake(true);
       }
       if (input.up(this.isP2)) {
-        if (this.m_body.GetPosition().y > 5.7) {
+        if (y < bottom) {
           this.m_body.m_linearVelocity.y = -7;
           this.m_body.SetAwake(true);
         }
       }
       if (input.down(this.isP2)) {
-        if (this.m_body.m_linearVelocity.y > 0 && this.m_body.GetPosition().y < 5) {
+        if (this.m_body.m_linearVelocity.y > 0 && y > bottom) {
           return this.m_body.m_linearVelocity.y *= 1.5;
         }
-      } else if (this.m_body && this.m_body.GetPosition().y > 5.5) {
+      } else if (this.m_body && y < bottom) {
         return this.m_body.m_linearVelocity.x /= 1.1;
       }
     };
 
     Slime.prototype.draw = function(ctx) {
-      var ballVec, eyeVec;
-      ctx.fillStyle = this.color;
-      ctx.beginPath();
-      ctx.arc(this.x, this.y, this.radius, 0, Math.PI, true);
-      ctx.closePath();
-      ctx.fill();
-      ctx.drawImage(this.img, this.x, this.y);
+      var ballVec, eyeVec, offset, offsetX, realSize;
+      ctx.translate(this.x - this.radius, this.y - this.radius);
+      ctx.scale(1.0 / ctx._scaleWidth, 1.0 / ctx._scaleHeight);
+      realSize = 2 * this.radius * ctx._scaleWidth / this.artSize;
+      ctx.scale(realSize, realSize);
+      ctx.drawImage(this.img, 0, 0);
+      ctx.scale(1.0 / realSize, 1.0 / realSize);
+      ctx.scale(ctx._scaleWidth, ctx._scaleHeight);
+      ctx.translate(-this.x + this.radius, -this.y + this.radius);
+      offset = this.radius / 2.0;
+      offsetX = offset * .95;
       if (this.isP2 === 0) {
-        eyeVec = new Box2D.Common.Math.b2Vec2(this.x + this.radius / 2.0, this.y - this.radius / 2.0);
+        eyeVec = new Box2D.Common.Math.b2Vec2(this.x + offsetX, this.y - offset);
       } else {
-        eyeVec = new Box2D.Common.Math.b2Vec2(this.x - this.radius / 2.0, this.y - this.radius / 2.0);
+        eyeVec = new Box2D.Common.Math.b2Vec2(this.x - offsetX, this.y - offset);
       }
-      ctx.fillStyle = '#ffffff';
-      ctx.beginPath();
-      ctx.arc(eyeVec.x, eyeVec.y, .1, 0, Math.PI * 2, true);
-      ctx.closePath();
-      ctx.fill();
       ballVec = new Box2D.Common.Math.b2Vec2(this.ball.x, this.ball.y);
       ballVec.Subtract(eyeVec);
       ballVec.Normalize();
-      ballVec.Multiply(.05);
+      ballVec.Multiply(.04);
       ballVec.Add(eyeVec);
       ctx.fillStyle = '#000000';
       ctx.beginPath();
-      ctx.arc(ballVec.x, ballVec.y, .05, 0, Math.PI * 2, true);
+      ctx.arc(ballVec.x, ballVec.y, .04, 0, Math.PI * 2, true);
       ctx.closePath();
       return ctx.fill();
     };
@@ -455,6 +517,8 @@
   })(Sprite);
 
 }).call(this);
+
+
 
 
 

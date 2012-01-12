@@ -3,37 +3,40 @@ class @SlimeVolleyball extends Game
 		@loader.load
 			p1: 'assets/images/s_0.png',
 			p2: 'assets/images/s_1.png'
+			bg: 'assets/images/bg.png'
 		
 	# will be called when load complete
 	start: ->
 		@world = new World('canvas', @interval)
-		@p1 = new Slime(2, 4, '#0f0', @loader.getAsset('p1'))
-		@p2 = new Slime(5, 5, '#00f', @loader.getAsset('p2'))
-		@ball = new Ball(2, 3, '#000')
+		@bg = new StretchySprite(0, 0, 480, 320, @loader.getAsset('bg'))
+		@world.addStaticSprite(@bg)
+		bottom = Constants.bottomHeight
+		@p1 = new Slime(2, @world.box2dHeight-bottom-1, '#0f0', @loader.getAsset('p1'))
+		@p2 = new Slime(5, @world.box2dHeight-bottom-1, '#00f', @loader.getAsset('p2'))
+		@ball = new Ball(2, 0, '#000')
+		@groundHeight
 		@p1.ball = @ball
 		@p2.ball = @ball
 		@p2.isP2 = 1 # face left
 		@world.addSprite(@p1)
 		@world.addSprite(@p2)
 		@world.addSprite(@ball)
-
-		# set up "walls" around world
+		
+		# set up "walls" around world: left, bottom, right, top
 		wall_width = .2
-		walls = [ new Box(-wall_width, 0, wall_width, @world.box2dHeight),    # left wall
-						  new Box(0, @world.box2dHeight+wall_width,         # bottom wall
-							        @world.box2dWidth, wall_width),
-						  new Box(@world.box2dWidth+wall_width, 0,          # right wall
-							        wall_width, @world.box2dHeight),
-						  new Box(0, -wall_width, @world.box2dWidth, wall_width) ]    # top wall
+		walls = [ new Box(-wall_width, 0, wall_width, @world.box2dHeight),
+	              new Box(0, @world.box2dHeight-bottom+wall_width, @world.box2dWidth, wall_width),
+		          new Box(@world.box2dWidth+wall_width, 0, wall_width, @world.box2dHeight),
+		          new Box(0, -wall_width, @world.box2dWidth, wall_width) ]
 		@world.addSprite(wall) for wall in walls
 		super()
 
 	step: ->
-		@p1.handleInput(@input)
-		@p2.handleInput(@input)
+		@p1.handleInput(@input, @world)
+		@p2.handleInput(@input, @world)
 		@world.draw()
 		@world.step()
-		if @ball.y + @ball.radius > @world.box2dHeight - @p1.radius
+		if @ball.y + @ball.radius > @world.box2dHeight - Constants.bottomHeight - @p1.radius
 			return
 
 		this.next()

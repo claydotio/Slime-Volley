@@ -15,6 +15,7 @@ class @Box extends Sprite
 
 	draw: (ctx) -> 
 		# given a canvas 2d context, draw a rect centered at @x, @y
-		#ctx.fillStyle = @color
-		#ctx.fillRect(@x, @y, @width, @height)
+		# make walls invisible for now
+		# ctx.fillStyle = @color
+		# ctx.fillRect(@x, @y, @width, @height)
 		

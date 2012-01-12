@@ -2,7 +2,7 @@
 # @author Joe Vennix 2012
 class @Game
 	constructor: ->
-		@interval = 1/60.0*1000
+		@interval = 1/30.0*1000
 		@input = new Input
 		@loader = new Loader
 		# perform some awkward scope scooping so we can use window.setTimeout
