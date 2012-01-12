@@ -1,9 +1,10 @@
 class @SlimeVolleyball extends Game
 	load: ->
 		@loader.load
-			p1: 'assets/images/s_0.png',
-			p2: 'assets/images/s_1.png'
-			bg: 'assets/images/bg.png'
+			p1:   'assets/images/s_0.png',
+			p2:   'assets/images/s_1.png'
+			bg:   'assets/images/bg.png',
+			ball: 'assets/images/ball.png'
 		
 	# will be called when load complete
 	start: ->
@@ -13,7 +14,7 @@ class @SlimeVolleyball extends Game
 		bottom = Constants.bottomHeight
 		@p1 = new Slime(2, @world.box2dHeight-bottom-1, '#0f0', @loader.getAsset('p1'))
 		@p2 = new Slime(5, @world.box2dHeight-bottom-1, '#00f', @loader.getAsset('p2'))
-		@ball = new Ball(2, 0, '#000')
+		@ball = new Ball(2, 0, @loader.getAsset('ball'))
 		@groundHeight
 		@p1.ball = @ball
 		@p2.ball = @ball
