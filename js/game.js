@@ -130,9 +130,9 @@ World = (function() {
     var aspect;
     this.width = parseFloat(this.canvas.width);
     this.height = parseFloat(this.canvas.height);
-    aspect = this.width / this.height;
-    this.box2dWidth = 10 * aspect;
-    this.box2dHeight = 10;
+    aspect = 480 / 320;
+    this.box2dWidth = 10;
+    this.box2dHeight = 10 * aspect;
     this.scaleWidth = this.width / this.box2dWidth;
     return this.scaleHeight = this.height / this.box2dHeight;
   };
@@ -160,7 +160,7 @@ World = (function() {
       if (spriteData.body) {
         spriteData.sprite.updateBody(spriteData.body, this);
       }
-      _results.push(!spriteData.body ? spriteData.sprite.draw(this.ctx) : void 0);
+      _results.push(spriteData.sprite.draw(this.ctx));
     }
     return _results;
   };
@@ -186,8 +186,8 @@ Sprite = (function() {
   };
   Sprite.prototype.updateBody = function(body, world) {
     if (body) {
-      this.x = body.GetPosition().x;
-      this.y = body.GetPosition().y;
+      this.x = body.GetPosition().x * (world.width / world.box2dWidth);
+      this.y = body.GetPosition().y * (world.height / world.box2dHeight);
       return this.m_body = body;
     }
   };
@@ -283,22 +283,21 @@ SlimeVolleyball = (function() {
     this.world = new World('canvas', this.interval);
     this.bg = new StretchySprite(0, 0, this.world.width, this.world.height, 200, 1, this.loader.getAsset('bg'));
     this.world.addStaticSprite(this.bg);
-    bottom = Constants.bottomHeight;
-    this.p1 = new Slime(2, this.world.box2dHeight - bottom - 1, '#0f0', this.loader.getAsset('p1'));
-    this.p2 = new Slime(5, this.world.box2dHeight - bottom - 1, '#00f', this.loader.getAsset('p2'));
-    this.ball = new Ball(2, 0, this.loader.getAsset('ball'));
-    this.groundHeight;
+    this.p1 = new Slime(2, 4, '#0f0', this.loader.getAsset('p1'));
+    this.p2 = new Slime(5, 4, '#00f', this.loader.getAsset('p2'));
+    this.ball = new Ball(2, 1, this.loader.getAsset('ball'));
     this.p1.ball = this.ball;
     this.p2.ball = this.ball;
     this.p2.isP2 = true;
     this.world.addSprite(this.p1);
     this.world.addSprite(this.p2);
     this.world.addSprite(this.ball);
+    bottom = 60 * (this.world.box2dHeight / this.world.height);
     wall_width = .2;
-    walls = [new Box(-wall_width, 0, wall_width, this.world.box2dHeight), new Box(0, this.world.box2dHeight - bottom + wall_width, this.world.box2dWidth, wall_width), new Box(this.world.box2dWidth + wall_width, 0, wall_width, this.world.box2dHeight), new Box(0, -wall_width, this.world.box2dWidth, wall_width)];
+    walls = [new Box(-wall_width, 0, wall_width, this.world.box2dHeight), new Box(0, this.world.box2dHeight + wall_width - bottom, this.world.box2dWidth, wall_width), new Box(this.world.box2dWidth + wall_width, 0, wall_width, this.world.box2dHeight), new Box(0, -wall_width, this.world.box2dWidth, wall_width)];
     for (_i = 0, _len = walls.length; _i < _len; _i++) {
       wall = walls[_i];
-      this.world.addStaticSprite(wall);
+      this.world.addSprite(wall);
     }
     return SlimeVolleyball.__super__.start.call(this);
   };
@@ -307,9 +306,6 @@ SlimeVolleyball = (function() {
     this.p2.handleInput(this.input, this.world);
     this.world.draw();
     this.world.step();
-    if (this.ball.y + this.ball.radius > this.world.box2dHeight - Constants.bottomHeight - this.p1.radius) {
-      return;
-    }
     return this.next();
   };
   return SlimeVolleyball;
@@ -335,7 +331,7 @@ Slime = (function() {
     this.y = y;
     this.color = color;
     this.img = img;
-    this.radius = .5;
+    this.radius = .3275;
     this.artSize = 64.0;
     this.isP2 = false;
     Slime.__super__.constructor.call(this, this.x, this.y, this.radius * 2, this.radius * 2);
@@ -350,29 +346,44 @@ Slime = (function() {
     this.body.type = Box2D.Dynamics.b2Body.b2_dynamicBody;
     return this.body.position.Set(this.x, this.y);
   };
-  Slime.prototype.handleInput = function(input, world) {};
-  Slime.prototype.draw = function(ctx) {
-    var ballVec, eyeVec, localEyeVec, offsetX, offsetY;
-    ctx.translate(this.x - this.radius, this.y - this.radius);
-    ctx.drawImage(this.img, 0, 0);
-    offsetY = this.radius / 2.0;
-    offsetX = offsetY * .95;
-    if (this.isP2) {
-      offsetX = -offsetX;
+  Slime.prototype.handleInput = function(input, world) {
+    var bottom, pNum, y;
+    console.log(this.radius * (world.width / world.box2dWidth));
+    if (this.m_body) {
+      y = world.box2dHeight - this.m_body.GetPosition().y;
     }
-    eyeVec = new Box2D.Common.Math.b2Vec2(this.x + offsetX, this.y - offsetY);
-    localEyeVec = new Box2D.Common.Math.b2Vec2(offsetX, offsetY);
-    ballVec = new Box2D.Common.Math.b2Vec2(this.ball.x, this.ball.y);
-    ballVec.Subtract(eyeVec);
-    ballVec.Normalize();
-    ballVec.Multiply(.04);
-    ballVec.Add(localEyeVec);
-    ctx.fillStyle = '#000000';
-    ctx.beginPath();
-    ctx.arc(ballVec.x, ballVec.y, .04, 0, Math.PI * 2, true);
-    ctx.closePath();
-    ctx.fill();
-    return ctx.translate(-this.x + this.radius, -this.y + this.radius);
+    pNum = this.isP2 ? 1 : 0;
+    bottom = 3;
+    if (input.left(pNum)) {
+      this.m_body.m_linearVelocity.x = -4;
+      this.m_body.SetAwake(true);
+    }
+    if (input.right(pNum)) {
+      this.m_body.m_linearVelocity.x = 4;
+      this.m_body.SetAwake(true);
+    }
+    if (input.up(pNum)) {
+      if (y < bottom) {
+        this.m_body.m_linearVelocity.y = -7;
+        this.m_body.SetAwake(true);
+      }
+    }
+    if (input.down(pNum)) {
+      if (this.m_body.m_linearVelocity.y > 0 && y > bottom) {
+        return this.m_body.m_linearVelocity.y *= 1.5;
+      }
+    } else if (this.m_body && y < bottom) {
+      return this.m_body.m_linearVelocity.x /= 1.1;
+    }
+  };
+  Slime.prototype.draw = function(ctx) {
+    ctx.translate(this.x, this.y);
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, 3, 3);
+    ctx.translate(-this.x, -this.y);
+    ctx.translate(this.x - this.artSize / 2.0, this.y - this.artSize / 2.0);
+    ctx.drawImage(this.img, 0, 0);
+    return ctx.translate(-this.x + this.artSize / 2.0, -this.y + this.artSize / 2.0);
   };
   return Slime;
 })();
@@ -438,9 +449,10 @@ Ball = (function() {
     return this.body.position.Set(this.x, this.y);
   };
   Ball.prototype.draw = function(ctx) {
+    console.log(.14 * (ctx._world.width / ctx._world.box2dWidth));
     ctx.fillStyle = this.color;
     ctx.beginPath();
-    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, true);
+    ctx.arc(this.x, this.y, 13, 0, Math.PI * 2, true);
     ctx.closePath();
     return ctx.fill();
   };

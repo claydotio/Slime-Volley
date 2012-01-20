@@ -15,8 +15,9 @@ class Ball extends Sprite
 		@body.position.Set(@x, @y)
 
 	draw: (ctx) ->
+		console.log .14*(ctx._world.width/ctx._world.box2dWidth)
 		ctx.fillStyle = @color
 		ctx.beginPath()
-		ctx.arc(@x, @y, @radius, 0, Math.PI*2, true)
+		ctx.arc(@x, @y, 13, 0, Math.PI*2, true)
 		ctx.closePath()
 		ctx.fill()

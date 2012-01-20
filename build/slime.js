@@ -14,7 +14,7 @@ Slime = (function() {
     this.y = y;
     this.color = color;
     this.img = img;
-    this.radius = .5;
+    this.radius = .3275;
     this.artSize = 64.0;
     this.isP2 = false;
     Slime.__super__.constructor.call(this, this.x, this.y, this.radius * 2, this.radius * 2);
@@ -29,29 +29,44 @@ Slime = (function() {
     this.body.type = Box2D.Dynamics.b2Body.b2_dynamicBody;
     return this.body.position.Set(this.x, this.y);
   };
-  Slime.prototype.handleInput = function(input, world) {};
-  Slime.prototype.draw = function(ctx) {
-    var ballVec, eyeVec, localEyeVec, offsetX, offsetY;
-    ctx.translate(this.x - this.radius, this.y - this.radius);
-    ctx.drawImage(this.img, 0, 0);
-    offsetY = this.radius / 2.0;
-    offsetX = offsetY * .95;
-    if (this.isP2) {
-      offsetX = -offsetX;
+  Slime.prototype.handleInput = function(input, world) {
+    var bottom, pNum, y;
+    console.log(this.radius * (world.width / world.box2dWidth));
+    if (this.m_body) {
+      y = world.box2dHeight - this.m_body.GetPosition().y;
     }
-    eyeVec = new Box2D.Common.Math.b2Vec2(this.x + offsetX, this.y - offsetY);
-    localEyeVec = new Box2D.Common.Math.b2Vec2(offsetX, offsetY);
-    ballVec = new Box2D.Common.Math.b2Vec2(this.ball.x, this.ball.y);
-    ballVec.Subtract(eyeVec);
-    ballVec.Normalize();
-    ballVec.Multiply(.04);
-    ballVec.Add(localEyeVec);
-    ctx.fillStyle = '#000000';
-    ctx.beginPath();
-    ctx.arc(ballVec.x, ballVec.y, .04, 0, Math.PI * 2, true);
-    ctx.closePath();
-    ctx.fill();
-    return ctx.translate(-this.x + this.radius, -this.y + this.radius);
+    pNum = this.isP2 ? 1 : 0;
+    bottom = 3;
+    if (input.left(pNum)) {
+      this.m_body.m_linearVelocity.x = -4;
+      this.m_body.SetAwake(true);
+    }
+    if (input.right(pNum)) {
+      this.m_body.m_linearVelocity.x = 4;
+      this.m_body.SetAwake(true);
+    }
+    if (input.up(pNum)) {
+      if (y < bottom) {
+        this.m_body.m_linearVelocity.y = -7;
+        this.m_body.SetAwake(true);
+      }
+    }
+    if (input.down(pNum)) {
+      if (this.m_body.m_linearVelocity.y > 0 && y > bottom) {
+        return this.m_body.m_linearVelocity.y *= 1.5;
+      }
+    } else if (this.m_body && y < bottom) {
+      return this.m_body.m_linearVelocity.x /= 1.1;
+    }
+  };
+  Slime.prototype.draw = function(ctx) {
+    ctx.translate(this.x, this.y);
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, 3, 3);
+    ctx.translate(-this.x, -this.y);
+    ctx.translate(this.x - this.artSize / 2.0, this.y - this.artSize / 2.0);
+    ctx.drawImage(this.img, 0, 0);
+    return ctx.translate(-this.x + this.artSize / 2.0, -this.y + this.artSize / 2.0);
   };
   return Slime;
 })();

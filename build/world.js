@@ -16,9 +16,9 @@ World = (function() {
     var aspect;
     this.width = parseFloat(this.canvas.width);
     this.height = parseFloat(this.canvas.height);
-    aspect = this.width / this.height;
-    this.box2dWidth = 10 * aspect;
-    this.box2dHeight = 10;
+    aspect = 480 / 320;
+    this.box2dWidth = 10;
+    this.box2dHeight = 10 * aspect;
     this.scaleWidth = this.width / this.box2dWidth;
     return this.scaleHeight = this.height / this.box2dHeight;
   };
@@ -46,7 +46,7 @@ World = (function() {
       if (spriteData.body) {
         spriteData.sprite.updateBody(spriteData.body, this);
       }
-      _results.push(!spriteData.body ? spriteData.sprite.draw(this.ctx) : void 0);
+      _results.push(spriteData.sprite.draw(this.ctx));
     }
     return _results;
   };

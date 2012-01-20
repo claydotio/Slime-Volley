@@ -14,8 +14,8 @@ Sprite = (function() {
   };
   Sprite.prototype.updateBody = function(body, world) {
     if (body) {
-      this.x = body.GetPosition().x;
-      this.y = body.GetPosition().y;
+      this.x = body.GetPosition().x * (world.width / world.box2dWidth);
+      this.y = body.GetPosition().y * (world.height / world.box2dHeight);
       return this.m_body = body;
     }
   };

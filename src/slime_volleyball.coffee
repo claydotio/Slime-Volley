@@ -11,11 +11,10 @@ class SlimeVolleyball extends Game
 		@world = new World('canvas', @interval)
 		@bg = new StretchySprite(0, 0, @world.width, @world.height, 200, 1, @loader.getAsset('bg'))
 		@world.addStaticSprite(@bg)
-		bottom = Constants.bottomHeight
-		@p1 = new Slime(2, @world.box2dHeight-bottom-1, '#0f0', @loader.getAsset('p1'))
-		@p2 = new Slime(5, @world.box2dHeight-bottom-1, '#00f', @loader.getAsset('p2'))
-		@ball = new Ball(2, 0, @loader.getAsset('ball'))
-		@groundHeight
+		
+		@p1 = new Slime(2, 4, '#0f0', @loader.getAsset('p1'))
+		@p2 = new Slime(5, 4, '#00f', @loader.getAsset('p2'))
+		@ball = new Ball(2, 1, @loader.getAsset('ball'))
 		@p1.ball = @ball
 		@p2.ball = @ball
 		@p2.isP2 = true # face left
@@ -24,12 +23,13 @@ class SlimeVolleyball extends Game
 		@world.addSprite(@ball)
 		
 		# set up "walls" around world: left, bottom, right, top
+		bottom = 60*(@world.box2dHeight/@world.height)
 		wall_width = .2
 		walls = [ new Box(-wall_width, 0, wall_width, @world.box2dHeight),
-	              new Box(0, @world.box2dHeight-bottom+wall_width, @world.box2dWidth, wall_width),
+	              new Box(0, @world.box2dHeight+wall_width-bottom, @world.box2dWidth, wall_width),
 		          new Box(@world.box2dWidth+wall_width, 0, wall_width, @world.box2dHeight),
 		          new Box(0, -wall_width, @world.box2dWidth, wall_width) ]
-		@world.addStaticSprite(wall) for wall in walls
+		@world.addSprite(wall) for wall in walls
 		super()
 
 	# main "loop" iteration
@@ -38,8 +38,8 @@ class SlimeVolleyball extends Game
 		@p2.handleInput(@input, @world)
 		@world.draw()
 		@world.step()
-		if @ball.y + @ball.radius > @world.box2dHeight - Constants.bottomHeight - @p1.radius
-			return
+		#if @ball.y + @ball.radius > @world.box2dHeight - Constants.bottomHeight - @p1.radius
+		#	return
 		this.next()
 
 # run the game when the dom loads

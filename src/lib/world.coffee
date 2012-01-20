@@ -17,9 +17,9 @@ class World
 		@width = parseFloat(@canvas.width)
 		@height = parseFloat(@canvas.height)
 		# scale box2d world to (10*aspect)x10 as suggested in docs
-		aspect = @width / @height
-		@box2dWidth = 10*aspect
-		@box2dHeight = 10
+		aspect = (480/320)
+		@box2dWidth = 10
+		@box2dHeight = 10*aspect
 		@scaleWidth = @width/@box2dWidth
 		@scaleHeight = @height/@box2dHeight
 	
@@ -38,7 +38,7 @@ class World
 		@ctx.clearRect(0, 0, @box2dWidth, @box2dHeight) 
 		for spriteData in @sprites               # drawin yer spritez 
 			spriteData.sprite.updateBody(spriteData.body, this) if spriteData.body
-			spriteData.sprite.draw(@ctx) unless spriteData.body
+			spriteData.sprite.draw(@ctx)
 
 	step: ->
 		@world.Step(@interval, 10, 10)

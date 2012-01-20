@@ -25,22 +25,21 @@ SlimeVolleyball = (function() {
     this.world = new World('canvas', this.interval);
     this.bg = new StretchySprite(0, 0, this.world.width, this.world.height, 200, 1, this.loader.getAsset('bg'));
     this.world.addStaticSprite(this.bg);
-    bottom = Constants.bottomHeight;
-    this.p1 = new Slime(2, this.world.box2dHeight - bottom - 1, '#0f0', this.loader.getAsset('p1'));
-    this.p2 = new Slime(5, this.world.box2dHeight - bottom - 1, '#00f', this.loader.getAsset('p2'));
-    this.ball = new Ball(2, 0, this.loader.getAsset('ball'));
-    this.groundHeight;
+    this.p1 = new Slime(2, 4, '#0f0', this.loader.getAsset('p1'));
+    this.p2 = new Slime(5, 4, '#00f', this.loader.getAsset('p2'));
+    this.ball = new Ball(2, 1, this.loader.getAsset('ball'));
     this.p1.ball = this.ball;
     this.p2.ball = this.ball;
     this.p2.isP2 = true;
     this.world.addSprite(this.p1);
     this.world.addSprite(this.p2);
     this.world.addSprite(this.ball);
+    bottom = 60 * (this.world.box2dHeight / this.world.height);
     wall_width = .2;
-    walls = [new Box(-wall_width, 0, wall_width, this.world.box2dHeight), new Box(0, this.world.box2dHeight - bottom + wall_width, this.world.box2dWidth, wall_width), new Box(this.world.box2dWidth + wall_width, 0, wall_width, this.world.box2dHeight), new Box(0, -wall_width, this.world.box2dWidth, wall_width)];
+    walls = [new Box(-wall_width, 0, wall_width, this.world.box2dHeight), new Box(0, this.world.box2dHeight + wall_width - bottom, this.world.box2dWidth, wall_width), new Box(this.world.box2dWidth + wall_width, 0, wall_width, this.world.box2dHeight), new Box(0, -wall_width, this.world.box2dWidth, wall_width)];
     for (_i = 0, _len = walls.length; _i < _len; _i++) {
       wall = walls[_i];
-      this.world.addStaticSprite(wall);
+      this.world.addSprite(wall);
     }
     return SlimeVolleyball.__super__.start.call(this);
   };
@@ -49,9 +48,6 @@ SlimeVolleyball = (function() {
     this.p2.handleInput(this.input, this.world);
     this.world.draw();
     this.world.step();
-    if (this.ball.y + this.ball.radius > this.world.box2dHeight - Constants.bottomHeight - this.p1.radius) {
-      return;
-    }
     return this.next();
   };
   return SlimeVolleyball;
