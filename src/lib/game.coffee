@@ -1,6 +1,6 @@
 # Game class - a base class for games that provides looping and input
 # @author Joe Vennix 2012
-class @Game
+class Game
 	constructor: ->
 		@interval = 1/30.0*1000
 		@input = new Input

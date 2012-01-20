@@ -1,6 +1,7 @@
-class @Ball extends Sprite
-	constructor: (@x, @y, @color) ->
+class Ball extends Sprite
+	constructor: (@x, @y, @bg) ->
 		@radius = .14
+		@color = '#000000'
 		super(@x, @y, @radius*2, @radius*2)
 
 	createBody: ->
@@ -15,7 +16,7 @@ class @Ball extends Sprite
 
 	draw: (ctx) ->
 		ctx.fillStyle = @color
-		ctx.beginPath();
-		ctx.arc(@x, @y, @radius, 0, Math.PI*2, true); 
-		ctx.closePath();
-		ctx.fill();
+		ctx.beginPath()
+		ctx.arc(@x, @y, @radius, 0, Math.PI*2, true)
+		ctx.closePath()
+		ctx.fill()

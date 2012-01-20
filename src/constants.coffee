@@ -1,2 +1,2 @@
-class @Constants
+class Constants
 	@bottomHeight: .75

@@ -1,4 +1,4 @@
-class @SlimeVolleyball extends Game
+class SlimeVolleyball extends Game
 	load: ->
 		@loader.load
 			p1:   'assets/images/s_0.png',
@@ -9,7 +9,7 @@ class @SlimeVolleyball extends Game
 	# will be called when load complete
 	start: ->
 		@world = new World('canvas', @interval)
-		@bg = new StretchySprite(0, 0, 480, 320, @loader.getAsset('bg'))
+		@bg = new StretchySprite(0, 0, @world.width, @world.height, 200, 1, @loader.getAsset('bg'))
 		@world.addStaticSprite(@bg)
 		bottom = Constants.bottomHeight
 		@p1 = new Slime(2, @world.box2dHeight-bottom-1, '#0f0', @loader.getAsset('p1'))
@@ -18,7 +18,7 @@ class @SlimeVolleyball extends Game
 		@groundHeight
 		@p1.ball = @ball
 		@p2.ball = @ball
-		@p2.isP2 = 1 # face left
+		@p2.isP2 = true # face left
 		@world.addSprite(@p1)
 		@world.addSprite(@p2)
 		@world.addSprite(@ball)
@@ -29,9 +29,10 @@ class @SlimeVolleyball extends Game
 	              new Box(0, @world.box2dHeight-bottom+wall_width, @world.box2dWidth, wall_width),
 		          new Box(@world.box2dWidth+wall_width, 0, wall_width, @world.box2dHeight),
 		          new Box(0, -wall_width, @world.box2dWidth, wall_width) ]
-		@world.addSprite(wall) for wall in walls
+		@world.addStaticSprite(wall) for wall in walls
 		super()
 
+	# main "loop" iteration
 	step: ->
 		@p1.handleInput(@input, @world)
 		@p2.handleInput(@input, @world)
@@ -39,7 +40,6 @@ class @SlimeVolleyball extends Game
 		@world.step()
 		if @ball.y + @ball.radius > @world.box2dHeight - Constants.bottomHeight - @p1.radius
 			return
-
 		this.next()
 
 # run the game when the dom loads

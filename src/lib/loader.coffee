@@ -1,4 +1,4 @@
-class @Loader
+class Loader
 	# accepts an associative array specifying asset and asset names:
 	# new Loader({ ball: '/images/ball.png' })
 	constructor: ->

@@ -1,4 +1,4 @@
-class @Input
+class Input
 	constructor: ->
 		# bind to dom key events (and touch, if available)
 		@keys = {}

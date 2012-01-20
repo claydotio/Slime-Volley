@@ -1,4 +1,4 @@
-class @Box extends Sprite
+class Box extends Sprite
 	constructor: (@x, @y, @width, @height) ->
 		@color = '#444'
 		super
