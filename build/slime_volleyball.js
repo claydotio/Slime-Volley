@@ -36,7 +36,7 @@ SlimeVolleyball = (function() {
     bottom = 60;
     wall_width = 1;
     wall_height = 1000;
-    walls = [new Box(-wall_width, -1000, wall_width, 2000), new Box(0, this.world.height - bottom + this.p1.radius, this.world.width, wall_width), new Box(this.world.width, -1000, wall_width, 2000)];
+    walls = [new Box(-wall_width, -wall_height, wall_width, 2 * wall_height), new Box(0, this.world.height - bottom + this.p1.radius, this.world.width, wall_width), new Box(this.world.width, -wall_height, wall_width, 2 * wall_height)];
     for (_i = 0, _len = walls.length; _i < _len; _i++) {
       wall = walls[_i];
       this.world.addSprite(wall);
@@ -44,11 +44,11 @@ SlimeVolleyball = (function() {
     return SlimeVolleyball.__super__.start.call(this);
   };
   SlimeVolleyball.prototype.step = function(timestamp) {
-    this.next();
+    this.world.step(timestamp);
     this.p1.handleInput(this.input, this.world);
     this.p2.handleInput(this.input, this.world);
     this.world.draw();
-    return this.world.step(timestamp);
+    return this.next();
   };
   return SlimeVolleyball;
 })();

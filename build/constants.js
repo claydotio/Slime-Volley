@@ -1,6 +1,6 @@
 var Constants;
-Constants = (function() {
-  function Constants() {}
-  Constants.bottomHeight = .75;
-  return Constants;
-})();
+Constants = {
+  SCALE: 0.1,
+  SCALE_INV: 10.0,
+  BOTTOM: 65
+};

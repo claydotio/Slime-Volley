@@ -9,10 +9,10 @@ class Ball extends Sprite
 		@fixture.density = .4
 		@fixture.friction = 0.5
 		@fixture.restitution = 0.2
-		@fixture.shape = new Box2D.Collision.Shapes.b2CircleShape(@radius)
+		@fixture.shape = new Box2D.Collision.Shapes.b2CircleShape(@radius*Constants.SCALE)
 		@body = new Box2D.Dynamics.b2BodyDef()
 		@body.type = Box2D.Dynamics.b2Body.b2_dynamicBody
-		@body.position.Set(@x, @y)
+		@body.position.Set(@scaledX, @scaledY)
 
 	draw: (ctx) ->
 		ctx.fillStyle = @color

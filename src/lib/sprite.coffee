@@ -2,8 +2,8 @@
 # Contains coordinates and a draw(ctx) method
 class Sprite
 	constructor: (@x, @y, @width, @height) ->
-		@halfWidth = @width/2.0
-		@halfHeight = @height/2.0
+		@scaledX = @x * Constants.SCALE
+		@scaledY = @y * Constants.SCALE
 		this.createBody()
 
 	createBody: ->
@@ -12,9 +12,9 @@ class Sprite
 	updateBody: (body, world) ->
 		# update x and y, converting from world space to screen space
 		if body
-			@x = body.GetPosition().x
-			@y = body.GetPosition().y
-			@m_body = body
+			@x = body.GetPosition().x * Constants.SCALE_INV
+			@y = body.GetPosition().y * Constants.SCALE_INV
+			@m_body ||= body
 
 	draw: (ctx) -> # ctx is the canvas context, passed from world
 		console.log 'Override me!'

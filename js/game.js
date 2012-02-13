@@ -1,3 +1,9 @@
+var Constants;
+Constants = {
+  SCALE: 0.1,
+  SCALE_INV: 10.0,
+  BOTTOM: 65
+};
 window.requestAnimationFrame || (window.requestAnimationFrame = window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame || window.oRequestAnimationFrame || window.msRequestAnimationFrame || function(callback, element) {
   return window.setTimeout(function() {
     return callback(+new Date());
@@ -126,7 +132,7 @@ World = (function() {
     this.width = parseFloat(this.canvas.width);
     this.height = parseFloat(this.canvas.height);
     this.ctx._world = this;
-    gravity = new Box2D.Common.Math.b2Vec2(0, 100);
+    gravity = new Box2D.Common.Math.b2Vec2(0, 40);
     this.world = new Box2D.Dynamics.b2World(gravity, true);
     this.sprites = [];
     this.oldTime = new Date();
@@ -140,6 +146,7 @@ World = (function() {
     var body;
     body = this.world.CreateBody(sprite.body);
     body.CreateFixture(sprite.fixture);
+    console.log(body.GetPosition());
     return this.sprites.push({
       sprite: sprite,
       body: body
@@ -163,7 +170,7 @@ World = (function() {
     var interval;
     interval = timestamp - this.oldTime;
     this.oldTime = timestamp;
-    this.world.Step(interval / 1000, 10, 10);
+    this.world.Step(interval / 1000.0, 10, 10);
     return this.world.ClearForces();
   };
   return World;
@@ -175,8 +182,8 @@ Sprite = (function() {
     this.y = y;
     this.width = width;
     this.height = height;
-    this.halfWidth = this.width / 2.0;
-    this.halfHeight = this.height / 2.0;
+    this.scaledX = this.x * Constants.SCALE;
+    this.scaledY = this.y * Constants.SCALE;
     this.createBody();
   }
   Sprite.prototype.createBody = function() {
@@ -184,9 +191,9 @@ Sprite = (function() {
   };
   Sprite.prototype.updateBody = function(body, world) {
     if (body) {
-      this.x = body.GetPosition().x;
-      this.y = body.GetPosition().y;
-      return this.m_body = body;
+      this.x = body.GetPosition().x * Constants.SCALE_INV;
+      this.y = body.GetPosition().y * Constants.SCALE_INV;
+      return this.m_body || (this.m_body = body);
     }
   };
   Sprite.prototype.draw = function(ctx) {
@@ -286,7 +293,7 @@ SlimeVolleyball = (function() {
     bottom = 60;
     wall_width = 1;
     wall_height = 1000;
-    walls = [new Box(-wall_width, -1000, wall_width, 2000), new Box(0, this.world.height - bottom + this.p1.radius, this.world.width, wall_width), new Box(this.world.width, -1000, wall_width, 2000)];
+    walls = [new Box(-wall_width, -wall_height, wall_width, 2 * wall_height), new Box(0, this.world.height - bottom + this.p1.radius, this.world.width, wall_width), new Box(this.world.width, -wall_height, wall_width, 2 * wall_height)];
     for (_i = 0, _len = walls.length; _i < _len; _i++) {
       wall = walls[_i];
       this.world.addSprite(wall);
@@ -294,11 +301,11 @@ SlimeVolleyball = (function() {
     return SlimeVolleyball.__super__.start.call(this);
   };
   SlimeVolleyball.prototype.step = function(timestamp) {
-    this.next();
+    this.world.step(timestamp);
     this.p1.handleInput(this.input, this.world);
     this.p2.handleInput(this.input, this.world);
     this.world.draw();
-    return this.world.step(timestamp);
+    return this.next();
   };
   return SlimeVolleyball;
 })();
@@ -329,32 +336,30 @@ Slime = (function() {
   }
   Slime.prototype.createBody = function() {
     this.fixture = new Box2D.Dynamics.b2FixtureDef();
-    this.fixture.density = 1.0;
+    this.fixture.density = 200.0;
     this.fixture.friction = 1.0;
     this.fixture.restitution = 0;
-    this.fixture.shape = new Box2D.Collision.Shapes.b2CircleShape(this.radius);
+    this.fixture.shape = new Box2D.Collision.Shapes.b2CircleShape(this.radius * Constants.SCALE);
     this.body = new Box2D.Dynamics.b2BodyDef();
     this.body.type = Box2D.Dynamics.b2Body.b2_dynamicBody;
-    return this.body.position.Set(this.x, this.y);
+    return this.body.position.Set(this.scaledX, this.scaledY);
   };
   Slime.prototype.handleInput = function(input, world) {
     var bottom, pNum, y;
-    if (this.m_body) {
-      y = world.height - this.m_body.GetPosition().y;
-    }
+    y = world.height - this.y;
     pNum = this.isP2 ? 1 : 0;
-    bottom = 100;
+    bottom = Constants.BOTTOM;
     if (input.left(pNum)) {
-      this.m_body.m_linearVelocity.x = -40;
+      this.m_body.m_linearVelocity.x = -20;
       this.m_body.SetAwake(true);
     }
     if (input.right(pNum)) {
-      this.m_body.m_linearVelocity.x = 40;
+      this.m_body.m_linearVelocity.x = 20;
       this.m_body.SetAwake(true);
     }
     if (input.up(pNum)) {
       if (y < bottom) {
-        this.m_body.m_linearVelocity.y = -100;
+        this.m_body.m_linearVelocity.y = -25;
         this.m_body.SetAwake(true);
       }
     }
@@ -416,10 +421,10 @@ Box = (function() {
     this.fixture.friction = 1.0;
     this.fixture.restitution = 0;
     this.fixture.shape = new Box2D.Collision.Shapes.b2PolygonShape();
-    this.fixture.shape.SetAsBox(this.width, this.height);
+    this.fixture.shape.SetAsBox(this.width * Constants.SCALE, this.height * Constants.SCALE);
     this.body = new Box2D.Dynamics.b2BodyDef();
     this.body.type = Box2D.Dynamics.b2Body.b2_staticBody;
-    return this.body.position.Set(this.x, this.y);
+    return this.body.position.Set(this.scaledX, this.scaledY);
   };
   Box.prototype.draw = function(ctx) {
     ctx.fillStyle = '#000';
@@ -451,10 +456,10 @@ Ball = (function() {
     this.fixture.density = .4;
     this.fixture.friction = 0.5;
     this.fixture.restitution = 0.2;
-    this.fixture.shape = new Box2D.Collision.Shapes.b2CircleShape(this.radius);
+    this.fixture.shape = new Box2D.Collision.Shapes.b2CircleShape(this.radius * Constants.SCALE);
     this.body = new Box2D.Dynamics.b2BodyDef();
     this.body.type = Box2D.Dynamics.b2Body.b2_dynamicBody;
-    return this.body.position.Set(this.x, this.y);
+    return this.body.position.Set(this.scaledX, this.scaledY);
   };
   Ball.prototype.draw = function(ctx) {
     ctx.fillStyle = this.color;

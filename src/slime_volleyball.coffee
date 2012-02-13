@@ -29,19 +29,20 @@ class SlimeVolleyball extends Game
 		wall_width = 1
 		wall_height = 1000   # set height of walls at 1000 (so users of different 
 		                     #   resolutions can play together without bugz)
-		walls = [ new Box(-wall_width, -1000, wall_width, 2000),
+		walls = [ new Box(-wall_width, -wall_height, wall_width, 2*wall_height),
 		          new Box(0, @world.height-bottom+@p1.radius, @world.width, wall_width),
-		          new Box(@world.width, -1000, wall_width, 2000) ]
+		          new Box(@world.width, -wall_height, wall_width, 2*wall_height) ]
 		@world.addSprite(wall) for wall in walls
 		super()
 
 	# main "loop" iteration
 	step: (timestamp) ->
-		this.next() # called first to fix setTimeout bug
+		@world.step(timestamp)
 		@p1.handleInput(@input, @world)
 		@p2.handleInput(@input, @world)
 		@world.draw()
-		@world.step(timestamp)		
+		
+		this.next() # called first to fix setTimeout bug		
 
 # run the game when the dom loads
 window.onload = ->

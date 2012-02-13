@@ -1,3 +1,4 @@
+//= require 'constants'
 //= require 'lib/shims'
 //= require 'lib/game'
 //= require 'lib/loader'

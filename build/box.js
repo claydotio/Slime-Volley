@@ -22,10 +22,10 @@ Box = (function() {
     this.fixture.friction = 1.0;
     this.fixture.restitution = 0;
     this.fixture.shape = new Box2D.Collision.Shapes.b2PolygonShape();
-    this.fixture.shape.SetAsBox(this.width, this.height);
+    this.fixture.shape.SetAsBox(this.width * Constants.SCALE, this.height * Constants.SCALE);
     this.body = new Box2D.Dynamics.b2BodyDef();
     this.body.type = Box2D.Dynamics.b2Body.b2_staticBody;
-    return this.body.position.Set(this.x, this.y);
+    return this.body.position.Set(this.scaledX, this.scaledY);
   };
   Box.prototype.draw = function(ctx) {
     ctx.fillStyle = '#000';

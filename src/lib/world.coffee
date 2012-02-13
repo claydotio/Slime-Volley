@@ -9,11 +9,11 @@ class World
 		@height = parseFloat(@canvas.height)
 		@ctx._world = this  # circular reference! fixme?
 		# @world is the box2d world we will use for physics
-		gravity = new Box2D.Common.Math.b2Vec2(0, 100)
+		gravity = new Box2D.Common.Math.b2Vec2(0, 40)
 		@world = new Box2D.Dynamics.b2World(gravity, true)
 		@sprites = []
 		@oldTime = new Date()
-	
+
 	addStaticSprite: (sprite) ->
 		@sprites.push { sprite: sprite }
 
@@ -21,6 +21,7 @@ class World
 		# add sprite to list, and create a physical body in box2d's
 		body = @world.CreateBody(sprite.body)
 		body.CreateFixture(sprite.fixture)
+		console.log body.GetPosition()
 		@sprites.push 
 			sprite: sprite
 			body: body
@@ -34,5 +35,5 @@ class World
 	step: (timestamp) ->
 		interval = timestamp - @oldTime
 		@oldTime = timestamp
-		@world.Step(interval/1000, 10, 10)
+		@world.Step(interval/1000.0, 10, 10)
 		@world.ClearForces()

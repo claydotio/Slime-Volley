@@ -22,10 +22,10 @@ Ball = (function() {
     this.fixture.density = .4;
     this.fixture.friction = 0.5;
     this.fixture.restitution = 0.2;
-    this.fixture.shape = new Box2D.Collision.Shapes.b2CircleShape(this.radius);
+    this.fixture.shape = new Box2D.Collision.Shapes.b2CircleShape(this.radius * Constants.SCALE);
     this.body = new Box2D.Dynamics.b2BodyDef();
     this.body.type = Box2D.Dynamics.b2Body.b2_dynamicBody;
-    return this.body.position.Set(this.x, this.y);
+    return this.body.position.Set(this.scaledX, this.scaledY);
   };
   Ball.prototype.draw = function(ctx) {
     ctx.fillStyle = this.color;

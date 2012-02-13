@@ -20,32 +20,30 @@ Slime = (function() {
   }
   Slime.prototype.createBody = function() {
     this.fixture = new Box2D.Dynamics.b2FixtureDef();
-    this.fixture.density = 1.0;
+    this.fixture.density = 200.0;
     this.fixture.friction = 1.0;
     this.fixture.restitution = 0;
-    this.fixture.shape = new Box2D.Collision.Shapes.b2CircleShape(this.radius);
+    this.fixture.shape = new Box2D.Collision.Shapes.b2CircleShape(this.radius * Constants.SCALE);
     this.body = new Box2D.Dynamics.b2BodyDef();
     this.body.type = Box2D.Dynamics.b2Body.b2_dynamicBody;
-    return this.body.position.Set(this.x, this.y);
+    return this.body.position.Set(this.scaledX, this.scaledY);
   };
   Slime.prototype.handleInput = function(input, world) {
     var bottom, pNum, y;
-    if (this.m_body) {
-      y = world.height - this.m_body.GetPosition().y;
-    }
+    y = world.height - this.y;
     pNum = this.isP2 ? 1 : 0;
-    bottom = 100;
+    bottom = Constants.BOTTOM;
     if (input.left(pNum)) {
-      this.m_body.m_linearVelocity.x = -40;
+      this.m_body.m_linearVelocity.x = -20;
       this.m_body.SetAwake(true);
     }
     if (input.right(pNum)) {
-      this.m_body.m_linearVelocity.x = 40;
+      this.m_body.m_linearVelocity.x = 20;
       this.m_body.SetAwake(true);
     }
     if (input.up(pNum)) {
       if (y < bottom) {
-        this.m_body.m_linearVelocity.y = -100;
+        this.m_body.m_linearVelocity.y = -25;
         this.m_body.SetAwake(true);
       }
     }

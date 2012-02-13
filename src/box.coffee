@@ -8,10 +8,10 @@ class Box extends Sprite
 		@fixture.friction = 1.0
 		@fixture.restitution = 0
 		@fixture.shape = new Box2D.Collision.Shapes.b2PolygonShape()
-		@fixture.shape.SetAsBox(@width, @height)
+		@fixture.shape.SetAsBox(@width*Constants.SCALE, @height*Constants.SCALE)
 		@body = new Box2D.Dynamics.b2BodyDef()
 		@body.type = Box2D.Dynamics.b2Body.b2_staticBody
-		@body.position.Set(@x, @y)
+		@body.position.Set(@scaledX, @scaledY)
 
 	draw: (ctx) -> 
 		# given a canvas 2d context, draw a rect centered at @x, @y

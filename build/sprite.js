@@ -5,8 +5,8 @@ Sprite = (function() {
     this.y = y;
     this.width = width;
     this.height = height;
-    this.halfWidth = this.width / 2.0;
-    this.halfHeight = this.height / 2.0;
+    this.scaledX = this.x * Constants.SCALE;
+    this.scaledY = this.y * Constants.SCALE;
     this.createBody();
   }
   Sprite.prototype.createBody = function() {
@@ -14,9 +14,9 @@ Sprite = (function() {
   };
   Sprite.prototype.updateBody = function(body, world) {
     if (body) {
-      this.x = body.GetPosition().x;
-      this.y = body.GetPosition().y;
-      return this.m_body = body;
+      this.x = body.GetPosition().x * Constants.SCALE_INV;
+      this.y = body.GetPosition().y * Constants.SCALE_INV;
+      return this.m_body || (this.m_body = body);
     }
   };
   Sprite.prototype.draw = function(ctx) {

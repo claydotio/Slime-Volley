@@ -6,28 +6,28 @@ class Slime extends Sprite
 
 	createBody: ->
 		@fixture = new Box2D.Dynamics.b2FixtureDef()
-		@fixture.density = 1.0
+		@fixture.density = 200.0
 		@fixture.friction = 1.0
 		@fixture.restitution = 0
-		@fixture.shape = new Box2D.Collision.Shapes.b2CircleShape(@radius)
+		@fixture.shape = new Box2D.Collision.Shapes.b2CircleShape(@radius*Constants.SCALE)
 		@body = new Box2D.Dynamics.b2BodyDef()
 		@body.type = Box2D.Dynamics.b2Body.b2_dynamicBody
-		@body.position.Set(@x, @y)
+		@body.position.Set(@scaledX, @scaledY)
 
 	handleInput: (input, world) ->
 		# check for up, left, right, and down(?)
-		y = world.height - @m_body.GetPosition().y if @m_body
+		y = world.height - @y
 		pNum = if @isP2 then 1 else 0
-		bottom = 100
+		bottom = Constants.BOTTOM
 		if input.left(pNum)
-			@m_body.m_linearVelocity.x = -40
+			@m_body.m_linearVelocity.x = -20
 			@m_body.SetAwake(true)
 		if input.right(pNum)
-			@m_body.m_linearVelocity.x = 40
+			@m_body.m_linearVelocity.x = 20
 			@m_body.SetAwake(true)
 		if input.up(pNum)
 			if y < bottom
-				@m_body.m_linearVelocity.y = -100
+				@m_body.m_linearVelocity.y = -25
 				@m_body.SetAwake(true)
 		if input.down(pNum)
 			if @m_body.m_linearVelocity.y > 0 && y > bottom
@@ -38,6 +38,7 @@ class Slime extends Sprite
 	draw: (ctx) ->
 		ctx.fillStyle = '#000'
 		ctx.fillRect(@x,@y,3,3)
+		#console.log 'draw: '+ @x+','+@y
 		# draw the slime sprite
 		# ctx.fillStyle = if @isP2 then '#f00' else '#0f0'
 		# ctx.beginPath()
@@ -45,7 +46,7 @@ class Slime extends Sprite
 		# ctx.closePath()
 		# ctx.fill()
 		ctx.drawImage(@img, @x-@radius-1, @y-@radius)
-		# # now draw the eyeball from the specified offsets
+		# now draw the eyeball from the specified offsets
 		offsetY = @radius/2.0  # these are like constants
 		offsetX = offsetY*.95
 		offsetX = -offsetX if @isP2  # draw on left side for p2
@@ -56,7 +57,7 @@ class Slime extends Sprite
 		ballVec = new Box2D.Common.Math.b2Vec2(@ball.x, @ball.y)
 		# direction of pupil = (normalize(ballVec-eyeVec)*eyeRadius)+localEyeVec
 		ballVec.Subtract(eyeVec)  
-		ballVec.y = -ballVec.y # flip y direction for canvsa
+		ballVec.y = -ballVec.y # flip y direction for canvas
 		ballVec.Normalize() 
 		ballVec.Multiply(3)
 		ballVec.Add(localEyeVec)
