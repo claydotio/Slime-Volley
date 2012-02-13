@@ -7,7 +7,6 @@ var Game;
 Game = (function() {
   function Game() {
     var _this;
-    this.interval = 1 / 60.0 * 1000;
     this.input = new Input;
     this.loader = new Loader;
     _this = this;
@@ -119,28 +118,19 @@ Input = (function() {
 })();
 var World;
 World = (function() {
-  function World(selector, interval, bg) {
+  function World(selector, bg) {
     var gravity;
     this.bg = bg;
     this.canvas = document.getElementById(selector);
     this.ctx = this.canvas.getContext('2d');
-    this.calculateDimensions();
-    this.ctx._world = this;
-    gravity = new Box2D.Common.Math.b2Vec2(0, 14);
-    this.world = new Box2D.Dynamics.b2World(gravity, true);
-    this.sprites = [];
-    this.interval = interval / 1000;
-  }
-  World.prototype.calculateDimensions = function() {
-    var aspect;
     this.width = parseFloat(this.canvas.width);
     this.height = parseFloat(this.canvas.height);
-    aspect = 480 / 320;
-    this.box2dWidth = 10;
-    this.box2dHeight = 10 * aspect;
-    this.scaleWidth = this.width / this.box2dWidth;
-    return this.scaleHeight = this.height / this.box2dHeight;
-  };
+    this.ctx._world = this;
+    gravity = new Box2D.Common.Math.b2Vec2(0, 100);
+    this.world = new Box2D.Dynamics.b2World(gravity, true);
+    this.sprites = [];
+    this.oldTime = new Date();
+  }
   World.prototype.addStaticSprite = function(sprite) {
     return this.sprites.push({
       sprite: sprite
@@ -157,7 +147,7 @@ World = (function() {
   };
   World.prototype.draw = function() {
     var spriteData, _i, _len, _ref, _results;
-    this.ctx.clearRect(0, 0, this.box2dWidth, this.box2dHeight);
+    this.ctx.clearRect(0, 0, this.width, this.height);
     _ref = this.sprites;
     _results = [];
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
@@ -169,8 +159,11 @@ World = (function() {
     }
     return _results;
   };
-  World.prototype.step = function() {
-    this.world.Step(this.interval, 10, 10);
+  World.prototype.step = function(timestamp) {
+    var interval;
+    interval = timestamp - this.oldTime;
+    this.oldTime = timestamp;
+    this.world.Step(interval / 1000, 10, 10);
     return this.world.ClearForces();
   };
   return World;
@@ -191,8 +184,8 @@ Sprite = (function() {
   };
   Sprite.prototype.updateBody = function(body, world) {
     if (body) {
-      this.x = body.GetPosition().x * (world.width / world.box2dWidth);
-      this.y = body.GetPosition().y * (world.height / world.box2dHeight);
+      this.x = body.GetPosition().x;
+      this.y = body.GetPosition().y;
       return this.m_body = body;
     }
   };
@@ -200,12 +193,6 @@ Sprite = (function() {
     return console.log('Override me!');
   };
   return Sprite;
-})();
-var Constants;
-Constants = (function() {
-  function Constants() {}
-  Constants.bottomHeight = .75;
-  return Constants;
 })();
 var StretchySprite;
 var __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) {
@@ -279,39 +266,39 @@ SlimeVolleyball = (function() {
     return this.loader.load({
       p1: 'assets/images/s_0.png',
       p2: 'assets/images/s_1.png',
-      bg: 'assets/images/bg.png',
-      ball: 'assets/images/ball.png'
+      bg: 'assets/images/bg.png'
     });
   };
   SlimeVolleyball.prototype.start = function() {
-    var bottom, wall, wall_width, walls, _i, _len;
+    var bottom, wall, wall_height, wall_width, walls, _i, _len;
     this.world = new World('canvas', this.interval);
     this.bg = new StretchySprite(0, 0, this.world.width, this.world.height, 200, 1, this.loader.getAsset('bg'));
-    this.world.addStaticSprite(this.bg);
-    this.p1 = new Slime(2, 4, '#0f0', this.loader.getAsset('p1'));
-    this.p2 = new Slime(5, 4, '#00f', this.loader.getAsset('p2'));
-    this.ball = new Ball(2, 1, this.loader.getAsset('ball'));
+    this.p1 = new Slime(100, 200, '#0f0', this.loader.getAsset('p1'));
+    this.p2 = new Slime(300, 200, '#00f', this.loader.getAsset('p2'));
+    this.ball = new Ball(230, 21);
     this.p1.ball = this.ball;
     this.p2.ball = this.ball;
     this.p2.isP2 = true;
+    this.world.addStaticSprite(this.bg);
     this.world.addSprite(this.p1);
     this.world.addSprite(this.p2);
     this.world.addSprite(this.ball);
-    bottom = 60 * (this.world.box2dHeight / this.world.height);
-    wall_width = .2;
-    walls = [new Box(-wall_width, 0, wall_width, this.world.box2dHeight), new Box(0, this.world.box2dHeight + wall_width - bottom, this.world.box2dWidth, wall_width), new Box(this.world.box2dWidth + wall_width, 0, wall_width, this.world.box2dHeight), new Box(0, -wall_width, this.world.box2dWidth, wall_width)];
+    bottom = 60;
+    wall_width = 1;
+    wall_height = 1000;
+    walls = [new Box(-wall_width, -1000, wall_width, 2000), new Box(0, this.world.height - bottom + this.p1.radius, this.world.width, wall_width), new Box(this.world.width, -1000, wall_width, 2000)];
     for (_i = 0, _len = walls.length; _i < _len; _i++) {
       wall = walls[_i];
       this.world.addSprite(wall);
     }
     return SlimeVolleyball.__super__.start.call(this);
   };
-  SlimeVolleyball.prototype.step = function() {
+  SlimeVolleyball.prototype.step = function(timestamp) {
+    this.next();
     this.p1.handleInput(this.input, this.world);
     this.p2.handleInput(this.input, this.world);
     this.world.draw();
-    this.world.step();
-    return this.next();
+    return this.world.step(timestamp);
   };
   return SlimeVolleyball;
 })();
@@ -336,8 +323,7 @@ Slime = (function() {
     this.y = y;
     this.color = color;
     this.img = img;
-    this.radius = .3275;
-    this.artSize = 64.0;
+    this.radius = 31;
     this.isP2 = false;
     Slime.__super__.constructor.call(this, this.x, this.y, this.radius * 2, this.radius * 2);
   }
@@ -353,23 +339,22 @@ Slime = (function() {
   };
   Slime.prototype.handleInput = function(input, world) {
     var bottom, pNum, y;
-    console.log(this.radius * (world.width / world.box2dWidth));
     if (this.m_body) {
-      y = world.box2dHeight - this.m_body.GetPosition().y;
+      y = world.height - this.m_body.GetPosition().y;
     }
     pNum = this.isP2 ? 1 : 0;
-    bottom = 3;
+    bottom = 100;
     if (input.left(pNum)) {
-      this.m_body.m_linearVelocity.x = -4;
+      this.m_body.m_linearVelocity.x = -40;
       this.m_body.SetAwake(true);
     }
     if (input.right(pNum)) {
-      this.m_body.m_linearVelocity.x = 4;
+      this.m_body.m_linearVelocity.x = 40;
       this.m_body.SetAwake(true);
     }
     if (input.up(pNum)) {
       if (y < bottom) {
-        this.m_body.m_linearVelocity.y = -7;
+        this.m_body.m_linearVelocity.y = -100;
         this.m_body.SetAwake(true);
       }
     }
@@ -382,13 +367,28 @@ Slime = (function() {
     }
   };
   Slime.prototype.draw = function(ctx) {
-    ctx.translate(this.x, this.y);
+    var ballVec, eyeVec, localEyeVec, offsetX, offsetY;
     ctx.fillStyle = '#000';
-    ctx.fillRect(0, 0, 3, 3);
-    ctx.translate(-this.x, -this.y);
-    ctx.translate(this.x - this.artSize / 2.0, this.y - this.artSize / 2.0);
-    ctx.drawImage(this.img, 0, 0);
-    return ctx.translate(-this.x + this.artSize / 2.0, -this.y + this.artSize / 2.0);
+    ctx.fillRect(this.x, this.y, 3, 3);
+    ctx.drawImage(this.img, this.x - this.radius - 1, this.y - this.radius);
+    offsetY = this.radius / 2.0;
+    offsetX = offsetY * .95;
+    if (this.isP2) {
+      offsetX = -offsetX;
+    }
+    eyeVec = new Box2D.Common.Math.b2Vec2(this.x + offsetX, this.y - offsetY);
+    localEyeVec = new Box2D.Common.Math.b2Vec2(offsetX, offsetY);
+    ballVec = new Box2D.Common.Math.b2Vec2(this.ball.x, this.ball.y);
+    ballVec.Subtract(eyeVec);
+    ballVec.y = -ballVec.y;
+    ballVec.Normalize();
+    ballVec.Multiply(3);
+    ballVec.Add(localEyeVec);
+    ctx.fillStyle = '#000';
+    ctx.beginPath();
+    ctx.arc(this.x + ballVec.x, this.y - ballVec.y, 2, 0, Math.PI * 2, true);
+    ctx.closePath();
+    return ctx.fill();
   };
   return Slime;
 })();
@@ -421,7 +421,10 @@ Box = (function() {
     this.body.type = Box2D.Dynamics.b2Body.b2_staticBody;
     return this.body.position.Set(this.x, this.y);
   };
-  Box.prototype.draw = function(ctx) {};
+  Box.prototype.draw = function(ctx) {
+    ctx.fillStyle = '#000';
+    return ctx.fillRect(this.x, this.y, this.width, this.height);
+  };
   return Box;
 })();
 var Ball;
@@ -439,7 +442,7 @@ Ball = (function() {
     this.x = x;
     this.y = y;
     this.bg = bg;
-    this.radius = .14;
+    this.radius = 10;
     this.color = '#000000';
     Ball.__super__.constructor.call(this, this.x, this.y, this.radius * 2, this.radius * 2);
   }
@@ -454,10 +457,9 @@ Ball = (function() {
     return this.body.position.Set(this.x, this.y);
   };
   Ball.prototype.draw = function(ctx) {
-    console.log(.14 * (ctx._world.width / ctx._world.box2dWidth));
     ctx.fillStyle = this.color;
     ctx.beginPath();
-    ctx.arc(this.x, this.y, 13, 0, Math.PI * 2, true);
+    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, true);
     ctx.closePath();
     return ctx.fill();
   };

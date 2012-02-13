@@ -27,6 +27,9 @@ Box = (function() {
     this.body.type = Box2D.Dynamics.b2Body.b2_staticBody;
     return this.body.position.Set(this.x, this.y);
   };
-  Box.prototype.draw = function(ctx) {};
+  Box.prototype.draw = function(ctx) {
+    ctx.fillStyle = '#000';
+    return ctx.fillRect(this.x, this.y, this.width, this.height);
+  };
   return Box;
 })();

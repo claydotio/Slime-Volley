@@ -2,7 +2,6 @@ var Game;
 Game = (function() {
   function Game() {
     var _this;
-    this.interval = 1 / 60.0 * 1000;
     this.input = new Input;
     this.loader = new Loader;
     _this = this;

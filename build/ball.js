@@ -13,7 +13,7 @@ Ball = (function() {
     this.x = x;
     this.y = y;
     this.bg = bg;
-    this.radius = .14;
+    this.radius = 10;
     this.color = '#000000';
     Ball.__super__.constructor.call(this, this.x, this.y, this.radius * 2, this.radius * 2);
   }
@@ -28,10 +28,9 @@ Ball = (function() {
     return this.body.position.Set(this.x, this.y);
   };
   Ball.prototype.draw = function(ctx) {
-    console.log(.14 * (ctx._world.width / ctx._world.box2dWidth));
     ctx.fillStyle = this.color;
     ctx.beginPath();
-    ctx.arc(this.x, this.y, 13, 0, Math.PI * 2, true);
+    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, true);
     ctx.closePath();
     return ctx.fill();
   };

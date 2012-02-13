@@ -4,7 +4,6 @@
 //= require 'lib/input'
 //= require 'lib/world'
 //= require 'lib/sprite'
-//= require 'constants'
 //= require 'stretchy_sprite'
 //= require 'slime_volleyball'
 //= require 'slime'

@@ -5,41 +5,43 @@ class SlimeVolleyball extends Game
 			p1:   'assets/images/s_0.png',
 			p2:   'assets/images/s_1.png'
 			bg:   'assets/images/bg.png',
-			ball: 'assets/images/ball.png'
+			#ball: 'assets/images/ball.png'
 		
 	# will be called when load complete
 	start: ->
 		@world = new World('canvas', @interval)
 		@bg = new StretchySprite(0, 0, @world.width, @world.height, 200, 1, @loader.getAsset('bg'))
-		@world.addStaticSprite(@bg)
-		
-		@p1 = new Slime(2, 4, '#0f0', @loader.getAsset('p1'))
-		@p2 = new Slime(5, 4, '#00f', @loader.getAsset('p2'))
-		@ball = new Ball(2, 1, @loader.getAsset('ball'))
+		@p1 = new Slime(100, 200, '#0f0', @loader.getAsset('p1'))
+		@p2 = new Slime(300, 200, '#00f', @loader.getAsset('p2'))
+		@ball = new Ball(230, 21)#, @loader.getAsset('ball'))
+
 		@p1.ball = @ball
 		@p2.ball = @ball
 		@p2.isP2 = true # face left
+
+		@world.addStaticSprite(@bg)
 		@world.addSprite(@p1)
 		@world.addSprite(@p2)
 		@world.addSprite(@ball)
 		
-		# set up "walls" around world: left, bottom, right, top
-		bottom = 60*(@world.box2dHeight/@world.height)
-		wall_width = .2
-		walls = [ new Box(-wall_width, 0, wall_width, @world.box2dHeight),
-	              new Box(0, @world.box2dHeight+wall_width-bottom, @world.box2dWidth, wall_width),
-		          new Box(@world.box2dWidth+wall_width, 0, wall_width, @world.box2dHeight),
-		          new Box(0, -wall_width, @world.box2dWidth, wall_width) ]
+		# set up "walls" around world: left, bottom, right
+		bottom = 60
+		wall_width = 1
+		wall_height = 1000   # set height of walls at 1000 (so users of different 
+		                     #   resolutions can play together without bugz)
+		walls = [ new Box(-wall_width, -1000, wall_width, 2000),
+		          new Box(0, @world.height-bottom+@p1.radius, @world.width, wall_width),
+		          new Box(@world.width, -1000, wall_width, 2000) ]
 		@world.addSprite(wall) for wall in walls
 		super()
 
 	# main "loop" iteration
-	step: ->
+	step: (timestamp) ->
+		this.next() # called first to fix setTimeout bug
 		@p1.handleInput(@input, @world)
 		@p2.handleInput(@input, @world)
 		@world.draw()
-		@world.step()
-		this.next()
+		@world.step(timestamp)		
 
 # run the game when the dom loads
 window.onload = ->

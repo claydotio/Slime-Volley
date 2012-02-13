@@ -12,8 +12,8 @@ class Sprite
 	updateBody: (body, world) ->
 		# update x and y, converting from world space to screen space
 		if body
-			@x = body.GetPosition().x * (world.width/world.box2dWidth)
-			@y = body.GetPosition().y * (world.height/world.box2dHeight)
+			@x = body.GetPosition().x
+			@y = body.GetPosition().y
 			@m_body = body
 
 	draw: (ctx) -> # ctx is the canvas context, passed from world

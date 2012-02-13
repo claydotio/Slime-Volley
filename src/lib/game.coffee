@@ -2,7 +2,6 @@
 # @author Joe Vennix 2012
 class Game
 	constructor: ->
-		@interval = 1/60.0*1000
 		@input = new Input
 		@loader = new Loader
 		# perform some awkward scope scooping so we can use window.setTimeout
@@ -20,4 +19,3 @@ class Game
 
 	next: -> # iterate game "loop"
 		window.requestAnimationFrame(@step_callback)
-		#window.setTimeout @step_callback, @interval 

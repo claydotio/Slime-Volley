@@ -14,8 +14,7 @@ Slime = (function() {
     this.y = y;
     this.color = color;
     this.img = img;
-    this.radius = .3275;
-    this.artSize = 64.0;
+    this.radius = 31;
     this.isP2 = false;
     Slime.__super__.constructor.call(this, this.x, this.y, this.radius * 2, this.radius * 2);
   }
@@ -31,23 +30,22 @@ Slime = (function() {
   };
   Slime.prototype.handleInput = function(input, world) {
     var bottom, pNum, y;
-    console.log(this.radius * (world.width / world.box2dWidth));
     if (this.m_body) {
-      y = world.box2dHeight - this.m_body.GetPosition().y;
+      y = world.height - this.m_body.GetPosition().y;
     }
     pNum = this.isP2 ? 1 : 0;
-    bottom = 3;
+    bottom = 100;
     if (input.left(pNum)) {
-      this.m_body.m_linearVelocity.x = -4;
+      this.m_body.m_linearVelocity.x = -40;
       this.m_body.SetAwake(true);
     }
     if (input.right(pNum)) {
-      this.m_body.m_linearVelocity.x = 4;
+      this.m_body.m_linearVelocity.x = 40;
       this.m_body.SetAwake(true);
     }
     if (input.up(pNum)) {
       if (y < bottom) {
-        this.m_body.m_linearVelocity.y = -7;
+        this.m_body.m_linearVelocity.y = -100;
         this.m_body.SetAwake(true);
       }
     }
@@ -60,13 +58,28 @@ Slime = (function() {
     }
   };
   Slime.prototype.draw = function(ctx) {
-    ctx.translate(this.x, this.y);
+    var ballVec, eyeVec, localEyeVec, offsetX, offsetY;
     ctx.fillStyle = '#000';
-    ctx.fillRect(0, 0, 3, 3);
-    ctx.translate(-this.x, -this.y);
-    ctx.translate(this.x - this.artSize / 2.0, this.y - this.artSize / 2.0);
-    ctx.drawImage(this.img, 0, 0);
-    return ctx.translate(-this.x + this.artSize / 2.0, -this.y + this.artSize / 2.0);
+    ctx.fillRect(this.x, this.y, 3, 3);
+    ctx.drawImage(this.img, this.x - this.radius - 1, this.y - this.radius);
+    offsetY = this.radius / 2.0;
+    offsetX = offsetY * .95;
+    if (this.isP2) {
+      offsetX = -offsetX;
+    }
+    eyeVec = new Box2D.Common.Math.b2Vec2(this.x + offsetX, this.y - offsetY);
+    localEyeVec = new Box2D.Common.Math.b2Vec2(offsetX, offsetY);
+    ballVec = new Box2D.Common.Math.b2Vec2(this.ball.x, this.ball.y);
+    ballVec.Subtract(eyeVec);
+    ballVec.y = -ballVec.y;
+    ballVec.Normalize();
+    ballVec.Multiply(3);
+    ballVec.Add(localEyeVec);
+    ctx.fillStyle = '#000';
+    ctx.beginPath();
+    ctx.arc(this.x + ballVec.x, this.y - ballVec.y, 2, 0, Math.PI * 2, true);
+    ctx.closePath();
+    return ctx.fill();
   };
   return Slime;
 })();
