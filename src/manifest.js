@@ -1,3 +1,4 @@
+//= require 'lib/shims'
 //= require 'lib/game'
 //= require 'lib/loader'
 //= require 'lib/input'

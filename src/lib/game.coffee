@@ -2,16 +2,15 @@
 # @author Joe Vennix 2012
 class Game
 	constructor: ->
-		@interval = 1/30.0*1000
+		@interval = 1/60.0*1000
 		@input = new Input
 		@loader = new Loader
 		# perform some awkward scope scooping so we can use window.setTimeout
 		_this = this
-		@step_callback = ->
-			_this.step()
+		@step_callback = (timestamp) ->
+			_this.step(timestamp)
 		@loader.loadComplete ->
 			_this.start()
-		
 
 	start: ->  # initialize vars for game loop
 		this.step()
@@ -20,4 +19,5 @@ class Game
 		console.log 'Implement me!!!'
 
 	next: -> # iterate game "loop"
-		window.setTimeout @step_callback, @interval 
+		window.requestAnimationFrame(@step_callback)
+		#window.setTimeout @step_callback, @interval 

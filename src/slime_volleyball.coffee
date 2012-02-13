@@ -1,3 +1,4 @@
+# SlimeVolleyball is the main class containing start() and step()
 class SlimeVolleyball extends Game
 	load: ->
 		@loader.load
@@ -38,8 +39,6 @@ class SlimeVolleyball extends Game
 		@p2.handleInput(@input, @world)
 		@world.draw()
 		@world.step()
-		#if @ball.y + @ball.radius > @world.box2dHeight - Constants.bottomHeight - @p1.radius
-		#	return
 		this.next()
 
 # run the game when the dom loads
