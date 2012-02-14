@@ -6,26 +6,18 @@ class Button extends Sprite
 
 	handleMouseDown: (e) ->
 		# check if event is inside bounding box
-		x = e.clientX || e.offsetX || e.pageX
-		y = e.clientY || e.offsetY || e.pageY
-		@down = Helpers.inRect(x, y, @x, @y, @width, @height)
+		@down = Helpers.inRect(e.x, e.y, @x, @y, @width, @height)
 
 	handleMouseUp: (e) ->
 		# check if event is inside bounding box
-		x = e.clientX || e.offsetX || e.pageX
-		y = e.clientY || e.offsetY || e.pageY
 		@down = false
 
 	handleMouseMove: (e) ->
-		oldDown = @down
-		this.handleMouseDown(e)
-		@down = oldDown if !oldDown
+		@down = Helpers.inRect(e.x, e.y, @x, @y, @width, @height) if @down
 
 	handleClick: (e) ->
-		x = e.clientX || e.offsetX || e.pageX
-		y = e.clientY || e.offsetY || e.pageY
 		@down = false
-		if Helpers.inRect(x, y, @x, @y, @width, @height)
+		if Helpers.inRect(e.x, e.y, @x, @y, @width, @height)
 			@scene.buttonPressed(this) if @scene # pass event back to delegate
 	
 	draw: (ctx) ->

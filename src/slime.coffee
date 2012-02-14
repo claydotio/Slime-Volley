@@ -8,7 +8,7 @@ class Slime extends Sprite
 		@fixture = new Box2D.Dynamics.b2FixtureDef()
 		@fixture.density = 200.0
 		@fixture.friction = 1.0
-		@fixture.restitution = 0
+		@fixture.restitution = 0.2
 		@fixture.shape = new Box2D.Collision.Shapes.b2CircleShape(@radius*Constants.SCALE)
 		@body = new Box2D.Dynamics.b2BodyDef()
 		@body.type = Box2D.Dynamics.b2Body.b2_dynamicBody
@@ -21,25 +21,24 @@ class Slime extends Sprite
 		bottom = Constants.BOTTOM
 		input = Globals.Input
 		if input.left(pNum)
-			@m_body.m_linearVelocity.x = -20
+			@m_body.m_linearVelocity.x = -14
 			@m_body.SetAwake(true)
 		if input.right(pNum)
-			@m_body.m_linearVelocity.x = 20
+			@m_body.m_linearVelocity.x = 14
 			@m_body.SetAwake(true)
 		if input.up(pNum)
 			if y < bottom
-				@m_body.m_linearVelocity.y = -25
+				@m_body.m_linearVelocity.y = -30
 				@m_body.SetAwake(true)
-		if input.down(pNum)
-			if @m_body.m_linearVelocity.y > 0 && y > bottom
-				@m_body.m_linearVelocity.y *= 1.5
+		# if input.down(pNum)
+		# 	if @m_body.m_linearVelocity.y > 0 && y > bottom
+		# 		@m_body.m_linearVelocity.y *= 1.5
 		else if @m_body && y < bottom
 			@m_body.m_linearVelocity.x /= 1.1
 
 	draw: (ctx) ->
-		ctx.fillStyle = '#000'
-		ctx.fillRect(@x,@y,3,3)
-		#console.log 'draw: '+ @x+','+@y
+		#ctx.fillStyle = '#000'
+		#ctx.fillRect(@x,@y,3,3)
 		# draw the slime sprite
 		# ctx.fillStyle = if @isP2 then '#f00' else '#0f0'
 		# ctx.beginPath()

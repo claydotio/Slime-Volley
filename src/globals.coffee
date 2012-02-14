@@ -1,4 +1,4 @@
 Globals =
-	Input:   new Input()
+	Input:   null #new Input()
 	Manager: new SceneManager()
 	Loader:  new Loader() 

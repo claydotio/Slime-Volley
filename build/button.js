@@ -18,32 +18,22 @@ Button = (function() {
   }
 
   Button.prototype.handleMouseDown = function(e) {
-    var x, y;
-    x = e.clientX || e.offsetX || e.pageX;
-    y = e.clientY || e.offsetY || e.pageY;
-    return this.down = Helpers.inRect(x, y, this.x, this.y, this.width, this.height);
+    return this.down = Helpers.inRect(e.x, e.y, this.x, this.y, this.width, this.height);
   };
 
   Button.prototype.handleMouseUp = function(e) {
-    var x, y;
-    x = e.clientX || e.offsetX || e.pageX;
-    y = e.clientY || e.offsetY || e.pageY;
     return this.down = false;
   };
 
   Button.prototype.handleMouseMove = function(e) {
-    var oldDown;
-    oldDown = this.down;
-    this.handleMouseDown(e);
-    if (!oldDown) return this.down = oldDown;
+    if (this.down) {
+      return this.down = Helpers.inRect(e.x, e.y, this.x, this.y, this.width, this.height);
+    }
   };
 
   Button.prototype.handleClick = function(e) {
-    var x, y;
-    x = e.clientX || e.offsetX || e.pageX;
-    y = e.clientY || e.offsetY || e.pageY;
     this.down = false;
-    if (Helpers.inRect(x, y, this.x, this.y, this.width, this.height)) {
+    if (Helpers.inRect(e.x, e.y, this.x, this.y, this.width, this.height)) {
       if (this.scene) return this.scene.buttonPressed(this);
     }
   };

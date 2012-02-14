@@ -20,7 +20,7 @@ Slime = (function() {
     this.fixture = new Box2D.Dynamics.b2FixtureDef();
     this.fixture.density = 200.0;
     this.fixture.friction = 1.0;
-    this.fixture.restitution = 0;
+    this.fixture.restitution = 0.2;
     this.fixture.shape = new Box2D.Collision.Shapes.b2CircleShape(this.radius * Constants.SCALE);
     this.body = new Box2D.Dynamics.b2BodyDef();
     this.body.type = Box2D.Dynamics.b2Body.b2_dynamicBody;
@@ -34,22 +34,17 @@ Slime = (function() {
     bottom = Constants.BOTTOM;
     input = Globals.Input;
     if (input.left(pNum)) {
-      this.m_body.m_linearVelocity.x = -20;
+      this.m_body.m_linearVelocity.x = -14;
       this.m_body.SetAwake(true);
     }
     if (input.right(pNum)) {
-      this.m_body.m_linearVelocity.x = 20;
+      this.m_body.m_linearVelocity.x = 14;
       this.m_body.SetAwake(true);
     }
     if (input.up(pNum)) {
       if (y < bottom) {
-        this.m_body.m_linearVelocity.y = -25;
-        this.m_body.SetAwake(true);
-      }
-    }
-    if (input.down(pNum)) {
-      if (this.m_body.m_linearVelocity.y > 0 && y > bottom) {
-        return this.m_body.m_linearVelocity.y *= 1.5;
+        this.m_body.m_linearVelocity.y = -30;
+        return this.m_body.SetAwake(true);
       }
     } else if (this.m_body && y < bottom) {
       return this.m_body.m_linearVelocity.x /= 1.1;
@@ -58,8 +53,6 @@ Slime = (function() {
 
   Slime.prototype.draw = function(ctx) {
     var ballVec, eyeVec, localEyeVec, offsetX, offsetY;
-    ctx.fillStyle = '#000';
-    ctx.fillRect(this.x, this.y, 3, 3);
     ctx.drawImage(this.img, Helpers.round(this.x - this.radius - 1), Helpers.round(this.y - this.radius));
     offsetY = this.radius / 2.0;
     offsetX = offsetY * .95;

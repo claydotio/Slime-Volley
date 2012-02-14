@@ -25,10 +25,7 @@ Box = (function() {
     return this.body.position.Set(this.scaledX, this.scaledY);
   };
 
-  Box.prototype.draw = function(ctx) {
-    ctx.fillStyle = '#000';
-    return ctx.fillRect(this.x, this.y, this.width, this.height);
-  };
+  Box.prototype.draw = function(ctx) {};
 
   return Box;
 

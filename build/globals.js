@@ -1,7 +1,7 @@
 var Globals;
 
 Globals = {
-  Input: new Input(),
+  Input: null,
   Manager: new SceneManager(),
   Loader: new Loader()
 };

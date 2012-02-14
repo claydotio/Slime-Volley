@@ -100,14 +100,12 @@ MenuScene = (function() {
   };
 
   MenuScene.prototype.buttonPressed = function(btn) {
-    if (btn === this.buttons['instructions']) {
-      return console.log('instructions!');
-    } else if (btn === this.buttons['onePlayer']) {
-      return console.log('one ');
-    } else if (btn === this.buttons['options']) {
-      return console.log('opt');
-    } else if (btn === this.buttons['wifi']) {
-      return console.log('wifi');
+    var s;
+    if (btn === this.buttons['instructions']) {} else if (btn === this.buttons['onePlayer']) {
+      SlimeVolleyball(s = new SlimeVolleyball());
+      return Globals.Manager.pushScene(s);
+    } else if (btn === this.buttons['options']) {} else if (btn === this.buttons['wifi']) {
+      if (console) return console.log('wifi');
     }
   };
 

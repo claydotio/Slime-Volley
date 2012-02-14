@@ -1,9 +1,11 @@
 var Constants;
 
 Constants = {
-  SCALE: 0.1,
-  SCALE_INV: 10.0,
+  SCALE: 0.07,
+  SCALE_INV: 1 / 0.07,
   BOTTOM: 65,
+  BASE_WIDTH: 480,
+  BASE_HEIGHT: 320,
   ASSETS: {
     p1: 'assets/images/s_0.png',
     p2: 'assets/images/s_1.png',
@@ -17,7 +19,8 @@ Constants = {
     btn_options: 'assets/images/btn_options.png',
     btn_wifi: 'assets/images/btn_wifi.png',
     btn_a: 'assets/images/btn_a.png',
-    btn_b: 'assets/images/btn_b.png'
+    btn_b: 'assets/images/btn_b.png',
+    pole: 'assets/images/pole.png'
   }
 };
 
@@ -240,13 +243,29 @@ var Input;
 Input = (function() {
 
   function Input() {
-    var handleClick, handleKeyDown, handleKeyUp, handleMouseDown, handleMouseMove, handleMouseUp, normalizeKeyEvent, _keys;
+    var canvas, handleClick, handleKeyDown, handleKeyUp, handleMouseDown, handleMouseMove, handleMouseUp, normalizeKeyEvent, normalizeMouseEvent, _keys;
     this.keys = {};
     _keys = this.keys;
     normalizeKeyEvent = function(e) {
       e.which || (e.which = e.charCode);
       e.which || (e.which = e.keyCode);
       return e;
+    };
+    normalizeMouseEvent = function(e) {
+      var c, h, mleft, mtop, nx, ny, w;
+      c = Globals.Manager.canvas;
+      e.x || (e.x = e.clientX || e.layerX);
+      e.y || (e.y = e.clientY || e.layerY);
+      w = parseInt(c.style.width) || parseInt(c.width);
+      h = parseInt(c.style.height) || parseInt(c.height);
+      mtop = parseInt(c.style.marginTop) || 0;
+      mleft = parseInt(c.style.marginLeft) || 0;
+      nx = (e.x - mleft) / w * Constants.BASE_WIDTH;
+      ny = (e.y - mtop) / h * Constants.BASE_HEIGHT;
+      return {
+        x: nx,
+        y: ny
+      };
     };
     handleKeyDown = function(e) {
       return _keys['key' + normalizeKeyEvent(e).which] = true;
@@ -255,23 +274,28 @@ Input = (function() {
       return _keys['key' + normalizeKeyEvent(e).which] = false;
     };
     handleMouseUp = function(e) {
+      e = normalizeMouseEvent(e);
       return Globals.Manager.currScene.mouseup(e);
     };
     handleMouseDown = function(e) {
+      e = normalizeMouseEvent(e);
       return Globals.Manager.currScene.mousedown(e);
     };
     handleMouseMove = function(e) {
+      e = normalizeMouseEvent(e);
       return Globals.Manager.currScene.mousemove(e);
     };
     handleClick = function(e) {
+      e = normalizeMouseEvent(e);
       return Globals.Manager.currScene.click(e);
     };
+    canvas = Globals.Manager.canvas;
     document.onkeydown = handleKeyDown;
     document.onkeyup = handleKeyUp;
-    document.onmouseup = handleMouseUp;
-    document.onmousedown = handleMouseDown;
-    document.onmousemove = handleMouseMove;
-    document.onclick = handleClick;
+    canvas.onmouseup = handleMouseUp;
+    canvas.onmousedown = handleMouseDown;
+    canvas.onmousemove = handleMouseMove;
+    canvas.onclick = handleClick;
     this.shortcuts = {
       left: ['key37', 'key65'],
       right: ['key39', 'key68'],
@@ -311,7 +335,7 @@ World = (function() {
     this.width = parseFloat(this.canvas.width);
     this.height = parseFloat(this.canvas.height);
     this.ctx._world = this;
-    gravity = new Box2D.Common.Math.b2Vec2(0, 40);
+    gravity = new Box2D.Common.Math.b2Vec2(0, 60);
     this.world = new Box2D.Dynamics.b2World(gravity, true);
     this.sprites = [];
     this.oldTime = new Date();
@@ -327,7 +351,6 @@ World = (function() {
     var body;
     body = this.world.CreateBody(sprite.body);
     body.CreateFixture(sprite.fixture);
-    console.log(body.GetPosition());
     return this.sprites.push({
       sprite: sprite,
       body: body
@@ -351,7 +374,7 @@ World = (function() {
     var interval;
     interval = timestamp - this.oldTime;
     this.oldTime = timestamp;
-    this.world.Step(interval / 1000.0, 10, 10);
+    this.world.Step(interval / 1000.0, 15, 15);
     return this.world.ClearForces();
   };
 
@@ -416,32 +439,22 @@ Button = (function() {
   }
 
   Button.prototype.handleMouseDown = function(e) {
-    var x, y;
-    x = e.clientX || e.offsetX || e.pageX;
-    y = e.clientY || e.offsetY || e.pageY;
-    return this.down = Helpers.inRect(x, y, this.x, this.y, this.width, this.height);
+    return this.down = Helpers.inRect(e.x, e.y, this.x, this.y, this.width, this.height);
   };
 
   Button.prototype.handleMouseUp = function(e) {
-    var x, y;
-    x = e.clientX || e.offsetX || e.pageX;
-    y = e.clientY || e.offsetY || e.pageY;
     return this.down = false;
   };
 
   Button.prototype.handleMouseMove = function(e) {
-    var oldDown;
-    oldDown = this.down;
-    this.handleMouseDown(e);
-    if (!oldDown) return this.down = oldDown;
+    if (this.down) {
+      return this.down = Helpers.inRect(e.x, e.y, this.x, this.y, this.width, this.height);
+    }
   };
 
   Button.prototype.handleClick = function(e) {
-    var x, y;
-    x = e.clientX || e.offsetX || e.pageX;
-    y = e.clientY || e.offsetY || e.pageY;
     this.down = false;
-    if (Helpers.inRect(x, y, this.x, this.y, this.width, this.height)) {
+    if (Helpers.inRect(e.x, e.y, this.x, this.y, this.width, this.height)) {
       if (this.scene) return this.scene.buttonPressed(this);
     }
   };
@@ -457,7 +470,7 @@ Button = (function() {
 var Globals;
 
 Globals = {
-  Input: new Input(),
+  Input: null,
   Manager: new SceneManager(),
   Loader: new Loader()
 };
@@ -539,7 +552,7 @@ Slime = (function() {
     this.fixture = new Box2D.Dynamics.b2FixtureDef();
     this.fixture.density = 200.0;
     this.fixture.friction = 1.0;
-    this.fixture.restitution = 0;
+    this.fixture.restitution = 0.2;
     this.fixture.shape = new Box2D.Collision.Shapes.b2CircleShape(this.radius * Constants.SCALE);
     this.body = new Box2D.Dynamics.b2BodyDef();
     this.body.type = Box2D.Dynamics.b2Body.b2_dynamicBody;
@@ -553,22 +566,17 @@ Slime = (function() {
     bottom = Constants.BOTTOM;
     input = Globals.Input;
     if (input.left(pNum)) {
-      this.m_body.m_linearVelocity.x = -20;
+      this.m_body.m_linearVelocity.x = -14;
       this.m_body.SetAwake(true);
     }
     if (input.right(pNum)) {
-      this.m_body.m_linearVelocity.x = 20;
+      this.m_body.m_linearVelocity.x = 14;
       this.m_body.SetAwake(true);
     }
     if (input.up(pNum)) {
       if (y < bottom) {
-        this.m_body.m_linearVelocity.y = -25;
-        this.m_body.SetAwake(true);
-      }
-    }
-    if (input.down(pNum)) {
-      if (this.m_body.m_linearVelocity.y > 0 && y > bottom) {
-        return this.m_body.m_linearVelocity.y *= 1.5;
+        this.m_body.m_linearVelocity.y = -30;
+        return this.m_body.SetAwake(true);
       }
     } else if (this.m_body && y < bottom) {
       return this.m_body.m_linearVelocity.x /= 1.1;
@@ -577,8 +585,6 @@ Slime = (function() {
 
   Slime.prototype.draw = function(ctx) {
     var ballVec, eyeVec, localEyeVec, offsetX, offsetY;
-    ctx.fillStyle = '#000';
-    ctx.fillRect(this.x, this.y, 3, 3);
     ctx.drawImage(this.img, Helpers.round(this.x - this.radius - 1), Helpers.round(this.y - this.radius));
     offsetY = this.radius / 2.0;
     offsetX = offsetY * .95;
@@ -625,10 +631,7 @@ Box = (function() {
     return this.body.position.Set(this.scaledX, this.scaledY);
   };
 
-  Box.prototype.draw = function(ctx) {
-    ctx.fillStyle = '#000';
-    return ctx.fillRect(this.x, this.y, this.width, this.height);
-  };
+  Box.prototype.draw = function(ctx) {};
 
   return Box;
 
@@ -642,19 +645,22 @@ Ball = (function() {
   __extends(Ball, Sprite);
 
   function Ball(x, y, bg) {
+    var oldBg;
     this.x = x;
     this.y = y;
     this.bg = bg;
     this.radius = 9;
     this.color = '#000000';
+    oldBg = this.bg;
     Ball.__super__.constructor.call(this, this.x, this.y, this.radius * 2, this.radius * 2);
+    this.bg || (this.bg = oldBg);
   }
 
   Ball.prototype.createBody = function() {
     this.fixture = new Box2D.Dynamics.b2FixtureDef();
-    this.fixture.density = .4;
-    this.fixture.friction = 0.8;
-    this.fixture.restitution = 0.2;
+    this.fixture.density = .9;
+    this.fixture.friction = 0.82;
+    this.fixture.restitution = .3;
     this.fixture.shape = new Box2D.Collision.Shapes.b2CircleShape(this.radius * Constants.SCALE);
     this.body = new Box2D.Dynamics.b2BodyDef();
     this.body.type = Box2D.Dynamics.b2Body.b2_dynamicBody;
@@ -832,14 +838,12 @@ MenuScene = (function() {
   };
 
   MenuScene.prototype.buttonPressed = function(btn) {
-    if (btn === this.buttons['instructions']) {
-      return console.log('instructions!');
-    } else if (btn === this.buttons['onePlayer']) {
-      return console.log('one ');
-    } else if (btn === this.buttons['options']) {
-      return console.log('opt');
-    } else if (btn === this.buttons['wifi']) {
-      return console.log('wifi');
+    var s;
+    if (btn === this.buttons['instructions']) {} else if (btn === this.buttons['onePlayer']) {
+      SlimeVolleyball(s = new SlimeVolleyball());
+      return Globals.Manager.pushScene(s);
+    } else if (btn === this.buttons['options']) {} else if (btn === this.buttons['wifi']) {
+      if (console) return console.log('wifi');
     }
   };
 
@@ -865,18 +869,20 @@ SlimeVolleyball = (function() {
     this.bg = new StretchySprite(0, 0, this.world.width, this.world.height, 200, 1, loader.getAsset('bg'));
     this.p1 = new Slime(100, 200, '#0f0', loader.getAsset('p1'), loader.getAsset('eye'));
     this.p2 = new Slime(300, 200, '#00f', loader.getAsset('p2'), loader.getAsset('eye'));
-    this.ball = new Ball(230, 21, loader.getAsset('ball'));
+    this.ball = new Ball(100, 0, loader.getAsset('ball'));
+    this.pole = new Sprite(this.center.x - 4, this.height - 60 - 64 - 1, 8, 64, loader.getAsset('pole'));
     this.p1.ball = this.ball;
     this.p2.ball = this.ball;
     this.p2.isP2 = true;
     this.world.addStaticSprite(this.bg);
+    this.world.addStaticSprite(this.pole);
     this.world.addSprite(this.p1);
     this.world.addSprite(this.p2);
     this.world.addSprite(this.ball);
     bottom = 60;
     wall_width = 1;
     wall_height = 1000;
-    walls = [new Box(-wall_width, -wall_height, wall_width, 2 * wall_height), new Box(0, this.world.height - bottom + this.p1.radius, this.world.width, wall_width), new Box(this.world.width, -wall_height, wall_width, 2 * wall_height)];
+    walls = [new Box(-wall_width, -wall_height, wall_width, 2 * wall_height), new Box(0, this.world.height - bottom + this.p1.radius, this.world.width, wall_width), new Box(this.world.width, -wall_height, wall_width, 2 * wall_height), new Box(this.world.width / 2, this.world.height - bottom - 32, 4, 32)];
     for (_i = 0, _len = walls.length; _i < _len; _i++) {
       wall = walls[_i];
       this.world.addSprite(wall);
@@ -889,6 +895,12 @@ SlimeVolleyball = (function() {
     this.world.step(timestamp);
     this.p1.handleInput(this.input, this.world);
     this.p2.handleInput(this.input, this.world);
+    if (this.p1.x + this.p1.radius > this.width / 2.0 - 4) {
+      this.p1.m_body.m_linearVelocity.x = -5;
+    }
+    if (this.p2.x - this.p2.radius < this.width / 2.0 + 4) {
+      this.p2.m_body.m_linearVelocity.x = 5;
+    }
     return this.world.draw();
   };
 
@@ -901,6 +913,7 @@ window.onload = function() {
   var loadingScene;
   Globals.Manager.canvas = document.getElementById('canvas');
   Globals.Manager.ctx = Globals.Manager.canvas.getContext('2d');
+  Globals.Input = new Input();
   loadingScene = new LoadingScene();
   Globals.Manager.pushScene(loadingScene);
   return loadingScene.start();

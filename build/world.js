@@ -9,7 +9,7 @@ World = (function() {
     this.width = parseFloat(this.canvas.width);
     this.height = parseFloat(this.canvas.height);
     this.ctx._world = this;
-    gravity = new Box2D.Common.Math.b2Vec2(0, 40);
+    gravity = new Box2D.Common.Math.b2Vec2(0, 60);
     this.world = new Box2D.Dynamics.b2World(gravity, true);
     this.sprites = [];
     this.oldTime = new Date();
@@ -25,7 +25,6 @@ World = (function() {
     var body;
     body = this.world.CreateBody(sprite.body);
     body.CreateFixture(sprite.fixture);
-    console.log(body.GetPosition());
     return this.sprites.push({
       sprite: sprite,
       body: body
@@ -49,7 +48,7 @@ World = (function() {
     var interval;
     interval = timestamp - this.oldTime;
     this.oldTime = timestamp;
-    this.world.Step(interval / 1000.0, 10, 10);
+    this.world.Step(interval / 1000.0, 15, 15);
     return this.world.ClearForces();
   };
 

@@ -52,10 +52,12 @@ class MenuScene extends Scene
 	# delegate callback when a button is pressed
 	buttonPressed: (btn) ->
 		if btn == @buttons['instructions']
-			console.log 'instructions!'
+			#console.log 'instructions!'
 		else if btn == @buttons['onePlayer']
-			console.log 'one '
+			# new volleyball game
+			SlimeVolleyball s = new SlimeVolleyball()
+			Globals.Manager.pushScene(s)
 		else if btn == @buttons['options']
-			console.log 'opt'
+			#console.log 'opt'
 		else if btn == @buttons['wifi']
-			console.log 'wifi'
+			console.log 'wifi' if console
