@@ -7,19 +7,18 @@ class Input
 			e.which ||= e.charCode
 			e.which ||= e.keyCode
 			e
-		
+		# resize mouse event into css-scaled canvas (from the rhino book p662)
+		normalizeCoordinates = (o) ->
+			c = Globals.Manager.canvas
+			bb = c.getBoundingClientRect()
+			o.x = (o.x-bb.left) * (c.width/bb.width)
+			o.y = (o.y-bb.top)  * (c.height/bb.height)
+			o
 		normalizeMouseEvent = (e) ->
 			c = Globals.Manager.canvas
-			e.x ||= e.clientX || e.layerX
-			e.y ||= e.clientY || e.layerY 
-			# resize mouse event into css-scaled canvas
-			w = parseInt(c.style.width) || parseInt(c.width)
-			h = parseInt(c.style.height) || parseInt(c.height)
-			mtop = parseInt(c.style.marginTop) || 0
-			mleft = parseInt(c.style.marginLeft) || 0
-			nx = (e.x - mleft) / w * Constants.BASE_WIDTH
-			ny = (e.y - mtop) / h * Constants.BASE_HEIGHT
-			{ x: nx, y: ny}
+			x = e.clientX || e.x || e.layerX
+			y = e.clientY || e.y || e.layerY 
+			normalizeCoordinates { x: x, y: y }
 
 		handleKeyDown = (e) ->
 			_keys['key'+normalizeKeyEvent(e).which] = true

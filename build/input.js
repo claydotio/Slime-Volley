@@ -3,7 +3,7 @@ var Input;
 Input = (function() {
 
   function Input() {
-    var canvas, handleClick, handleKeyDown, handleKeyUp, handleMouseDown, handleMouseMove, handleMouseUp, normalizeKeyEvent, normalizeMouseEvent, _keys;
+    var canvas, handleClick, handleKeyDown, handleKeyUp, handleMouseDown, handleMouseMove, handleMouseUp, normalizeCoordinates, normalizeKeyEvent, normalizeMouseEvent, _keys;
     this.keys = {};
     _keys = this.keys;
     normalizeKeyEvent = function(e) {
@@ -11,21 +11,23 @@ Input = (function() {
       e.which || (e.which = e.keyCode);
       return e;
     };
-    normalizeMouseEvent = function(e) {
-      var c, h, mleft, mtop, nx, ny, w;
+    normalizeCoordinates = function(o) {
+      var bb, c;
       c = Globals.Manager.canvas;
-      e.x || (e.x = e.clientX || e.layerX);
-      e.y || (e.y = e.clientY || e.layerY);
-      w = parseInt(c.style.width) || parseInt(c.width);
-      h = parseInt(c.style.height) || parseInt(c.height);
-      mtop = parseInt(c.style.marginTop) || 0;
-      mleft = parseInt(c.style.marginLeft) || 0;
-      nx = (e.x - mleft) / w * Constants.BASE_WIDTH;
-      ny = (e.y - mtop) / h * Constants.BASE_HEIGHT;
-      return {
-        x: nx,
-        y: ny
-      };
+      bb = c.getBoundingClientRect();
+      o.x = (o.x - bb.left) * (c.width / bb.width);
+      o.y = (o.y - bb.top) * (c.height / bb.height);
+      return o;
+    };
+    normalizeMouseEvent = function(e) {
+      var c, x, y;
+      c = Globals.Manager.canvas;
+      x = e.clientX || e.x || e.layerX;
+      y = e.clientY || e.y || e.layerY;
+      return normalizeCoordinates({
+        x: x,
+        y: y
+      });
     };
     handleKeyDown = function(e) {
       return _keys['key' + normalizeKeyEvent(e).which] = true;

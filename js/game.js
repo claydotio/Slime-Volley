@@ -243,7 +243,7 @@ var Input;
 Input = (function() {
 
   function Input() {
-    var canvas, handleClick, handleKeyDown, handleKeyUp, handleMouseDown, handleMouseMove, handleMouseUp, normalizeKeyEvent, normalizeMouseEvent, _keys;
+    var canvas, handleClick, handleKeyDown, handleKeyUp, handleMouseDown, handleMouseMove, handleMouseUp, normalizeCoordinates, normalizeKeyEvent, normalizeMouseEvent, _keys;
     this.keys = {};
     _keys = this.keys;
     normalizeKeyEvent = function(e) {
@@ -251,21 +251,23 @@ Input = (function() {
       e.which || (e.which = e.keyCode);
       return e;
     };
-    normalizeMouseEvent = function(e) {
-      var c, h, mleft, mtop, nx, ny, w;
+    normalizeCoordinates = function(o) {
+      var bb, c;
       c = Globals.Manager.canvas;
-      e.x || (e.x = e.clientX || e.layerX);
-      e.y || (e.y = e.clientY || e.layerY);
-      w = parseInt(c.style.width) || parseInt(c.width);
-      h = parseInt(c.style.height) || parseInt(c.height);
-      mtop = parseInt(c.style.marginTop) || 0;
-      mleft = parseInt(c.style.marginLeft) || 0;
-      nx = (e.x - mleft) / w * Constants.BASE_WIDTH;
-      ny = (e.y - mtop) / h * Constants.BASE_HEIGHT;
-      return {
-        x: nx,
-        y: ny
-      };
+      bb = c.getBoundingClientRect();
+      o.x = (o.x - bb.left) * (c.width / bb.width);
+      o.y = (o.y - bb.top) * (c.height / bb.height);
+      return o;
+    };
+    normalizeMouseEvent = function(e) {
+      var c, x, y;
+      c = Globals.Manager.canvas;
+      x = e.clientX || e.x || e.layerX;
+      y = e.clientY || e.y || e.layerY;
+      return normalizeCoordinates({
+        x: x,
+        y: y
+      });
     };
     handleKeyDown = function(e) {
       return _keys['key' + normalizeKeyEvent(e).which] = true;
@@ -869,7 +871,7 @@ SlimeVolleyball = (function() {
     this.bg = new StretchySprite(0, 0, this.world.width, this.world.height, 200, 1, loader.getAsset('bg'));
     this.p1 = new Slime(100, 200, '#0f0', loader.getAsset('p1'), loader.getAsset('eye'));
     this.p2 = new Slime(300, 200, '#00f', loader.getAsset('p2'), loader.getAsset('eye'));
-    this.ball = new Ball(100, 0, loader.getAsset('ball'));
+    this.ball = new Ball(100, this.world.height - 400, loader.getAsset('ball'));
     this.pole = new Sprite(this.center.x - 4, this.height - 60 - 64 - 1, 8, 64, loader.getAsset('pole'));
     this.p1.ball = this.ball;
     this.p2.ball = this.ball;

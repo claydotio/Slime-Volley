@@ -7,7 +7,7 @@ class SlimeVolleyball extends Scene
 		@bg = new StretchySprite(0, 0, @world.width, @world.height, 200, 1, loader.getAsset('bg'))
 		@p1 = new Slime(100, 200, '#0f0', loader.getAsset('p1'), loader.getAsset('eye'))
 		@p2 = new Slime(300, 200, '#00f', loader.getAsset('p2'), loader.getAsset('eye'))
-		@ball = new Ball(100, 0, loader.getAsset('ball'))
+		@ball = new Ball(100, @world.height-400, loader.getAsset('ball'))
 		@pole = new Sprite(@center.x-4, @height-60-64-1, 8, 64, loader.getAsset('pole'))
 		@p1.ball = @ball
 		@p2.ball = @ball
