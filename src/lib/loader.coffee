@@ -10,7 +10,8 @@ class Loader
 	updateProgress: ->
 		# make this better and smoother
 		@progress = @loadedAssets / @totalAssets
-		@onload() if (@progress == 1 && @onload)
+		@onprogress(@progress) if @onprogress
+		@onload() if @progress == 1 && @onload
 
 	load: (assets) ->
 		this.loadAsset(name, asset) for name, asset of assets
@@ -28,6 +29,9 @@ class Loader
 			image: img
 		@totalAssets++
 		img.src = asset
+
+	loadProgress: (func) ->
+		@onprogress = func
 
 	loadComplete: (func) ->
 		@onload = func

@@ -14,8 +14,24 @@ class Input
 		handleKeyUp = (e) ->
 			_keys['key'+normalizeKeyEvent(e).which] = false
 
+		handleMouseUp = (e) ->
+			Globals.Manager.currScene.mouseup(e)
+
+		handleMouseDown = (e) ->
+			Globals.Manager.currScene.mousedown(e)
+
+		handleMouseMove = (e) ->
+			Globals.Manager.currScene.mousemove(e)
+
+		handleClick = (e) ->
+			Globals.Manager.currScene.click(e)
+
 		document.onkeydown = handleKeyDown
 		document.onkeyup = handleKeyUp
+		document.onmouseup = handleMouseUp
+		document.onmousedown = handleMouseDown
+		document.onmousemove = handleMouseMove
+		document.onclick = handleClick
 		
 		@shortcuts =
 			left: ['key37', 'key65']

@@ -1,5 +1,5 @@
 class Slime extends Sprite
-	constructor: (@x, @y, @color, @img) ->
+	constructor: (@x, @y, @color, @img, @eyeImg) ->
 		@radius = 31
 		@isP2 = false
 		super(@x, @y, @radius*2, @radius*2)
@@ -19,6 +19,7 @@ class Slime extends Sprite
 		y = world.height - @y
 		pNum = if @isP2 then 1 else 0
 		bottom = Constants.BOTTOM
+		input = Globals.Input
 		if input.left(pNum)
 			@m_body.m_linearVelocity.x = -20
 			@m_body.SetAwake(true)
@@ -45,7 +46,7 @@ class Slime extends Sprite
 		# ctx.arc(@radius, @radius, @radius, 0, Math.PI*2, true)
 		# ctx.closePath()
 		# ctx.fill()
-		ctx.drawImage(@img, @x-@radius-1, @y-@radius)
+		ctx.drawImage(@img, Helpers.round(@x-@radius-1), Helpers.round(@y-@radius))
 		# now draw the eyeball from the specified offsets
 		offsetY = @radius/2.0  # these are like constants
 		offsetX = offsetY*.95
@@ -62,8 +63,9 @@ class Slime extends Sprite
 		ballVec.Multiply(3)
 		ballVec.Add(localEyeVec)
 		# draw pupil
-		ctx.fillStyle = '#000'
-		ctx.beginPath()
-		ctx.arc(@x+ballVec.x, @y-ballVec.y, 2, 0, Math.PI*2, true)
-		ctx.closePath()
-		ctx.fill()
+		# ctx.fillStyle = '#000'
+		# ctx.beginPath()
+		# ctx.arc(@x+ballVec.x, @y-ballVec.y, 2, 0, Math.PI*2, true)
+		# ctx.closePath()
+		# ctx.fill()
+		ctx.drawImage(@eyeImg, Helpers.round(@x+ballVec.x-2), Helpers.round(@y-ballVec.y-2))

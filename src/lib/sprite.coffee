@@ -1,7 +1,7 @@
 # Sprite class - a base class for anything that exists in a World
 # Contains coordinates and a draw(ctx) method
 class Sprite
-	constructor: (@x, @y, @width, @height) ->
+	constructor: (@x, @y, @width, @height, @bg) ->
 		@scaledX = @x * Constants.SCALE
 		@scaledY = @y * Constants.SCALE
 		this.createBody()
@@ -17,4 +17,4 @@ class Sprite
 			@m_body ||= body
 
 	draw: (ctx) -> # ctx is the canvas context, passed from world
-		console.log 'Override me!'
+		ctx.drawImage(@bg, Helpers.round(@x), Helpers.round(@y)) if @bg

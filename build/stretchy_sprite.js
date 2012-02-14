@@ -1,14 +1,10 @@
 var StretchySprite;
-var __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) {
-  for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; }
-  function ctor() { this.constructor = child; }
-  ctor.prototype = parent.prototype;
-  child.prototype = new ctor;
-  child.__super__ = parent.prototype;
-  return child;
-};
+var __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
+
 StretchySprite = (function() {
+
   __extends(StretchySprite, Sprite);
+
   function StretchySprite(x, y, width, height, rightCap, topCap, bg) {
     this.x = x;
     this.y = y;
@@ -20,6 +16,7 @@ StretchySprite = (function() {
     this.generateStretchedImage();
     StretchySprite.__super__.constructor.call(this, this.x, this.y, this.width, this.height);
   }
+
   StretchySprite.prototype.generateStretchedImage = function() {
     var createCanvas, ctx, rightCanvas, rightCtx, rightPattern, topCanvas, topCtx, topPattern;
     createCanvas = function(w, h) {
@@ -47,8 +44,11 @@ StretchySprite = (function() {
     ctx.drawImage(this.bg, 0, 0, this.bg.width, this.topCap, 0, 0, this.width, this.topCap);
     return ctx.drawImage(this.bg, this.bg.width - this.rightCap, 0, this.rightCap, this.bg.height, this.width - this.rightCap, this.height - this.bg.height, this.rightCap, this.bg.height);
   };
+
   StretchySprite.prototype.draw = function(ctx) {
     return ctx.drawImage(this.stretchedImage, 0, 0);
   };
+
   return StretchySprite;
+
 })();

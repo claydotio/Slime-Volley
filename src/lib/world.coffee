@@ -1,9 +1,9 @@
 # World class - handles the canvas, physics, and drawing calls
 # @author Joe Vennix 2012
 class World
-	constructor: (selector, @bg) ->
+	constructor: ->
 		# set up canvas
-		@canvas = document.getElementById(selector)
+		@canvas = Globals.Manager.canvas
 		@ctx = @canvas.getContext('2d')
 		@width = parseFloat(@canvas.width)
 		@height = parseFloat(@canvas.height)
