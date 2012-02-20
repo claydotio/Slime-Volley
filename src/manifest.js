@@ -15,6 +15,7 @@
 //= require 'slime'
 //= require 'box'
 //= require 'ball'
+//= require 'ai'
 
 //= require 'scenes/loading_scene'
 //= require 'scenes/menu_scene'

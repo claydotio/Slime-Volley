@@ -19,9 +19,9 @@ Ball = (function() {
 
   Ball.prototype.createBody = function() {
     this.fixture = new Box2D.Dynamics.b2FixtureDef();
-    this.fixture.density = .9;
-    this.fixture.friction = 0.82;
-    this.fixture.restitution = .3;
+    this.fixture.density = .6;
+    this.fixture.friction = 1.0;
+    this.fixture.restitution = .4;
     this.fixture.shape = new Box2D.Collision.Shapes.b2CircleShape(this.radius * Constants.SCALE);
     this.body = new Box2D.Dynamics.b2BodyDef();
     this.body.type = Box2D.Dynamics.b2Body.b2_dynamicBody;

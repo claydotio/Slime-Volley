@@ -6,7 +6,7 @@ class Box extends Sprite
 	createBody: ->
 		@fixture = new Box2D.Dynamics.b2FixtureDef()
 		@fixture.friction = 1.0
-		@fixture.restitution = 0
+		@fixture.restitution = 0.1
 		@fixture.shape = new Box2D.Collision.Shapes.b2PolygonShape()
 		@fixture.shape.SetAsBox(@width*Constants.SCALE, @height*Constants.SCALE)
 		@body = new Box2D.Dynamics.b2BodyDef()
@@ -15,6 +15,6 @@ class Box extends Sprite
 
 	draw: (ctx) -> 
 		# given a canvas 2d context, draw a rect centered at @x, @y
-		# make walls invisible for now
+		# make walls invisible for now 
 		# ctx.fillStyle = '#000'
 		# ctx.fillRect(@x, @y, @width, @height)

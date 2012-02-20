@@ -42,8 +42,14 @@ class Input
 			e = normalizeMouseEvent(e)
 			Globals.Manager.currScene.click(e)
 
+		multitouchShim = (e, callback) -> 
+			((e) ->
+				
+			)
+			
+
 		canvas = Globals.Manager.canvas
-		document.onkeydown = handleKeyDown
+		document.addEventListener 'keydown', handleKeyDown, true
 		document.onkeyup = handleKeyUp
 		canvas.onmouseup = handleMouseUp
 		canvas.onmousedown = handleMouseDown
@@ -61,3 +67,4 @@ class Input
 	right: (p2) -> @keys[@shortcuts['right'][p2]] || false
 	up:    (p2) -> @keys[@shortcuts['up'][p2]] || false
 	down:  (p2) -> @keys[@shortcuts['down'][p2]] || false
+	reset:      -> @keys[key] = false for key, val of @keys

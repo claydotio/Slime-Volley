@@ -13,13 +13,14 @@ Slime = (function() {
     this.eyeImg = eyeImg;
     this.radius = 31;
     this.isP2 = false;
+    this.score = 0;
     Slime.__super__.constructor.call(this, this.x, this.y, this.radius * 2, this.radius * 2);
   }
 
   Slime.prototype.createBody = function() {
     this.fixture = new Box2D.Dynamics.b2FixtureDef();
-    this.fixture.density = 200.0;
-    this.fixture.friction = 1.0;
+    this.fixture.density = 1.0;
+    this.fixture.friction = 0.6;
     this.fixture.restitution = 0.2;
     this.fixture.shape = new Box2D.Collision.Shapes.b2CircleShape(this.radius * Constants.SCALE);
     this.body = new Box2D.Dynamics.b2BodyDef();
@@ -32,18 +33,17 @@ Slime = (function() {
     y = world.height - this.y;
     pNum = this.isP2 ? 1 : 0;
     bottom = Constants.BOTTOM;
-    input = Globals.Input;
     if (input.left(pNum)) {
-      this.m_body.m_linearVelocity.x = -14;
+      this.m_body.m_linearVelocity.x = -Constants.MOVE_ACCEL;
       this.m_body.SetAwake(true);
     }
     if (input.right(pNum)) {
-      this.m_body.m_linearVelocity.x = 14;
+      this.m_body.m_linearVelocity.x = Constants.MOVE_ACCEL;
       this.m_body.SetAwake(true);
     }
     if (input.up(pNum)) {
       if (y < bottom) {
-        this.m_body.m_linearVelocity.y = -30;
+        this.m_body.m_linearVelocity.y = Constants.JUMP_ACCEL;
         return this.m_body.SetAwake(true);
       }
     } else if (this.m_body && y < bottom) {

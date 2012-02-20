@@ -21,4 +21,5 @@ class Button extends Sprite
 			@scene.buttonPressed(this) if @scene # pass event back to delegate
 	
 	draw: (ctx) ->
+		return unless @img
 		ctx.drawImage (if @down then @downImg else @img), Helpers.round(@x), Helpers.round(@y)

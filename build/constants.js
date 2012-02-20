@@ -1,11 +1,16 @@
 var Constants;
 
 Constants = {
-  SCALE: 0.07,
-  SCALE_INV: 1 / 0.07,
+  SCALE: .09,
+  SCALE_INV: 1 / .09,
   BOTTOM: 65,
   BASE_WIDTH: 480,
   BASE_HEIGHT: 320,
+  SLIME_START_HEIGHT: 60,
+  JUMP_ACCEL: -38,
+  MOVE_ACCEL: 25,
+  GRAVITY: 50,
+  SET_DELAY: 800,
   ASSETS: {
     p1: 'assets/images/s_0.png',
     p2: 'assets/images/s_1.png',

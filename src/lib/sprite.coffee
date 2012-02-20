@@ -16,5 +16,10 @@ class Sprite
 			@y = body.GetPosition().y * Constants.SCALE_INV
 			@m_body ||= body
 
+	setPosition: (x, y) ->
+		@m_body.SetPosition x: x*Constants.SCALE, y: y*Constants.SCALE if @m_body
+		@x = x
+		@y = y
+
 	draw: (ctx) -> # ctx is the canvas context, passed from world
 		ctx.drawImage(@bg, Helpers.round(@x), Helpers.round(@y)) if @bg

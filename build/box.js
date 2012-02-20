@@ -17,7 +17,7 @@ Box = (function() {
   Box.prototype.createBody = function() {
     this.fixture = new Box2D.Dynamics.b2FixtureDef();
     this.fixture.friction = 1.0;
-    this.fixture.restitution = 0;
+    this.fixture.restitution = 0.1;
     this.fixture.shape = new Box2D.Collision.Shapes.b2PolygonShape();
     this.fixture.shape.SetAsBox(this.width * Constants.SCALE, this.height * Constants.SCALE);
     this.body = new Box2D.Dynamics.b2BodyDef();

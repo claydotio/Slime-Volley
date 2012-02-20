@@ -3,7 +3,7 @@ var Input;
 Input = (function() {
 
   function Input() {
-    var canvas, handleClick, handleKeyDown, handleKeyUp, handleMouseDown, handleMouseMove, handleMouseUp, normalizeCoordinates, normalizeKeyEvent, normalizeMouseEvent, _keys;
+    var canvas, handleClick, handleKeyDown, handleKeyUp, handleMouseDown, handleMouseMove, handleMouseUp, multitouchShim, normalizeCoordinates, normalizeKeyEvent, normalizeMouseEvent, _keys;
     this.keys = {};
     _keys = this.keys;
     normalizeKeyEvent = function(e) {
@@ -51,8 +51,11 @@ Input = (function() {
       e = normalizeMouseEvent(e);
       return Globals.Manager.currScene.click(e);
     };
+    multitouchShim = function(e, callback) {
+      return function(e) {};
+    };
     canvas = Globals.Manager.canvas;
-    document.onkeydown = handleKeyDown;
+    document.addEventListener('keydown', handleKeyDown, true);
     document.onkeyup = handleKeyUp;
     canvas.onmouseup = handleMouseUp;
     canvas.onmousedown = handleMouseDown;
@@ -80,6 +83,17 @@ Input = (function() {
 
   Input.prototype.down = function(p2) {
     return this.keys[this.shortcuts['down'][p2]] || false;
+  };
+
+  Input.prototype.reset = function() {
+    var key, val, _ref, _results;
+    _ref = this.keys;
+    _results = [];
+    for (key in _ref) {
+      val = _ref[key];
+      _results.push(this.keys[key] = false);
+    }
+    return _results;
   };
 
   return Input;

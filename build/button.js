@@ -39,6 +39,7 @@ Button = (function() {
   };
 
   Button.prototype.draw = function(ctx) {
+    if (!this.img) return;
     return ctx.drawImage((this.down ? this.downImg : this.img), Helpers.round(this.x), Helpers.round(this.y));
   };
 

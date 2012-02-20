@@ -2,12 +2,13 @@ class Slime extends Sprite
 	constructor: (@x, @y, @color, @img, @eyeImg) ->
 		@radius = 31
 		@isP2 = false
+		@score = 0
 		super(@x, @y, @radius*2, @radius*2)
 
 	createBody: ->
 		@fixture = new Box2D.Dynamics.b2FixtureDef()
-		@fixture.density = 200.0
-		@fixture.friction = 1.0
+		@fixture.density = 1.0
+		@fixture.friction = 0.6
 		@fixture.restitution = 0.2
 		@fixture.shape = new Box2D.Collision.Shapes.b2CircleShape(@radius*Constants.SCALE)
 		@body = new Box2D.Dynamics.b2BodyDef()
@@ -19,16 +20,15 @@ class Slime extends Sprite
 		y = world.height - @y
 		pNum = if @isP2 then 1 else 0
 		bottom = Constants.BOTTOM
-		input = Globals.Input
 		if input.left(pNum)
-			@m_body.m_linearVelocity.x = -14
+			@m_body.m_linearVelocity.x = -Constants.MOVE_ACCEL
 			@m_body.SetAwake(true)
 		if input.right(pNum)
-			@m_body.m_linearVelocity.x = 14
+			@m_body.m_linearVelocity.x = Constants.MOVE_ACCEL
 			@m_body.SetAwake(true)
 		if input.up(pNum)
 			if y < bottom
-				@m_body.m_linearVelocity.y = -30
+				@m_body.m_linearVelocity.y = Constants.JUMP_ACCEL
 				@m_body.SetAwake(true)
 		# if input.down(pNum)
 		# 	if @m_body.m_linearVelocity.y > 0 && y > bottom

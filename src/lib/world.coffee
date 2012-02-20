@@ -9,7 +9,7 @@ class World
 		@height = parseFloat(@canvas.height)
 		@ctx._world = this  # circular reference! fixme?
 		# @world is the box2d world we will use for physics
-		gravity = new Box2D.Common.Math.b2Vec2(0, 60)
+		gravity = new Box2D.Common.Math.b2Vec2(0, Constants.GRAVITY)
 		@world = new Box2D.Dynamics.b2World(gravity, true)
 		@sprites = []
 		@oldTime = new Date()

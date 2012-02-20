@@ -25,6 +25,15 @@ Sprite = (function() {
     }
   };
 
+  Sprite.prototype.setPosition = function(x, y) {
+    this.m_body.SetPosition({
+      x: x * Constants.SCALE,
+      y: this.m_body ? y * Constants.SCALE : void 0
+    });
+    this.x = x;
+    return this.y = y;
+  };
+
   Sprite.prototype.draw = function(ctx) {
     if (this.bg) {
       return ctx.drawImage(this.bg, Helpers.round(this.x), Helpers.round(this.y));
