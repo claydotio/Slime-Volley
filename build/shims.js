@@ -41,3 +41,13 @@ CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
   this.closePath();
   return this;
 };
+
+if (!window.addEventListener) {
+  window.addEventListener = function(event, callback, capture) {
+    if (window.attachEvent) {
+      return window.attachEvent('on' + event, callback);
+    } else {
+      return window['on' + event] = callback;
+    }
+  };
+}

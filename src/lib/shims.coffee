@@ -33,3 +33,11 @@ CanvasRenderingContext2D.prototype.roundRect = (x, y, w, h, r) ->
 	this.arcTo(x,   y,   x+w, y,   r)
 	this.closePath()
 	return this
+
+# add a shim for events IE6+ and graceful degradation
+if !window.addEventListener
+	window.addEventListener = (event, callback, capture) ->
+		if window.attachEvent
+			window.attachEvent 'on'+event, callback
+		else
+			window['on'+event] = callback

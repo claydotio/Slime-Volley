@@ -1,4 +1,9 @@
 # simple button class handles mousedown and click events
+# Constructor: new Button(x, y, width, height, defaultImage, activeImage, scene)
+# == Delegate Methods == (* means Required)
+# buttonDown(button)
+# buttonUp(button)
+# buttonPress(button) *
 class Button extends Sprite
 	constructor: (@x, @y, @width, @height, @img, @downImg, @scene) ->
 		@down = false

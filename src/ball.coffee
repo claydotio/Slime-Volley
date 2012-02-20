@@ -8,9 +8,9 @@ class Ball extends Sprite
 
 	createBody: ->
 		@fixture = new Box2D.Dynamics.b2FixtureDef()
-		@fixture.density = .6
+		@fixture.density = .8
 		@fixture.friction = 1.0
-		@fixture.restitution = .4
+		@fixture.restitution = .25
 		@fixture.shape = new Box2D.Collision.Shapes.b2CircleShape(@radius*Constants.SCALE)
 		@body = new Box2D.Dynamics.b2BodyDef()
 		@body.type = Box2D.Dynamics.b2Body.b2_dynamicBody

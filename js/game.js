@@ -10,6 +10,7 @@ Constants = {
   JUMP_ACCEL: -38,
   MOVE_ACCEL: 25,
   GRAVITY: 50,
+  ARROW_WIDTH: 121,
   SET_DELAY: 800,
   ASSETS: {
     p1: 'assets/images/s_0.png',
@@ -83,6 +84,16 @@ CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
   this.closePath();
   return this;
 };
+
+if (!window.addEventListener) {
+  window.addEventListener = function(event, callback, capture) {
+    if (window.attachEvent) {
+      return window.attachEvent('on' + event, callback);
+    } else {
+      return window['on' + event] = callback;
+    }
+  };
+}
 
 var SceneManager;
 
@@ -301,11 +312,11 @@ Input = (function() {
     };
     canvas = Globals.Manager.canvas;
     document.addEventListener('keydown', handleKeyDown, true);
-    document.onkeyup = handleKeyUp;
-    canvas.onmouseup = handleMouseUp;
-    canvas.onmousedown = handleMouseDown;
-    canvas.onmousemove = handleMouseMove;
-    canvas.onclick = handleClick;
+    document.addEventListener('keyup', handleKeyUp, true);
+    canvas.addEventListener('mouseup', handleMouseUp, true);
+    canvas.addEventListener('mousedown', handleMouseDown, true);
+    canvas.addEventListener('mousemove', handleMouseMove, true);
+    canvas.addEventListener('click', handleClick, true);
     this.shortcuts = {
       left: ['key37', 'key65'],
       right: ['key39', 'key68'],
@@ -339,6 +350,11 @@ Input = (function() {
       _results.push(this.keys[key] = false);
     }
     return _results;
+  };
+
+  Input.prototype.set = function(shortcut, val, p2) {
+    if (p2 == null) p2 = 0;
+    return this.keys[this.shortcuts[shortcut][p2]] = val;
   };
 
   return Input;
@@ -689,9 +705,9 @@ Ball = (function() {
 
   Ball.prototype.createBody = function() {
     this.fixture = new Box2D.Dynamics.b2FixtureDef();
-    this.fixture.density = .6;
+    this.fixture.density = .8;
     this.fixture.friction = 1.0;
-    this.fixture.restitution = .4;
+    this.fixture.restitution = .25;
     this.fixture.shape = new Box2D.Collision.Shapes.b2CircleShape(this.radius * Constants.SCALE);
     this.body = new Box2D.Dynamics.b2BodyDef();
     this.body.type = Box2D.Dynamics.b2Body.b2_dynamicBody;
@@ -960,7 +976,12 @@ SlimeVolleyball = (function() {
     this.world.addSprite(this.p1);
     this.world.addSprite(this.p2);
     this.world.addSprite(this.ball);
-    this.buttons = [new Button(50, 50, 300, 50, null, null, this)];
+    this.onscreenRects = {
+      left: [0, this.world.height - Constants.BOTTOM, Constants.ARROW_WIDTH, Constants.BOTTOM],
+      right: [Constants.ARROW_WIDTH, this.world.height - Constants.BOTTOM, Constants.ARROW_WIDTH, Constants.BOTTOM],
+      up: [2 * Constants.ARROW_WIDTH, this.world.height - Constants.BOTTOM, this.world.width - 2 * Constants.ARROW_WIDTH, Constants.BOTTOM]
+    };
+    this.previousPos = {};
     bottom = 60;
     wall_width = 1;
     wall_height = 1000;
@@ -1025,52 +1046,54 @@ SlimeVolleyball = (function() {
     return this.world.draw();
   };
 
-  SlimeVolleyball.prototype.click = function(e) {
-    var btn, key, _ref, _results;
-    _ref = this.buttons;
-    _results = [];
-    for (key in _ref) {
-      btn = _ref[key];
-      _results.push(btn.handleClick(e));
-    }
-    return _results;
+  SlimeVolleyball.prototype.inRect = function(e, rect) {
+    if (!e) return false;
+    return Helpers.inRect(e.x, e.y, rect[0], rect[1], rect[2], rect[3]);
+  };
+
+  SlimeVolleyball.prototype.findRect = function(e) {
+    var left, right, up, _ref;
+    _ref = this.onscreenRects, left = _ref.left, right = _ref.right, up = _ref.up;
+    if (this.inRect(e, left)) return 'left';
+    if (this.inRect(e, right)) return 'right';
+    if (this.inRect(e, up)) return 'up';
+    return null;
+  };
+
+  SlimeVolleyball.prototype.savePreviousPos = function(e) {
+    return this.previousPos[e.touchIdentifier || '0'] = e;
+  };
+
+  SlimeVolleyball.prototype.getPreviousPos = function(e) {
+    return this.previousPos[e.touchIdentifier || '0'];
   };
 
   SlimeVolleyball.prototype.mousedown = function(e) {
-    var btn, key, _ref, _results;
-    _ref = this.buttons;
-    _results = [];
-    for (key in _ref) {
-      btn = _ref[key];
-      _results.push(btn.handleMouseDown(e));
-    }
-    return _results;
+    var box;
+    box = this.findRect(e);
+    console.log('box = ' + box);
+    if (box) Globals.Input.set(box, true);
+    return this.savePreviousPos(e);
   };
 
   SlimeVolleyball.prototype.mousemove = function(e) {
-    var btn, key, _ref, _results;
-    _ref = this.buttons;
-    _results = [];
-    for (key in _ref) {
-      btn = _ref[key];
-      _results.push(btn.handleMouseMove(e));
+    var box, prevBox, prevPos;
+    box = this.findRect(e);
+    prevPos = this.getPreviousPos(e);
+    prevBox = prevPos ? this.findRect() : null;
+    this.savePreviousPos(e);
+    if (prevBox && box === prevBox) {
+      return Globals.Input.set(prevBox, true);
+    } else if (prevBox && box !== prevBox) {
+      return Globals.Input.set(prevBox, false);
     }
-    return _results;
   };
 
   SlimeVolleyball.prototype.mouseup = function(e) {
-    var btn, key, _ref, _results;
-    _ref = this.buttons;
-    _results = [];
-    for (key in _ref) {
-      btn = _ref[key];
-      _results.push(btn.handleMouseUp(e));
-    }
-    return _results;
-  };
-
-  SlimeVolleyball.prototype.buttonPressed = function(btn) {
-    return console.log('button!');
+    var box;
+    box = this.findRect(e);
+    if (box) Globals.Input.set(box, false);
+    return this.savePreviousPos(e);
   };
 
   return SlimeVolleyball;

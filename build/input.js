@@ -56,11 +56,11 @@ Input = (function() {
     };
     canvas = Globals.Manager.canvas;
     document.addEventListener('keydown', handleKeyDown, true);
-    document.onkeyup = handleKeyUp;
-    canvas.onmouseup = handleMouseUp;
-    canvas.onmousedown = handleMouseDown;
-    canvas.onmousemove = handleMouseMove;
-    canvas.onclick = handleClick;
+    document.addEventListener('keyup', handleKeyUp, true);
+    canvas.addEventListener('mouseup', handleMouseUp, true);
+    canvas.addEventListener('mousedown', handleMouseDown, true);
+    canvas.addEventListener('mousemove', handleMouseMove, true);
+    canvas.addEventListener('click', handleClick, true);
     this.shortcuts = {
       left: ['key37', 'key65'],
       right: ['key39', 'key68'],
@@ -94,6 +94,11 @@ Input = (function() {
       _results.push(this.keys[key] = false);
     }
     return _results;
+  };
+
+  Input.prototype.set = function(shortcut, val, p2) {
+    if (p2 == null) p2 = 0;
+    return this.keys[this.shortcuts[shortcut][p2]] = val;
   };
 
   return Input;

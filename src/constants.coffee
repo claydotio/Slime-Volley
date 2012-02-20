@@ -9,6 +9,7 @@ Constants =
 	JUMP_ACCEL: -38
 	MOVE_ACCEL: 25
 	GRAVITY: 50
+	ARROW_WIDTH: 121
 	SET_DELAY: 800 #ms
 	ASSETS: # images and sounds
 		p1:      'assets/images/s_0.png',

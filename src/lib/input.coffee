@@ -50,11 +50,11 @@ class Input
 
 		canvas = Globals.Manager.canvas
 		document.addEventListener 'keydown', handleKeyDown, true
-		document.onkeyup = handleKeyUp
-		canvas.onmouseup = handleMouseUp
-		canvas.onmousedown = handleMouseDown
-		canvas.onmousemove = handleMouseMove
-		canvas.onclick = handleClick
+		document.addEventListener 'keyup', handleKeyUp, true
+		canvas.addEventListener 'mouseup', handleMouseUp, true
+		canvas.addEventListener 'mousedown', handleMouseDown, true
+		canvas.addEventListener 'mousemove', handleMouseMove, true
+		canvas.addEventListener 'click', handleClick, true
 		
 		@shortcuts =
 			left: ['key37', 'key65']
@@ -68,3 +68,8 @@ class Input
 	up:    (p2) -> @keys[@shortcuts['up'][p2]] || false
 	down:  (p2) -> @keys[@shortcuts['down'][p2]] || false
 	reset:      -> @keys[key] = false for key, val of @keys
+
+	# setters for up, left, right
+	set: (shortcut, val, p2) ->
+		p2 ?= 0
+		@keys[@shortcuts[shortcut][p2]] = val

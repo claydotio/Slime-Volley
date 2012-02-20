@@ -1,5 +1,5 @@
 # SlimeVolleyball is the main class containing start() and step()
-class SlimeVolleyball extends Scene		
+class SlimeVolleyball extends Scene
 	# will be called when load complete
 	start: ->
 		@world = new World()
@@ -20,9 +20,15 @@ class SlimeVolleyball extends Scene
 		@world.addSprite(@p2)
 		@world.addSprite(@ball)
 
-		@buttons = [
-			new Button(50, 50, 300, 50, null, null, this)
-		]
+		# store on-screen button rects
+		@onscreenRects = {
+			left: [ 0, @world.height-Constants.BOTTOM, Constants.ARROW_WIDTH, Constants.BOTTOM ],
+			right: [ Constants.ARROW_WIDTH, @world.height-Constants.BOTTOM, Constants.ARROW_WIDTH, Constants.BOTTOM ],
+			up: [ 2*Constants.ARROW_WIDTH, @world.height-Constants.BOTTOM, @world.width-2*Constants.ARROW_WIDTH, Constants.BOTTOM ]
+		}
+
+		# remember previous mouse positions
+		@previousPos = {}
 		
 		# set up "walls" around world: left, bottom, right
 		bottom = 60
@@ -30,19 +36,17 @@ class SlimeVolleyball extends Scene
 		wall_height = 1000   # set height of walls at 1000 (so users of different 
 		                     #   resolutions can play together without bugz)
 		walls = [ new Box(-wall_width, -wall_height, wall_width, 2*wall_height),
-		          new Box(0, @world.height-bottom+@p1.radius, @world.width, wall_width),
-		          new Box(@world.width, -wall_height, wall_width, 2*wall_height),
-		          new Box(@world.width/2, @world.height-bottom-32, 4, 32) ]
+			new Box(0, @world.height-bottom+@p1.radius, @world.width, wall_width),
+			new Box(@world.width, -wall_height, wall_width, 2*wall_height),
+			new Box(@world.width/2, @world.height-bottom-32, 4, 32) ]
 		@world.addSprite(wall) for wall in walls
 
 		@failMsgs = [
 			'you failed miserably!', 'try harder, young one.', 'not even close!',
-			'he wins, you lose!', '"hahaha!" shouts your opponent.', '*** YOU LOST THE GAME ***'
-		]
+			'he wins, you lose!', '"hahaha!" shouts your opponent.', '*** YOU LOST THE GAME ***' ]
 		@winMsgs = [
 			'nice shot!', 'good job!', 'you\'ve got this!', 'keep it up!',
-			'either you\'re good, or you got lucky!', '*** YOU WON THE GAME ***'
-		]
+			'either you\'re good, or you got lucky!', '*** YOU WON THE GAME ***' ]
 		@paused = false
 		super()
 
@@ -65,7 +69,7 @@ class SlimeVolleyball extends Scene
 					input.reset()
 					window.p1 = @p1
 					@paused = false
-			this.next() # called first to fix setTimeout bug
+			this.next()
 			return
 		this.next() # called first to fix setTimeout bug
 		@world.step(timestamp)
@@ -88,12 +92,41 @@ class SlimeVolleyball extends Scene
 			@paused = true
 		@world.draw()
 	
-	# pass mouse events to buttons
-	click:     (e) -> btn.handleClick(e)     for key, btn of @buttons
-	mousedown: (e) -> btn.handleMouseDown(e) for key, btn of @buttons
-	mousemove: (e) -> btn.handleMouseMove(e) for key, btn of @buttons
-	mouseup:   (e) -> btn.handleMouseUp(e)   for key, btn of @buttons
+	# helper funcs for mouse handling
+	inRect: (e, rect) ->
+		return false if !e
+		Helpers.inRect(e.x, e.y, rect[0], rect[1], rect[2], rect[3])
+	findRect: (e) ->
+		{ left, right, up } = @onscreenRects
+		return 'left'  if this.inRect(e, left)
+		return 'right' if this.inRect(e, right)
+		return 'up'    if this.inRect(e, up)
+		null
+	savePreviousPos: (e) -> # since touch events might have >1 mouse events
+	                        # simultaneously, we must have a key for each touch point
+		@previousPos[e.touchIdentifier || '0'] = e
+	getPreviousPos: (e) -> @previousPos[e.touchIdentifier || '0']
 
-	# delegate callback when a button is pressed
-	buttonPressed: (btn) ->
-		console.log 'button!'
+	# handle mouse events for on-screen controls
+	mousedown: (e) -> 
+		box = this.findRect(e)
+		console.log ('box = '+box)
+		Globals.Input.set(box, true) if box
+		this.savePreviousPos(e)
+
+	mousemove: (e) -> 
+		box = this.findRect(e)
+		prevPos = this.getPreviousPos(e)
+		prevBox = if prevPos then this.findRect() else null
+		this.savePreviousPos(e)
+		# reset button state when your mouse leaves the rect
+		if prevBox && box == prevBox
+			Globals.Input.set(prevBox, true)
+		else if prevBox && box != prevBox
+			Globals.Input.set(prevBox, false)
+
+		
+	mouseup:   (e) ->
+		box = this.findRect(e)
+		Globals.Input.set(box, false) if box
+		this.savePreviousPos(e)
