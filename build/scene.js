@@ -27,6 +27,11 @@ Scene = (function() {
     return this.step();
   };
 
+  Scene.prototype.restart = function() {
+    this.stopped = false;
+    return this.step();
+  };
+
   Scene.prototype.step = function(timestamp) {
     return console.log('Implement me!!!');
   };

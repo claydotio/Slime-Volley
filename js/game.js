@@ -12,6 +12,11 @@ Constants = {
   GRAVITY: 50,
   ARROW_WIDTH: 121,
   SET_DELAY: 800,
+  WIN_SCORE: 6,
+  POINT_WIDTH: 24,
+  SCOREBOARD_PADDING: 20,
+  BACK_BTN_WIDTH: 108,
+  BACK_BTN_HEIGHT: 26,
   ASSETS: {
     p1: 'assets/images/s_0.png',
     p2: 'assets/images/s_1.png',
@@ -26,7 +31,9 @@ Constants = {
     btn_wifi: 'assets/images/btn_wifi.png',
     btn_a: 'assets/images/btn_a.png',
     btn_b: 'assets/images/btn_b.png',
-    pole: 'assets/images/pole.png'
+    pole: 'assets/images/pole.png',
+    blank_point: 'assets/images/blank_point.png',
+    "return": 'assets/images/return.png'
   }
 };
 
@@ -121,16 +128,18 @@ SceneManager = (function() {
   };
 
   SceneManager.prototype.popScene = function() {
+    var oldScene;
     if (this.currScene) {
       this.currScene.stop();
       this.currScene.ctx = null;
     }
-    this.sceneStack.pop();
+    oldScene = this.sceneStack.pop();
     this.currScene = this.sceneStack[this.sceneStack.length - 1] || null;
     if (this.currScene) {
-      this.currScene.next();
-      return this.currScene.ctx = this.ctx;
+      this.currScene.ctx = this.ctx;
+      this.currScene.restart();
     }
+    return oldScene;
   };
 
   return SceneManager;
@@ -163,6 +172,11 @@ Scene = (function() {
   Scene.prototype.start = function() {
     this.stopped = false;
     this.inited = true;
+    return this.step();
+  };
+
+  Scene.prototype.restart = function() {
+    this.stopped = false;
     return this.step();
   };
 
@@ -771,6 +785,39 @@ AI = (function() {
 
 })();
 
+var Scoreboard;
+var __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
+
+Scoreboard = (function() {
+
+  __extends(Scoreboard, Sprite);
+
+  function Scoreboard(x, y, width, height, blankImg, pointImg) {
+    this.x = x;
+    this.y = y;
+    this.width = width;
+    this.height = height;
+    this.blankImg = blankImg;
+    this.pointImg = pointImg;
+    this.score = 0;
+    Scoreboard.__super__.constructor.call(this, this.x, this.y, this.width, this.height);
+  }
+
+  Scoreboard.prototype.draw = function(ctx) {
+    var i, w, _ref, _ref2, _ref3;
+    w = Constants.POINT_WIDTH;
+    for (i = 0, _ref = this.score; 0 <= _ref ? i < _ref : i > _ref; 0 <= _ref ? i++ : i--) {
+      ctx.drawImage(this.pointImg, this.x + i * w, this.y);
+    }
+    for (i = _ref2 = this.score, _ref3 = Constants.WIN_SCORE; _ref2 <= _ref3 ? i < _ref3 : i > _ref3; _ref2 <= _ref3 ? i++ : i--) {
+      ctx.drawImage(this.blankImg, this.x + i * w, this.y);
+    }
+  };
+
+  return Scoreboard;
+
+})();
+
 var LoadingScene;
 var __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
 
@@ -959,7 +1006,7 @@ SlimeVolleyball = (function() {
   }
 
   SlimeVolleyball.prototype.start = function() {
-    var bottom, loader, wall, wall_height, wall_width, walls, _i, _len;
+    var bottom, btn, key, loader, wall, wall_height, wall_width, walls, _i, _len, _ref;
     this.world = new World();
     loader = Globals.Loader;
     this.bg = new StretchySprite(0, 0, this.world.width, this.world.height, 200, 1, loader.getAsset('bg'));
@@ -971,16 +1018,28 @@ SlimeVolleyball = (function() {
     this.p1.ball = this.ball;
     this.p2.ball = this.ball;
     this.p2.isP2 = true;
+    this.p1Scoreboard = new Scoreboard(Constants.SCOREBOARD_PADDING, Constants.SCOREBOARD_PADDING, Constants.POINT_WIDTH * Constants.WIN_SCORE, Constants.POINT_WIDTH, loader.getAsset('blank_point'), loader.getAsset('ball'));
+    this.p2Scoreboard = new Scoreboard(this.world.width - Constants.WIN_SCORE * Constants.POINT_WIDTH - Constants.SCOREBOARD_PADDING, Constants.SCOREBOARD_PADDING, Constants.POINT_WIDTH * Constants.WIN_SCORE, Constants.POINT_WIDTH, loader.getAsset('blank_point'), loader.getAsset('ball'));
     this.world.addStaticSprite(this.bg);
     this.world.addStaticSprite(this.pole);
     this.world.addSprite(this.p1);
     this.world.addSprite(this.p2);
     this.world.addSprite(this.ball);
+    this.world.addStaticSprite(this.p1Scoreboard);
+    this.world.addStaticSprite(this.p2Scoreboard);
     this.onscreenRects = {
       left: [0, this.world.height - Constants.BOTTOM, Constants.ARROW_WIDTH, Constants.BOTTOM],
       right: [Constants.ARROW_WIDTH, this.world.height - Constants.BOTTOM, Constants.ARROW_WIDTH, Constants.BOTTOM],
       up: [2 * Constants.ARROW_WIDTH, this.world.height - Constants.BOTTOM, this.world.width - 2 * Constants.ARROW_WIDTH, Constants.BOTTOM]
     };
+    this.buttons = {
+      back: new Button(this.world.width / 2 - Constants.BACK_BTN_WIDTH / 2, Constants.SCOREBOARD_PADDING, Constants.BACK_BTN_WIDTH, Constants.BACK_BTN_HEIGHT, loader.getAsset('return'), loader.getAsset('return'), this)
+    };
+    _ref = this.buttons;
+    for (key in _ref) {
+      btn = _ref[key];
+      this.world.addStaticSprite(btn);
+    }
     this.previousPos = {};
     bottom = 60;
     wall_width = 1;
@@ -1036,9 +1095,9 @@ SlimeVolleyball = (function() {
     }
     if (this.ball.y > 0 && this.world.height - this.ball.y - this.ball.radius < 60) {
       if (this.ball.x < this.world.width / 2) {
-        this.p2.score++;
+        this.p2Scoreboard.score++;
       } else {
-        this.p1.score++;
+        this.p1Scoreboard.score++;
       }
       this.pauseTime = new Date();
       this.paused = true;
@@ -1069,15 +1128,24 @@ SlimeVolleyball = (function() {
   };
 
   SlimeVolleyball.prototype.mousedown = function(e) {
-    var box;
+    var box, btn, key, _ref;
+    _ref = this.buttons;
+    for (key in _ref) {
+      btn = _ref[key];
+      btn.handleMouseDown(e);
+    }
     box = this.findRect(e);
-    console.log('box = ' + box);
     if (box) Globals.Input.set(box, true);
     return this.savePreviousPos(e);
   };
 
   SlimeVolleyball.prototype.mousemove = function(e) {
-    var box, prevBox, prevPos;
+    var box, btn, key, prevBox, prevPos, _ref;
+    _ref = this.buttons;
+    for (key in _ref) {
+      btn = _ref[key];
+      btn.handleMouseMove(e);
+    }
     box = this.findRect(e);
     prevPos = this.getPreviousPos(e);
     prevBox = prevPos ? this.findRect() : null;
@@ -1090,10 +1158,31 @@ SlimeVolleyball = (function() {
   };
 
   SlimeVolleyball.prototype.mouseup = function(e) {
-    var box;
+    var box, btn, key, _ref;
+    _ref = this.buttons;
+    for (key in _ref) {
+      btn = _ref[key];
+      btn.handleMouseUp(e);
+    }
     box = this.findRect(e);
     if (box) Globals.Input.set(box, false);
     return this.savePreviousPos(e);
+  };
+
+  SlimeVolleyball.prototype.click = function(e) {
+    var btn, key, _ref, _results;
+    _ref = this.buttons;
+    _results = [];
+    for (key in _ref) {
+      btn = _ref[key];
+      _results.push(btn.handleClick(e));
+    }
+    return _results;
+  };
+
+  SlimeVolleyball.prototype.buttonPressed = function(e) {
+    console.log('btn');
+    return Globals.Manager.popScene();
   };
 
   return SlimeVolleyball;

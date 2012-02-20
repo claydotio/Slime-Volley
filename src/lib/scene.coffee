@@ -22,6 +22,10 @@ class Scene
 		@inited = true
 		this.step()
 
+	restart: -> 
+		@stopped = false
+		this.step()
+
 	step: (timestamp) -> # game logic goes here, in your subclass
 		console.log 'Implement me!!!'
 

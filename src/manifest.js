@@ -16,6 +16,7 @@
 //= require 'box'
 //= require 'ball'
 //= require 'ai'
+//= require 'scoreboard'
 
 //= require 'scenes/loading_scene'
 //= require 'scenes/menu_scene'

@@ -24,16 +24,18 @@ SceneManager = (function() {
   };
 
   SceneManager.prototype.popScene = function() {
+    var oldScene;
     if (this.currScene) {
       this.currScene.stop();
       this.currScene.ctx = null;
     }
-    this.sceneStack.pop();
+    oldScene = this.sceneStack.pop();
     this.currScene = this.sceneStack[this.sceneStack.length - 1] || null;
     if (this.currScene) {
-      this.currScene.next();
-      return this.currScene.ctx = this.ctx;
+      this.currScene.ctx = this.ctx;
+      this.currScene.restart();
     }
+    return oldScene;
   };
 
   return SceneManager;

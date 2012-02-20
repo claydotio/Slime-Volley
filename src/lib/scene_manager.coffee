@@ -17,8 +17,9 @@ class SceneManager
 		if @currScene
 			@currScene.stop()
 			@currScene.ctx = null
-		@sceneStack.pop()
+		oldScene = @sceneStack.pop()
 		@currScene = @sceneStack[@sceneStack.length-1] || null
 		if @currScene
-			@currScene.next() 
 			@currScene.ctx = @ctx
+			@currScene.restart()
+		oldScene

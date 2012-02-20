@@ -10,7 +10,7 @@ SlimeVolleyball = (function() {
   }
 
   SlimeVolleyball.prototype.start = function() {
-    var bottom, loader, wall, wall_height, wall_width, walls, _i, _len;
+    var bottom, btn, key, loader, wall, wall_height, wall_width, walls, _i, _len, _ref;
     this.world = new World();
     loader = Globals.Loader;
     this.bg = new StretchySprite(0, 0, this.world.width, this.world.height, 200, 1, loader.getAsset('bg'));
@@ -22,16 +22,28 @@ SlimeVolleyball = (function() {
     this.p1.ball = this.ball;
     this.p2.ball = this.ball;
     this.p2.isP2 = true;
+    this.p1Scoreboard = new Scoreboard(Constants.SCOREBOARD_PADDING, Constants.SCOREBOARD_PADDING, Constants.POINT_WIDTH * Constants.WIN_SCORE, Constants.POINT_WIDTH, loader.getAsset('blank_point'), loader.getAsset('ball'));
+    this.p2Scoreboard = new Scoreboard(this.world.width - Constants.WIN_SCORE * Constants.POINT_WIDTH - Constants.SCOREBOARD_PADDING, Constants.SCOREBOARD_PADDING, Constants.POINT_WIDTH * Constants.WIN_SCORE, Constants.POINT_WIDTH, loader.getAsset('blank_point'), loader.getAsset('ball'));
     this.world.addStaticSprite(this.bg);
     this.world.addStaticSprite(this.pole);
     this.world.addSprite(this.p1);
     this.world.addSprite(this.p2);
     this.world.addSprite(this.ball);
+    this.world.addStaticSprite(this.p1Scoreboard);
+    this.world.addStaticSprite(this.p2Scoreboard);
     this.onscreenRects = {
       left: [0, this.world.height - Constants.BOTTOM, Constants.ARROW_WIDTH, Constants.BOTTOM],
       right: [Constants.ARROW_WIDTH, this.world.height - Constants.BOTTOM, Constants.ARROW_WIDTH, Constants.BOTTOM],
       up: [2 * Constants.ARROW_WIDTH, this.world.height - Constants.BOTTOM, this.world.width - 2 * Constants.ARROW_WIDTH, Constants.BOTTOM]
     };
+    this.buttons = {
+      back: new Button(this.world.width / 2 - Constants.BACK_BTN_WIDTH / 2, Constants.SCOREBOARD_PADDING, Constants.BACK_BTN_WIDTH, Constants.BACK_BTN_HEIGHT, loader.getAsset('return'), loader.getAsset('return'), this)
+    };
+    _ref = this.buttons;
+    for (key in _ref) {
+      btn = _ref[key];
+      this.world.addStaticSprite(btn);
+    }
     this.previousPos = {};
     bottom = 60;
     wall_width = 1;
@@ -87,9 +99,9 @@ SlimeVolleyball = (function() {
     }
     if (this.ball.y > 0 && this.world.height - this.ball.y - this.ball.radius < 60) {
       if (this.ball.x < this.world.width / 2) {
-        this.p2.score++;
+        this.p2Scoreboard.score++;
       } else {
-        this.p1.score++;
+        this.p1Scoreboard.score++;
       }
       this.pauseTime = new Date();
       this.paused = true;
@@ -120,15 +132,24 @@ SlimeVolleyball = (function() {
   };
 
   SlimeVolleyball.prototype.mousedown = function(e) {
-    var box;
+    var box, btn, key, _ref;
+    _ref = this.buttons;
+    for (key in _ref) {
+      btn = _ref[key];
+      btn.handleMouseDown(e);
+    }
     box = this.findRect(e);
-    console.log('box = ' + box);
     if (box) Globals.Input.set(box, true);
     return this.savePreviousPos(e);
   };
 
   SlimeVolleyball.prototype.mousemove = function(e) {
-    var box, prevBox, prevPos;
+    var box, btn, key, prevBox, prevPos, _ref;
+    _ref = this.buttons;
+    for (key in _ref) {
+      btn = _ref[key];
+      btn.handleMouseMove(e);
+    }
     box = this.findRect(e);
     prevPos = this.getPreviousPos(e);
     prevBox = prevPos ? this.findRect() : null;
@@ -141,10 +162,31 @@ SlimeVolleyball = (function() {
   };
 
   SlimeVolleyball.prototype.mouseup = function(e) {
-    var box;
+    var box, btn, key, _ref;
+    _ref = this.buttons;
+    for (key in _ref) {
+      btn = _ref[key];
+      btn.handleMouseUp(e);
+    }
     box = this.findRect(e);
     if (box) Globals.Input.set(box, false);
     return this.savePreviousPos(e);
+  };
+
+  SlimeVolleyball.prototype.click = function(e) {
+    var btn, key, _ref, _results;
+    _ref = this.buttons;
+    _results = [];
+    for (key in _ref) {
+      btn = _ref[key];
+      _results.push(btn.handleClick(e));
+    }
+    return _results;
+  };
+
+  SlimeVolleyball.prototype.buttonPressed = function(e) {
+    console.log('btn');
+    return Globals.Manager.popScene();
   };
 
   return SlimeVolleyball;

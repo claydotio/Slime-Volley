@@ -14,11 +14,16 @@ class SlimeVolleyball extends Scene
 		@p2.ball = @ball
 		@p2.isP2 = true # face left
 
+		@p1Scoreboard = new Scoreboard(Constants.SCOREBOARD_PADDING, Constants.SCOREBOARD_PADDING, Constants.POINT_WIDTH*Constants.WIN_SCORE, Constants.POINT_WIDTH, loader.getAsset('blank_point'), loader.getAsset('ball'))
+		@p2Scoreboard = new Scoreboard(@world.width-Constants.WIN_SCORE*Constants.POINT_WIDTH-Constants.SCOREBOARD_PADDING, Constants.SCOREBOARD_PADDING, Constants.POINT_WIDTH*Constants.WIN_SCORE, Constants.POINT_WIDTH, loader.getAsset('blank_point'), loader.getAsset('ball'))
+
 		@world.addStaticSprite(@bg)
 		@world.addStaticSprite(@pole)
 		@world.addSprite(@p1)
 		@world.addSprite(@p2)
 		@world.addSprite(@ball)
+		@world.addStaticSprite(@p1Scoreboard)
+		@world.addStaticSprite(@p2Scoreboard)
 
 		# store on-screen button rects
 		@onscreenRects = {
@@ -26,6 +31,11 @@ class SlimeVolleyball extends Scene
 			right: [ Constants.ARROW_WIDTH, @world.height-Constants.BOTTOM, Constants.ARROW_WIDTH, Constants.BOTTOM ],
 			up: [ 2*Constants.ARROW_WIDTH, @world.height-Constants.BOTTOM, @world.width-2*Constants.ARROW_WIDTH, Constants.BOTTOM ]
 		}
+		# create a back button
+		@buttons = {
+			back: new Button(@world.width/2-Constants.BACK_BTN_WIDTH/2, Constants.SCOREBOARD_PADDING, Constants.BACK_BTN_WIDTH, Constants.BACK_BTN_HEIGHT, loader.getAsset('return'), loader.getAsset('return'), this)
+		}
+		@world.addStaticSprite(btn) for key, btn of @buttons
 
 		# remember previous mouse positions
 		@previousPos = {}
@@ -85,9 +95,9 @@ class SlimeVolleyball extends Scene
 		# check if ball hit the ground
 		if @ball.y > 0 && @world.height-@ball.y-@ball.radius < 60
 			if @ball.x < @world.width/2
-				@p2.score++
+				@p2Scoreboard.score++
 			else 
-				@p1.score++
+				@p1Scoreboard.score++
 			@pauseTime = new Date()
 			@paused = true
 		@world.draw()
@@ -109,12 +119,13 @@ class SlimeVolleyball extends Scene
 
 	# handle mouse events for on-screen controls
 	mousedown: (e) -> 
+		# pass event to buttons first
+		btn.handleMouseDown(e) for key, btn of @buttons
 		box = this.findRect(e)
-		console.log ('box = '+box)
 		Globals.Input.set(box, true) if box
 		this.savePreviousPos(e)
-
 	mousemove: (e) -> 
+		btn.handleMouseMove(e) for key, btn of @buttons
 		box = this.findRect(e)
 		prevPos = this.getPreviousPos(e)
 		prevBox = if prevPos then this.findRect() else null
@@ -124,9 +135,13 @@ class SlimeVolleyball extends Scene
 			Globals.Input.set(prevBox, true)
 		else if prevBox && box != prevBox
 			Globals.Input.set(prevBox, false)
-
-		
 	mouseup:   (e) ->
+		btn.handleMouseUp(e) for key, btn of @buttons
 		box = this.findRect(e)
 		Globals.Input.set(box, false) if box
 		this.savePreviousPos(e)
+	click: (e) ->
+		btn.handleClick(e) for key, btn of @buttons
+	buttonPressed: (e) ->
+		console.log 'btn'
+		Globals.Manager.popScene()
