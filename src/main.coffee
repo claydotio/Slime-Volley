@@ -1,4 +1,4 @@
-# run the game when the dom loads
+# FIXME run the game when the dom loads
 window.onload = ->
 	Globals.Manager.canvas = document.getElementById('canvas')
 	Globals.Manager.ctx = Globals.Manager.canvas.getContext('2d')

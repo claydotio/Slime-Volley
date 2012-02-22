@@ -41,3 +41,7 @@ if !window.addEventListener
 			window.attachEvent 'on'+event, callback
 		else
 			window['on'+event] = callback
+
+# iphone specific: hide address bar
+window.addEventListener "load", ->
+  setTimeout (-> window.scrollTo(0, 1)), 0

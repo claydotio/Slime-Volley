@@ -1,8 +1,8 @@
 var Constants;
 
 Constants = {
-  SCALE: .09,
-  SCALE_INV: 1 / .09,
+  SCALE: .1,
+  SCALE_INV: 1 / .1,
   BOTTOM: 65,
   BASE_WIDTH: 480,
   BASE_HEIGHT: 320,
@@ -101,6 +101,12 @@ if (!window.addEventListener) {
     }
   };
 }
+
+window.addEventListener("load", function() {
+  return setTimeout((function() {
+    return window.scrollTo(0, 1);
+  }), 0);
+});
 
 var SceneManager;
 
@@ -296,7 +302,8 @@ Input = (function() {
       y = e.clientY || e.y || e.layerY;
       return normalizeCoordinates({
         x: x,
-        y: y
+        y: y,
+        identifier: e.identifier
       });
     };
     handleKeyDown = function(e) {
@@ -321,8 +328,23 @@ Input = (function() {
       e = normalizeMouseEvent(e);
       return Globals.Manager.currScene.click(e);
     };
-    multitouchShim = function(e, callback) {
-      return function(e) {};
+    multitouchShim = function(callback) {
+      return (function(cb) {
+        return function(e) {
+          var t, _i, _len, _ref;
+          console.log(e);
+          e.preventDefault();
+          _ref = e.changedTouches;
+          for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+            t = _ref[_i];
+            cb({
+              x: t.clientX,
+              y: t.clientY,
+              identifier: t.identifier
+            });
+          }
+        };
+      }).call(this, callback);
     };
     canvas = Globals.Manager.canvas;
     document.addEventListener('keydown', handleKeyDown, true);
@@ -331,6 +353,10 @@ Input = (function() {
     canvas.addEventListener('mousedown', handleMouseDown, true);
     canvas.addEventListener('mousemove', handleMouseMove, true);
     canvas.addEventListener('click', handleClick, true);
+    document.documentElement.addEventListener('touchstart', multitouchShim(handleMouseDown), true);
+    document.documentElement.addEventListener('touchend', multitouchShim(handleMouseUp), true);
+    window.addEventListener('touchmove', multitouchShim(handleMouseMove), true);
+    window.addEventListener('touchcancel', multitouchShim(handleMouseUp), true);
     this.shortcuts = {
       left: ['key37', 'key65'],
       right: ['key39', 'key68'],
@@ -503,6 +529,9 @@ Button = (function() {
   };
 
   Button.prototype.handleMouseUp = function(e) {
+    if (this.down && Helpers.inRect(e.x, e.y, this.x, this.y, this.width, this.height)) {
+      if (this.scene) this.scene.buttonPressed(this);
+    }
     return this.down = false;
   };
 
@@ -891,9 +920,9 @@ MenuScene = (function() {
     MenuScene.__super__.constructor.call(this);
     loader = Globals.Loader;
     this.bg = new StretchySprite(0, 0, this.width, this.height, 1, 1, loader.getAsset('menu_bg'));
-    this.logo = new Sprite(this.center.x - 128, this.center.y - 160, 256, 256, loader.getAsset('logo'));
+    this.logo = new Sprite(this.center.x - 128, this.center.y - 155, 256, 256, loader.getAsset('logo'));
     this.logo.velocity = 0;
-    dy = this.center.y + 50;
+    dy = this.center.y + 30;
     btnWidth = 234;
     btnHeight = 44;
     yOffset = 58;
@@ -1120,11 +1149,11 @@ SlimeVolleyball = (function() {
   };
 
   SlimeVolleyball.prototype.savePreviousPos = function(e) {
-    return this.previousPos[e.touchIdentifier || '0'] = e;
+    return this.previousPos[(e.identifier || '0') + ''] = e;
   };
 
   SlimeVolleyball.prototype.getPreviousPos = function(e) {
-    return this.previousPos[e.touchIdentifier || '0'];
+    return this.previousPos[(e.identifier || '0') + ''];
   };
 
   SlimeVolleyball.prototype.mousedown = function(e) {
@@ -1141,6 +1170,7 @@ SlimeVolleyball = (function() {
 
   SlimeVolleyball.prototype.mousemove = function(e) {
     var box, btn, key, prevBox, prevPos, _ref;
+    if (!e.identifier) return;
     _ref = this.buttons;
     for (key in _ref) {
       btn = _ref[key];
@@ -1148,12 +1178,14 @@ SlimeVolleyball = (function() {
     }
     box = this.findRect(e);
     prevPos = this.getPreviousPos(e);
-    prevBox = prevPos ? this.findRect() : null;
+    prevBox = prevPos ? this.findRect(prevPos) : null;
     this.savePreviousPos(e);
+    console.log('mouse move. box: ' + box + ', prevbox: ' + prevBox);
     if (prevBox && box === prevBox) {
       return Globals.Input.set(prevBox, true);
     } else if (prevBox && box !== prevBox) {
-      return Globals.Input.set(prevBox, false);
+      Globals.Input.set(prevBox, false);
+      if (box) return Globals.Input.set(box, false);
     }
   };
 
@@ -1181,7 +1213,6 @@ SlimeVolleyball = (function() {
   };
 
   SlimeVolleyball.prototype.buttonPressed = function(e) {
-    console.log('btn');
     return Globals.Manager.popScene();
   };
 

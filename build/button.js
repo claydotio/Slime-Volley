@@ -22,6 +22,9 @@ Button = (function() {
   };
 
   Button.prototype.handleMouseUp = function(e) {
+    if (this.down && Helpers.inRect(e.x, e.y, this.x, this.y, this.width, this.height)) {
+      if (this.scene) this.scene.buttonPressed(this);
+    }
     return this.down = false;
   };
 

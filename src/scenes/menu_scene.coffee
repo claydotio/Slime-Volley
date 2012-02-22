@@ -8,9 +8,9 @@ class MenuScene extends Scene
 		super()
 		loader = Globals.Loader
 		@bg = new StretchySprite(0, 0, @width, @height, 1, 1, loader.getAsset('menu_bg'))
-		@logo = new Sprite(@center.x-128, @center.y-160, 256, 256, loader.getAsset('logo'))
+		@logo = new Sprite(@center.x-128, @center.y-155, 256, 256, loader.getAsset('logo'))
 		@logo.velocity = 0
-		dy = @center.y + 50
+		dy = @center.y + 30
 		btnWidth = 234
 		btnHeight = 44
 		yOffset = 58

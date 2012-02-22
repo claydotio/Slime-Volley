@@ -26,7 +26,8 @@ Input = (function() {
       y = e.clientY || e.y || e.layerY;
       return normalizeCoordinates({
         x: x,
-        y: y
+        y: y,
+        identifier: e.identifier
       });
     };
     handleKeyDown = function(e) {
@@ -51,8 +52,23 @@ Input = (function() {
       e = normalizeMouseEvent(e);
       return Globals.Manager.currScene.click(e);
     };
-    multitouchShim = function(e, callback) {
-      return function(e) {};
+    multitouchShim = function(callback) {
+      return (function(cb) {
+        return function(e) {
+          var t, _i, _len, _ref;
+          console.log(e);
+          e.preventDefault();
+          _ref = e.changedTouches;
+          for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+            t = _ref[_i];
+            cb({
+              x: t.clientX,
+              y: t.clientY,
+              identifier: t.identifier
+            });
+          }
+        };
+      }).call(this, callback);
     };
     canvas = Globals.Manager.canvas;
     document.addEventListener('keydown', handleKeyDown, true);
@@ -61,6 +77,10 @@ Input = (function() {
     canvas.addEventListener('mousedown', handleMouseDown, true);
     canvas.addEventListener('mousemove', handleMouseMove, true);
     canvas.addEventListener('click', handleClick, true);
+    document.documentElement.addEventListener('touchstart', multitouchShim(handleMouseDown), true);
+    document.documentElement.addEventListener('touchend', multitouchShim(handleMouseUp), true);
+    window.addEventListener('touchmove', multitouchShim(handleMouseMove), true);
+    window.addEventListener('touchcancel', multitouchShim(handleMouseUp), true);
     this.shortcuts = {
       left: ['key37', 'key65'],
       right: ['key39', 'key68'],

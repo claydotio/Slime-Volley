@@ -15,6 +15,8 @@ class Button extends Sprite
 
 	handleMouseUp: (e) ->
 		# check if event is inside bounding box
+		if @down && Helpers.inRect(e.x, e.y, @x, @y, @width, @height)
+			@scene.buttonPressed(this) if @scene # pass event back to delegate
 		@down = false
 
 	handleMouseMove: (e) ->

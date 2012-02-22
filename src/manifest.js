@@ -6,6 +6,7 @@
 //= require 'lib/scene'
 //= require 'lib/loader'
 //= require 'lib/input'
+//= require 'lib/physics'
 //= require 'lib/world'
 //= require 'lib/sprite'
 //= require 'lib/button'

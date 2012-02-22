@@ -124,11 +124,11 @@ SlimeVolleyball = (function() {
   };
 
   SlimeVolleyball.prototype.savePreviousPos = function(e) {
-    return this.previousPos[e.touchIdentifier || '0'] = e;
+    return this.previousPos[(e.identifier || '0') + ''] = e;
   };
 
   SlimeVolleyball.prototype.getPreviousPos = function(e) {
-    return this.previousPos[e.touchIdentifier || '0'];
+    return this.previousPos[(e.identifier || '0') + ''];
   };
 
   SlimeVolleyball.prototype.mousedown = function(e) {
@@ -145,6 +145,7 @@ SlimeVolleyball = (function() {
 
   SlimeVolleyball.prototype.mousemove = function(e) {
     var box, btn, key, prevBox, prevPos, _ref;
+    if (!e.identifier) return;
     _ref = this.buttons;
     for (key in _ref) {
       btn = _ref[key];
@@ -152,12 +153,14 @@ SlimeVolleyball = (function() {
     }
     box = this.findRect(e);
     prevPos = this.getPreviousPos(e);
-    prevBox = prevPos ? this.findRect() : null;
+    prevBox = prevPos ? this.findRect(prevPos) : null;
     this.savePreviousPos(e);
+    console.log('mouse move. box: ' + box + ', prevbox: ' + prevBox);
     if (prevBox && box === prevBox) {
       return Globals.Input.set(prevBox, true);
     } else if (prevBox && box !== prevBox) {
-      return Globals.Input.set(prevBox, false);
+      Globals.Input.set(prevBox, false);
+      if (box) return Globals.Input.set(box, false);
     }
   };
 
@@ -185,7 +188,6 @@ SlimeVolleyball = (function() {
   };
 
   SlimeVolleyball.prototype.buttonPressed = function(e) {
-    console.log('btn');
     return Globals.Manager.popScene();
   };
 

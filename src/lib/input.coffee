@@ -18,7 +18,7 @@ class Input
 			c = Globals.Manager.canvas
 			x = e.clientX || e.x || e.layerX
 			y = e.clientY || e.y || e.layerY 
-			normalizeCoordinates { x: x, y: y }
+			normalizeCoordinates { x: x, y: y, identifier: e.identifier }
 
 		handleKeyDown = (e) ->
 			_keys['key'+normalizeKeyEvent(e).which] = true
@@ -42,19 +42,27 @@ class Input
 			e = normalizeMouseEvent(e)
 			Globals.Manager.currScene.click(e)
 
-		multitouchShim = (e, callback) -> 
-			((e) ->
-				
-			)
-			
-
+		# multitouch shim wraps a callback and applies it for each individual touch 
+		multitouchShim = (callback) ->
+			return ((cb) ->  # create a scope to protect the callback param
+				return (e) ->
+					console.log (e)
+					e.preventDefault()
+					cb( x: t.clientX, y: t.clientY, identifier: t.identifier ) for t in e.changedTouches
+					return
+			).call(this, callback)
 		canvas = Globals.Manager.canvas
 		document.addEventListener 'keydown', handleKeyDown, true
 		document.addEventListener 'keyup', handleKeyUp, true
 		canvas.addEventListener 'mouseup', handleMouseUp, true
 		canvas.addEventListener 'mousedown', handleMouseDown, true
 		canvas.addEventListener 'mousemove', handleMouseMove, true
-		canvas.addEventListener 'click', handleClick, true
+		canvas.addEventListener 'click', handleClick, true # NO NEED FOR CLICK EVENT
+		document.documentElement.addEventListener 'touchstart', multitouchShim(handleMouseDown), true
+		document.documentElement.addEventListener 'touchend',  multitouchShim(handleMouseUp), true
+		window.addEventListener 'touchmove', multitouchShim(handleMouseMove), true
+		window.addEventListener 'touchcancel', multitouchShim(handleMouseUp), true
+
 		
 		@shortcuts =
 			left: ['key37', 'key65']

@@ -114,8 +114,8 @@ class SlimeVolleyball extends Scene
 		null
 	savePreviousPos: (e) -> # since touch events might have >1 mouse events
 	                        # simultaneously, we must have a key for each touch point
-		@previousPos[e.touchIdentifier || '0'] = e
-	getPreviousPos: (e) -> @previousPos[e.touchIdentifier || '0']
+		@previousPos[(e.identifier || '0')+''] = e
+	getPreviousPos: (e) -> @previousPos[(e.identifier || '0')+'']
 
 	# handle mouse events for on-screen controls
 	mousedown: (e) -> 
@@ -125,16 +125,19 @@ class SlimeVolleyball extends Scene
 		Globals.Input.set(box, true) if box
 		this.savePreviousPos(e)
 	mousemove: (e) -> 
+		return if !e.identifier
 		btn.handleMouseMove(e) for key, btn of @buttons
 		box = this.findRect(e)
 		prevPos = this.getPreviousPos(e)
-		prevBox = if prevPos then this.findRect() else null
+		prevBox = if prevPos then this.findRect(prevPos) else null
 		this.savePreviousPos(e)
+		console.log 'mouse move. box: '+box+', prevbox: '+prevBox
 		# reset button state when your mouse leaves the rect
 		if prevBox && box == prevBox
 			Globals.Input.set(prevBox, true)
 		else if prevBox && box != prevBox
 			Globals.Input.set(prevBox, false)
+			Globals.Input.set(box, false) if box
 	mouseup:   (e) ->
 		btn.handleMouseUp(e) for key, btn of @buttons
 		box = this.findRect(e)
@@ -143,5 +146,4 @@ class SlimeVolleyball extends Scene
 	click: (e) ->
 		btn.handleClick(e) for key, btn of @buttons
 	buttonPressed: (e) ->
-		console.log 'btn'
 		Globals.Manager.popScene()

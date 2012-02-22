@@ -1,7 +1,7 @@
 # declare global constants here
 Constants =
-	SCALE: .09
-	SCALE_INV: 1/.09
+	SCALE: .1
+	SCALE_INV: 1/.1
 	BOTTOM: 65
 	BASE_WIDTH: 480
 	BASE_HEIGHT: 320

@@ -10,9 +10,9 @@ MenuScene = (function() {
     MenuScene.__super__.constructor.call(this);
     loader = Globals.Loader;
     this.bg = new StretchySprite(0, 0, this.width, this.height, 1, 1, loader.getAsset('menu_bg'));
-    this.logo = new Sprite(this.center.x - 128, this.center.y - 160, 256, 256, loader.getAsset('logo'));
+    this.logo = new Sprite(this.center.x - 128, this.center.y - 155, 256, 256, loader.getAsset('logo'));
     this.logo.velocity = 0;
-    dy = this.center.y + 50;
+    dy = this.center.y + 30;
     btnWidth = 234;
     btnHeight = 44;
     yOffset = 58;
