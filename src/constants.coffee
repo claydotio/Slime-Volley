@@ -12,7 +12,7 @@ Constants =
 	ARROW_WIDTH: 121
 	SET_DELAY: 800 #ms
 	WIN_SCORE: 6
-	POINT_WIDTH: 24
+	POINT_WIDTH: 20
 	SCOREBOARD_PADDING: 20
 	BACK_BTN_WIDTH: 108
 	BACK_BTN_HEIGHT: 26
@@ -32,4 +32,6 @@ Constants =
 		btn_b:   'assets/images/btn_b.png',
 		pole:    'assets/images/pole.png',
 		blank_point: 'assets/images/blank_point.png',
-		return:      'assets/images/return.png'
+		return:      'assets/images/return.png',
+		score_a:     'assets/images/score_a.png',
+		score_b:     'assets/images/score_b.png'

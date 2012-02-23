@@ -13,7 +13,7 @@ Constants = {
   ARROW_WIDTH: 121,
   SET_DELAY: 800,
   WIN_SCORE: 6,
-  POINT_WIDTH: 24,
+  POINT_WIDTH: 20,
   SCOREBOARD_PADDING: 20,
   BACK_BTN_WIDTH: 108,
   BACK_BTN_HEIGHT: 26,
@@ -33,7 +33,9 @@ Constants = {
     btn_b: 'assets/images/btn_b.png',
     pole: 'assets/images/pole.png',
     blank_point: 'assets/images/blank_point.png',
-    "return": 'assets/images/return.png'
+    "return": 'assets/images/return.png',
+    score_a: 'assets/images/score_a.png',
+    score_b: 'assets/images/score_b.png'
   }
 };
 
@@ -126,10 +128,10 @@ SceneManager = (function() {
     }
     this.currScene = scene;
     this.currScene.ctx = this.ctx;
-    if (this.currScene.inited) {
-      return this.currScene.next();
-    } else {
+    if (this.currScene.initialized) {
       return this.currScene.start();
+    } else {
+      return this.currScene.init();
     }
   };
 
@@ -143,7 +145,7 @@ SceneManager = (function() {
     this.currScene = this.sceneStack[this.sceneStack.length - 1] || null;
     if (this.currScene) {
       this.currScene.ctx = this.ctx;
-      this.currScene.restart();
+      this.currScene.start();
     }
     return oldScene;
   };
@@ -153,14 +155,14 @@ SceneManager = (function() {
 })();
 
 var Scene;
+var __hasProp = Object.prototype.hasOwnProperty;
 
 Scene = (function() {
 
   function Scene() {
-    var _this;
-    _this = this;
+    var _this = this;
     this.stopped = true;
-    this.inited = false;
+    this.initialized = false;
     this.lastTimeout = 0;
     this.width = Globals.Manager.canvas.width;
     this.height = Globals.Manager.canvas.height;
@@ -170,18 +172,19 @@ Scene = (function() {
     };
     this.canvas = Globals.Manager.canvas;
     this.ctx = this.canvas.getContext('2d');
+    this.buttons || (this.buttons = {});
     this.stepCallback = function(timestamp) {
       return _this.step(timestamp);
     };
   }
 
-  Scene.prototype.start = function() {
+  Scene.prototype.init = function() {
     this.stopped = false;
-    this.inited = true;
+    this.initialized = true;
     return this.step();
   };
 
-  Scene.prototype.restart = function() {
+  Scene.prototype.start = function() {
     this.stopped = false;
     return this.step();
   };
@@ -201,13 +204,55 @@ Scene = (function() {
     return window.cancelAnimationFrame(this.lastTimeout);
   };
 
-  Scene.prototype.click = function(e) {};
+  Scene.prototype.click = function(e) {
+    var btn, key, _ref, _results;
+    _ref = this.buttons;
+    _results = [];
+    for (key in _ref) {
+      if (!__hasProp.call(_ref, key)) continue;
+      btn = _ref[key];
+      _results.push(btn.handleClick(e));
+    }
+    return _results;
+  };
 
-  Scene.prototype.mousedown = function(e) {};
+  Scene.prototype.mousedown = function(e) {
+    var btn, key, _ref, _results;
+    _ref = this.buttons;
+    _results = [];
+    for (key in _ref) {
+      if (!__hasProp.call(_ref, key)) continue;
+      btn = _ref[key];
+      _results.push(btn.handleMouseDown(e));
+    }
+    return _results;
+  };
 
-  Scene.prototype.mouseup = function(e) {};
+  Scene.prototype.mousemove = function(e) {
+    var btn, key, _ref, _results;
+    _ref = this.buttons;
+    _results = [];
+    for (key in _ref) {
+      if (!__hasProp.call(_ref, key)) continue;
+      btn = _ref[key];
+      _results.push(btn.handleMouseMove(e));
+    }
+    return _results;
+  };
 
-  Scene.prototype.mousemove = function(e) {};
+  Scene.prototype.mouseup = function(e) {
+    var btn, key, _ref, _results;
+    _ref = this.buttons;
+    _results = [];
+    for (key in _ref) {
+      if (!__hasProp.call(_ref, key)) continue;
+      btn = _ref[key];
+      _results.push(btn.handleMouseUp(e));
+    }
+    return _results;
+  };
+
+  Scene.prototype.buttonPressed = function() {};
 
   return Scene;
 
@@ -401,64 +446,6 @@ Input = (function() {
 
 })();
 
-var World;
-
-World = (function() {
-
-  function World() {
-    var gravity;
-    this.canvas = Globals.Manager.canvas;
-    this.ctx = this.canvas.getContext('2d');
-    this.width = parseFloat(this.canvas.width);
-    this.height = parseFloat(this.canvas.height);
-    this.ctx._world = this;
-    gravity = new Box2D.Common.Math.b2Vec2(0, Constants.GRAVITY);
-    this.world = new Box2D.Dynamics.b2World(gravity, true);
-    this.sprites = [];
-    this.oldTime = new Date();
-  }
-
-  World.prototype.addStaticSprite = function(sprite) {
-    return this.sprites.push({
-      sprite: sprite
-    });
-  };
-
-  World.prototype.addSprite = function(sprite) {
-    var body;
-    body = this.world.CreateBody(sprite.body);
-    body.CreateFixture(sprite.fixture);
-    return this.sprites.push({
-      sprite: sprite,
-      body: body
-    });
-  };
-
-  World.prototype.draw = function() {
-    var spriteData, _i, _len, _ref, _results;
-    this.ctx.clearRect(0, 0, this.width, this.height);
-    _ref = this.sprites;
-    _results = [];
-    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-      spriteData = _ref[_i];
-      if (spriteData.body) spriteData.sprite.updateBody(spriteData.body, this);
-      _results.push(spriteData.sprite.draw(this.ctx));
-    }
-    return _results;
-  };
-
-  World.prototype.step = function(timestamp) {
-    var interval;
-    interval = timestamp - this.oldTime;
-    this.oldTime = timestamp;
-    this.world.Step(interval / 1000.0, 15, 15);
-    return this.world.ClearForces();
-  };
-
-  return World;
-
-})();
-
 var Sprite;
 
 Sprite = (function() {
@@ -469,28 +456,9 @@ Sprite = (function() {
     this.width = width;
     this.height = height;
     this.bg = bg;
-    this.scaledX = this.x * Constants.SCALE;
-    this.scaledY = this.y * Constants.SCALE;
-    this.createBody();
   }
 
-  Sprite.prototype.createBody = function() {
-    return this.body = null;
-  };
-
-  Sprite.prototype.updateBody = function(body, world) {
-    if (body) {
-      this.x = body.GetPosition().x * Constants.SCALE_INV;
-      this.y = body.GetPosition().y * Constants.SCALE_INV;
-      return this.m_body || (this.m_body = body);
-    }
-  };
-
   Sprite.prototype.setPosition = function(x, y) {
-    this.m_body.SetPosition({
-      x: x * Constants.SCALE,
-      y: this.m_body ? y * Constants.SCALE : void 0
-    });
     this.x = x;
     return this.y = y;
   };
@@ -554,6 +522,80 @@ Button = (function() {
   };
 
   return Button;
+
+})();
+
+var GamePad;
+
+GamePad = (function() {
+
+  function GamePad(btnRects) {
+    this.btnRects = btnRects;
+    this.previousPos = {};
+  }
+
+  GamePad.prototype.inRect = function(e, rect) {
+    if (!e) return false;
+    return Helpers.inRect(e.x, e.y, rect[0], rect[1], rect[2], rect[3]);
+  };
+
+  GamePad.prototype.findRect = function(e) {
+    var key, val;
+    if ((function() {
+      var _len, _ref, _results;
+      _ref = this.btnRects;
+      _results = [];
+      for (val = 0, _len = _ref.length; val < _len; val++) {
+        key = _ref[val];
+        _results.push(this.inRect(e, val));
+      }
+      return _results;
+    }).call(this)) {
+      return key;
+    }
+    return null;
+  };
+
+  GamePad.prototype.savePreviousPos = function(e) {
+    return this.previousPos[(e.identifier || '0') + ''] = e;
+  };
+
+  GamePad.prototype.getPreviousPos = function(e) {
+    return this.previousPos[(e.identifier || '0') + ''];
+  };
+
+  GamePad.prototype.handleMouseDown = function(e) {
+    var box;
+    box = this.findRect(e);
+    if (box) Globals.Input.set(box, true);
+    return this.savePreviousPos(e);
+  };
+
+  GamePad.prototype.handleMouseMove = function(e) {
+    var box, prevBox, prevPos;
+    if (!e.identifier) return;
+    box = this.findRect(e);
+    prevPos = this.getPreviousPos(e);
+    prevBox = prevPos ? this.findRect(prevPos) : null;
+    this.savePreviousPos(e);
+    if (prevBox && box === prevBox) {
+      return Globals.Input.set(prevBox, true);
+    } else if (prevBox && box !== prevBox) {
+      Globals.Input.set(prevBox, false);
+      if (box) return Globals.Input.set(box, false);
+    }
+  };
+
+  GamePad.prototype.handleMouseUp = function(e) {
+    var box;
+    box = this.findRect(e);
+    if (box) Globals.Input.set(box, false);
+    return this.savePreviousPos(e);
+  };
+
+  GamePad.prototype.handleClick = function() {};
+
+  return GamePad;
 
 })();
 
@@ -639,129 +681,31 @@ Slime = (function() {
     Slime.__super__.constructor.call(this, this.x, this.y, this.radius * 2, this.radius * 2);
   }
 
-  Slime.prototype.createBody = function() {
-    this.fixture = new Box2D.Dynamics.b2FixtureDef();
-    this.fixture.density = 1.0;
-    this.fixture.friction = 0.6;
-    this.fixture.restitution = 0.2;
-    this.fixture.shape = new Box2D.Collision.Shapes.b2CircleShape(this.radius * Constants.SCALE);
-    this.body = new Box2D.Dynamics.b2BodyDef();
-    this.body.type = Box2D.Dynamics.b2Body.b2_dynamicBody;
-    return this.body.position.Set(this.scaledX, this.scaledY);
-  };
-
   Slime.prototype.handleInput = function(input, world) {
-    var bottom, pNum, y;
+    var pNum, y;
     y = world.height - this.y;
-    pNum = this.isP2 ? 1 : 0;
-    bottom = Constants.BOTTOM;
-    if (input.left(pNum)) {
-      this.m_body.m_linearVelocity.x = -Constants.MOVE_ACCEL;
-      this.m_body.SetAwake(true);
-    }
-    if (input.right(pNum)) {
-      this.m_body.m_linearVelocity.x = Constants.MOVE_ACCEL;
-      this.m_body.SetAwake(true);
-    }
-    if (input.up(pNum)) {
-      if (y < bottom) {
-        this.m_body.m_linearVelocity.y = Constants.JUMP_ACCEL;
-        return this.m_body.SetAwake(true);
-      }
-    } else if (this.m_body && y < bottom) {
-      return this.m_body.m_linearVelocity.x /= 1.1;
-    }
+    return pNum = this.isP2 ? 1 : 0;
   };
 
   Slime.prototype.draw = function(ctx) {
-    var ballVec, eyeVec, localEyeVec, offsetX, offsetY;
+    var ballVec, ballVecSize, eyeVec, localEyeVec, offsetX, offsetY;
     ctx.drawImage(this.img, Helpers.round(this.x - this.radius - 1), Helpers.round(this.y - this.radius));
     offsetY = this.radius / 2.0;
     offsetX = offsetY * .95;
     if (this.isP2) offsetX = -offsetX;
-    eyeVec = new Box2D.Common.Math.b2Vec2(this.x + offsetX, this.y - offsetY);
-    localEyeVec = new Box2D.Common.Math.b2Vec2(offsetX, offsetY);
-    ballVec = new Box2D.Common.Math.b2Vec2(this.ball.x, this.ball.y);
-    ballVec.Subtract(eyeVec);
-    ballVec.y = -ballVec.y;
-    ballVec.Normalize();
-    ballVec.Multiply(3);
-    ballVec.Add(localEyeVec);
-    return ctx.drawImage(this.eyeImg, Helpers.round(this.x + ballVec.x - 2), Helpers.round(this.y - ballVec.y - 2));
+    eyeVec = [this.x + offsetX, this.y - offsetY];
+    localEyeVec = [offsetX, offsetY];
+    ballVec = [this.ball.x, this.ball.y];
+    ballVec[0] -= eyeVec[0];
+    ballVec[1] -= eyeVec[1];
+    ballVec[1] = -ballVec[1];
+    ballVecSize = Math.sqrt(Math.pow(ballVec[0], 2) + Math.pow(ballVec[1], 2));
+    ballVec[0] = ballVec[0] / ballVecSize * 3 + localEyeVec[0];
+    ballVec[1] = ballVec[1] / ballVecSize * 3 + localEyeVec[1];
+    return ctx.drawImage(this.eyeImg, Helpers.round(this.x + ballVec[0] - 2), Helpers.round(this.y - ballVec[1] - 2));
   };
 
   return Slime;
-
-})();
-
-var Box;
-var __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
-
-Box = (function() {
-
-  __extends(Box, Sprite);
-
-  function Box(x, y, width, height) {
-    this.x = x;
-    this.y = y;
-    this.width = width;
-    this.height = height;
-    this.color = '#444';
-    Box.__super__.constructor.apply(this, arguments);
-  }
-
-  Box.prototype.createBody = function() {
-    this.fixture = new Box2D.Dynamics.b2FixtureDef();
-    this.fixture.friction = 1.0;
-    this.fixture.restitution = 0.1;
-    this.fixture.shape = new Box2D.Collision.Shapes.b2PolygonShape();
-    this.fixture.shape.SetAsBox(this.width * Constants.SCALE, this.height * Constants.SCALE);
-    this.body = new Box2D.Dynamics.b2BodyDef();
-    this.body.type = Box2D.Dynamics.b2Body.b2_staticBody;
-    return this.body.position.Set(this.scaledX, this.scaledY);
-  };
-
-  Box.prototype.draw = function(ctx) {};
-
-  return Box;
-
-})();
-
-var Ball;
-var __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
-
-Ball = (function() {
-
-  __extends(Ball, Sprite);
-
-  function Ball(x, y, bg) {
-    var oldBg;
-    this.x = x;
-    this.y = y;
-    this.bg = bg;
-    this.radius = 9;
-    this.color = '#000000';
-    oldBg = this.bg;
-    Ball.__super__.constructor.call(this, this.x, this.y, this.radius * 2, this.radius * 2);
-    this.bg || (this.bg = oldBg);
-  }
-
-  Ball.prototype.createBody = function() {
-    this.fixture = new Box2D.Dynamics.b2FixtureDef();
-    this.fixture.density = .8;
-    this.fixture.friction = 1.0;
-    this.fixture.restitution = .25;
-    this.fixture.shape = new Box2D.Collision.Shapes.b2CircleShape(this.radius * Constants.SCALE);
-    this.body = new Box2D.Dynamics.b2BodyDef();
-    this.body.type = Box2D.Dynamics.b2Body.b2_dynamicBody;
-    return this.body.position.Set(this.scaledX, this.scaledY);
-  };
-
-  Ball.prototype.draw = function(ctx) {
-    return ctx.drawImage(this.bg, Helpers.round(this.x - this.radius), Helpers.round(this.y - this.radius));
-  };
-
-  return Ball;
 
 })();
 
@@ -771,21 +715,37 @@ AI = (function() {
 
   function AI() {
     this._left = this._right = this._up = this._down = false;
-    this.ticksSkip = 58;
-    this.ticksWrap = 60;
+    this.ticksSkip = 2;
+    this.ticksWrap = 4;
     this.tick = 0;
   }
 
   AI.prototype.calculateInput = function(ball, p, world) {
-    var predictX, predictY;
+    var a, absA, bally, dist, py, t, targetX;
     this._left = this._right = this._up = this._down = false;
     this.tick++;
     if (this.tick <= this.ticksSkip) return this;
     this.tick = this.tick > this.ticksWrap ? 0 : this.tick;
-    predictX = 0;
-    predictY = 0;
-    if (ball.x > world.width / 2) {
-      if (ball.x < p.x) {
+    py = world.height - p.y;
+    bally = world.height - ball.y;
+    dist = Math.sqrt(Math.pow(ball.x - p.x, 2) + Math.pow(bally - py, 2));
+    t = Math.sqrt(bally / (.5 * Constants.GRAVITY));
+    targetX = ball.x + ball.m_body.m_linearVelocity.x * t + p.radius;
+    if (py - p.radius <= Constants.BOTTOM) {
+      if (dist < 200) {
+        a = Math.atan((ball.x - p.x) / (bally - py));
+        absA = Math.abs(a);
+        if (absA > 0.4666) this._up = true;
+      } else if (ball.x > world.width / 2) {
+        if (p.x > targetX) {
+          this._left = true;
+        } else {
+          this._right = true;
+        }
+      }
+    } else {
+      this._up = py < .75 * bally;
+      if (p.x > ball.x) {
         this._left = true;
       } else {
         this._right = true;
@@ -821,13 +781,14 @@ Scoreboard = (function() {
 
   __extends(Scoreboard, Sprite);
 
-  function Scoreboard(x, y, width, height, blankImg, pointImg) {
+  function Scoreboard(x, y, width, height, blankImg, pointImg, bgImg) {
     this.x = x;
     this.y = y;
     this.width = width;
     this.height = height;
     this.blankImg = blankImg;
     this.pointImg = pointImg;
+    this.bgImg = bgImg;
     this.score = 0;
     Scoreboard.__super__.constructor.call(this, this.x, this.y, this.width, this.height);
   }
@@ -835,11 +796,12 @@ Scoreboard = (function() {
   Scoreboard.prototype.draw = function(ctx) {
     var i, w, _ref, _ref2, _ref3;
     w = Constants.POINT_WIDTH;
+    ctx.drawImage(this.bgImg, this.x, this.y);
     for (i = 0, _ref = this.score; 0 <= _ref ? i < _ref : i > _ref; 0 <= _ref ? i++ : i--) {
-      ctx.drawImage(this.pointImg, this.x + i * w, this.y);
+      ctx.drawImage(this.pointImg, this.x + i * w + 3, this.y + 2);
     }
     for (i = _ref2 = this.score, _ref3 = Constants.WIN_SCORE; _ref2 <= _ref3 ? i < _ref3 : i > _ref3; _ref2 <= _ref3 ? i++ : i--) {
-      ctx.drawImage(this.blankImg, this.x + i * w, this.y);
+      ctx.drawImage(this.blankImg, this.x + i * w + 3, this.y + 2);
     }
   };
 
@@ -965,50 +927,6 @@ MenuScene = (function() {
     return this.logo.velocity += 2;
   };
 
-  MenuScene.prototype.click = function(e) {
-    var btn, key, _ref, _results;
-    _ref = this.buttons;
-    _results = [];
-    for (key in _ref) {
-      btn = _ref[key];
-      _results.push(btn.handleClick(e));
-    }
-    return _results;
-  };
-
-  MenuScene.prototype.mousedown = function(e) {
-    var btn, key, _ref, _results;
-    _ref = this.buttons;
-    _results = [];
-    for (key in _ref) {
-      btn = _ref[key];
-      _results.push(btn.handleMouseDown(e));
-    }
-    return _results;
-  };
-
-  MenuScene.prototype.mousemove = function(e) {
-    var btn, key, _ref, _results;
-    _ref = this.buttons;
-    _results = [];
-    for (key in _ref) {
-      btn = _ref[key];
-      _results.push(btn.handleMouseMove(e));
-    }
-    return _results;
-  };
-
-  MenuScene.prototype.mouseup = function(e) {
-    var btn, key, _ref, _results;
-    _ref = this.buttons;
-    _results = [];
-    for (key in _ref) {
-      btn = _ref[key];
-      _results.push(btn.handleMouseUp(e));
-    }
-    return _results;
-  };
-
   MenuScene.prototype.buttonPressed = function(btn) {
     var s;
     if (btn === this.buttons['instructions']) {} else if (btn === this.buttons['onePlayer']) {
@@ -1034,180 +952,65 @@ SlimeVolleyball = (function() {
     SlimeVolleyball.__super__.constructor.apply(this, arguments);
   }
 
-  SlimeVolleyball.prototype.start = function() {
-    var bottom, btn, key, loader, wall, wall_height, wall_width, walls, _i, _len, _ref;
-    this.world = new World();
+  SlimeVolleyball.prototype.init = function() {
+    var bottom, btn, gamepad, key, loader, wall, wall_height, wall_width, walls, _i, _len, _ref;
+    this.sprites = [];
     loader = Globals.Loader;
-    this.bg = new StretchySprite(0, 0, this.world.width, this.world.height, 200, 1, loader.getAsset('bg'));
-    this.p1 = new Slime(100, this.world.height - Constants.SLIME_START_HEIGHT, '#0f0', loader.getAsset('p1'), loader.getAsset('eye'));
-    this.p2 = new Slime(380, this.world.height - Constants.SLIME_START_HEIGHT, '#00f', loader.getAsset('p2'), loader.getAsset('eye'));
-    this.ball = new Ball(100, this.world.height - 340, loader.getAsset('ball'));
+    this.bg = new StretchySprite(0, 0, this.width, this.height, 200, 1, loader.getAsset('bg'));
+    this.p1 = new Slime(100, this.height - Constants.SLIME_START_HEIGHT, '#0f0', loader.getAsset('p1'), loader.getAsset('eye'));
+    this.p2 = new Slime(380, this.height - Constants.SLIME_START_HEIGHT, '#00f', loader.getAsset('p2'), loader.getAsset('eye'));
+    this.ball = new Sprite(100, this.height - 340, 62, 62, loader.getAsset('ball'));
     this.pole = new Sprite(this.center.x - 4, this.height - 60 - 64 - 1, 8, 64, loader.getAsset('pole'));
     this.ai = new AI();
     this.p1.ball = this.ball;
     this.p2.ball = this.ball;
     this.p2.isP2 = true;
-    this.p1Scoreboard = new Scoreboard(Constants.SCOREBOARD_PADDING, Constants.SCOREBOARD_PADDING, Constants.POINT_WIDTH * Constants.WIN_SCORE, Constants.POINT_WIDTH, loader.getAsset('blank_point'), loader.getAsset('ball'));
-    this.p2Scoreboard = new Scoreboard(this.world.width - Constants.WIN_SCORE * Constants.POINT_WIDTH - Constants.SCOREBOARD_PADDING, Constants.SCOREBOARD_PADDING, Constants.POINT_WIDTH * Constants.WIN_SCORE, Constants.POINT_WIDTH, loader.getAsset('blank_point'), loader.getAsset('ball'));
-    this.world.addStaticSprite(this.bg);
-    this.world.addStaticSprite(this.pole);
-    this.world.addSprite(this.p1);
-    this.world.addSprite(this.p2);
-    this.world.addSprite(this.ball);
-    this.world.addStaticSprite(this.p1Scoreboard);
-    this.world.addStaticSprite(this.p2Scoreboard);
-    this.onscreenRects = {
-      left: [0, this.world.height - Constants.BOTTOM, Constants.ARROW_WIDTH, Constants.BOTTOM],
-      right: [Constants.ARROW_WIDTH, this.world.height - Constants.BOTTOM, Constants.ARROW_WIDTH, Constants.BOTTOM],
-      up: [2 * Constants.ARROW_WIDTH, this.world.height - Constants.BOTTOM, this.world.width - 2 * Constants.ARROW_WIDTH, Constants.BOTTOM]
-    };
+    this.p1Scoreboard = new Scoreboard(Constants.SCOREBOARD_PADDING, Constants.SCOREBOARD_PADDING, Constants.POINT_WIDTH * Constants.WIN_SCORE, Constants.POINT_WIDTH, loader.getAsset('blank_point'), loader.getAsset('ball'), loader.getAsset('score_a'));
+    this.p2Scoreboard = new Scoreboard(this.width - Constants.WIN_SCORE * Constants.POINT_WIDTH - Constants.SCOREBOARD_PADDING, Constants.SCOREBOARD_PADDING, Constants.POINT_WIDTH * Constants.WIN_SCORE, Constants.POINT_WIDTH, loader.getAsset('blank_point'), loader.getAsset('ball'), loader.getAsset('score_b'));
+    this.sprites.push(this.bg);
+    this.sprites.push(this.pole);
+    this.sprites.push(this.p1);
+    this.sprites.push(this.p2);
+    this.sprites.push(this.ball);
+    this.sprites.push(this.p1Scoreboard);
+    this.sprites.push(this.p2Scoreboard);
     this.buttons = {
-      back: new Button(this.world.width / 2 - Constants.BACK_BTN_WIDTH / 2, Constants.SCOREBOARD_PADDING, Constants.BACK_BTN_WIDTH, Constants.BACK_BTN_HEIGHT, loader.getAsset('return'), loader.getAsset('return'), this)
+      back: new Button(this.width / 2 - Constants.BACK_BTN_WIDTH / 2, Constants.SCOREBOARD_PADDING, Constants.BACK_BTN_WIDTH, Constants.BACK_BTN_HEIGHT, loader.getAsset('return'), loader.getAsset('return'), this)
     };
     _ref = this.buttons;
     for (key in _ref) {
+      if (!__hasProp.call(_ref, key)) continue;
       btn = _ref[key];
-      this.world.addStaticSprite(btn);
+      this.sprites.push(btn);
     }
-    this.previousPos = {};
+    gamepad = new GamePad({
+      left: [0, this.height - Constants.BOTTOM, Constants.ARROW_WIDTH, Constants.BOTTOM],
+      right: [Constants.ARROW_WIDTH, this.height - Constants.BOTTOM, Constants.ARROW_WIDTH, Constants.BOTTOM],
+      up: [2 * Constants.ARROW_WIDTH, this.height - Constants.BOTTOM, this.width - 2 * Constants.ARROW_WIDTH, Constants.BOTTOM]
+    });
+    this.buttons['gamepad'] = gamepad;
     bottom = 60;
     wall_width = 1;
     wall_height = 1000;
-    walls = [new Box(-wall_width, -wall_height, wall_width, 2 * wall_height), new Box(0, this.world.height - bottom + this.p1.radius, this.world.width, wall_width), new Box(this.world.width, -wall_height, wall_width, 2 * wall_height), new Box(this.world.width / 2, this.world.height - bottom - 32, 4, 32)];
+    walls = [new Sprite(-wall_width, -wall_height, wall_width, 2 * wall_height), new Sprite(0, this.height - bottom + this.p1.radius, this.width, wall_width), new Sprite(this.width, -wall_height, wall_width, 2 * wall_height), new Sprite(this.width / 2, this.height - bottom - 32, 4, 32)];
     for (_i = 0, _len = walls.length; _i < _len; _i++) {
       wall = walls[_i];
-      this.world.addSprite(wall);
+      this.sprites.push(wall);
     }
     this.failMsgs = ['you failed miserably!', 'try harder, young one.', 'not even close!', 'he wins, you lose!', '"hahaha!" shouts your opponent.', '*** YOU LOST THE GAME ***'];
     this.winMsgs = ['nice shot!', 'good job!', 'you\'ve got this!', 'keep it up!', 'either you\'re good, or you got lucky!', '*** YOU WON THE GAME ***'];
     this.paused = false;
-    return SlimeVolleyball.__super__.start.call(this);
+    return SlimeVolleyball.__super__.init.call(this);
   };
 
   SlimeVolleyball.prototype.step = function(timestamp) {
-    var input, zero;
-    if (this.paused) {
-      if (new Date - this.pauseTime > Constants.SET_DELAY) {
-        input = Globals.Input;
-        if (input.up(0) || input.down(0) || input.left(0) || input.right(0)) {
-          this.p1.setPosition(100, this.world.height - Constants.SLIME_START_HEIGHT);
-          this.p2.setPosition(380, this.world.height - Constants.SLIME_START_HEIGHT);
-          this.ball.setPosition(100, this.world.height - 340);
-          zero = {
-            x: 0,
-            y: 0
-          };
-          this.p1.m_body.SetLinearVelocity(zero);
-          this.p1.m_body.SetAwake(false);
-          this.p2.m_body.SetLinearVelocity(zero);
-          this.p2.m_body.SetAwake(false);
-          this.ball.m_body.SetLinearVelocity(zero);
-          input.reset();
-          window.p1 = this.p1;
-          this.paused = false;
-        }
-      }
-      this.next();
-      return;
-    }
-    this.next();
-    this.world.step(timestamp);
-    this.p1.handleInput(Globals.Input, this.world);
-    this.p2.handleInput(this.ai.calculateInput(this.ball, this.p2, this.world), this.world);
-    if (this.p1.x + this.p1.radius > this.width / 2.0 - 4) {
-      this.p1.m_body.m_linearVelocity.x = -5;
-      this.p1.m_body.m_linearVelocity.y = 5;
-    }
-    if (this.p2.x - this.p2.radius < this.width / 2.0 + 4) {
-      this.p2.m_body.m_linearVelocity.x = 5;
-      this.p1.m_body.m_linearVelocity.y = 5;
-    }
-    if (this.ball.y > 0 && this.world.height - this.ball.y - this.ball.radius < 60) {
-      if (this.ball.x < this.world.width / 2) {
-        this.p2Scoreboard.score++;
-      } else {
-        this.p1Scoreboard.score++;
-      }
-      this.pauseTime = new Date();
-      this.paused = true;
-    }
-    return this.world.draw();
-  };
-
-  SlimeVolleyball.prototype.inRect = function(e, rect) {
-    if (!e) return false;
-    return Helpers.inRect(e.x, e.y, rect[0], rect[1], rect[2], rect[3]);
-  };
-
-  SlimeVolleyball.prototype.findRect = function(e) {
-    var left, right, up, _ref;
-    _ref = this.onscreenRects, left = _ref.left, right = _ref.right, up = _ref.up;
-    if (this.inRect(e, left)) return 'left';
-    if (this.inRect(e, right)) return 'right';
-    if (this.inRect(e, up)) return 'up';
-    return null;
-  };
-
-  SlimeVolleyball.prototype.savePreviousPos = function(e) {
-    return this.previousPos[(e.identifier || '0') + ''] = e;
-  };
-
-  SlimeVolleyball.prototype.getPreviousPos = function(e) {
-    return this.previousPos[(e.identifier || '0') + ''];
-  };
-
-  SlimeVolleyball.prototype.mousedown = function(e) {
-    var box, btn, key, _ref;
-    _ref = this.buttons;
-    for (key in _ref) {
-      btn = _ref[key];
-      btn.handleMouseDown(e);
-    }
-    box = this.findRect(e);
-    if (box) Globals.Input.set(box, true);
-    return this.savePreviousPos(e);
-  };
-
-  SlimeVolleyball.prototype.mousemove = function(e) {
-    var box, btn, key, prevBox, prevPos, _ref;
-    if (!e.identifier) return;
-    _ref = this.buttons;
-    for (key in _ref) {
-      btn = _ref[key];
-      btn.handleMouseMove(e);
-    }
-    box = this.findRect(e);
-    prevPos = this.getPreviousPos(e);
-    prevBox = prevPos ? this.findRect(prevPos) : null;
-    this.savePreviousPos(e);
-    console.log('mouse move. box: ' + box + ', prevbox: ' + prevBox);
-    if (prevBox && box === prevBox) {
-      return Globals.Input.set(prevBox, true);
-    } else if (prevBox && box !== prevBox) {
-      Globals.Input.set(prevBox, false);
-      if (box) return Globals.Input.set(box, false);
-    }
-  };
-
-  SlimeVolleyball.prototype.mouseup = function(e) {
-    var box, btn, key, _ref;
-    _ref = this.buttons;
-    for (key in _ref) {
-      btn = _ref[key];
-      btn.handleMouseUp(e);
-    }
-    box = this.findRect(e);
-    if (box) Globals.Input.set(box, false);
-    return this.savePreviousPos(e);
-  };
-
-  SlimeVolleyball.prototype.click = function(e) {
-    var btn, key, _ref, _results;
-    _ref = this.buttons;
+    var sprite, _i, _len, _ref, _results;
+    this.ctx.clearRect(0, 0, this.width, this.height);
+    _ref = this.sprites;
     _results = [];
-    for (key in _ref) {
-      btn = _ref[key];
-      _results.push(btn.handleClick(e));
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      sprite = _ref[_i];
+      _results.push(sprite.draw(this.ctx));
     }
     return _results;
   };

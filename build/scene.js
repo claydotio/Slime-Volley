@@ -1,12 +1,12 @@
 var Scene;
+var __hasProp = Object.prototype.hasOwnProperty;
 
 Scene = (function() {
 
   function Scene() {
-    var _this;
-    _this = this;
+    var _this = this;
     this.stopped = true;
-    this.inited = false;
+    this.initialized = false;
     this.lastTimeout = 0;
     this.width = Globals.Manager.canvas.width;
     this.height = Globals.Manager.canvas.height;
@@ -16,18 +16,19 @@ Scene = (function() {
     };
     this.canvas = Globals.Manager.canvas;
     this.ctx = this.canvas.getContext('2d');
+    this.buttons || (this.buttons = {});
     this.stepCallback = function(timestamp) {
       return _this.step(timestamp);
     };
   }
 
-  Scene.prototype.start = function() {
+  Scene.prototype.init = function() {
     this.stopped = false;
-    this.inited = true;
+    this.initialized = true;
     return this.step();
   };
 
-  Scene.prototype.restart = function() {
+  Scene.prototype.start = function() {
     this.stopped = false;
     return this.step();
   };
@@ -47,13 +48,55 @@ Scene = (function() {
     return window.cancelAnimationFrame(this.lastTimeout);
   };
 
-  Scene.prototype.click = function(e) {};
+  Scene.prototype.click = function(e) {
+    var btn, key, _ref, _results;
+    _ref = this.buttons;
+    _results = [];
+    for (key in _ref) {
+      if (!__hasProp.call(_ref, key)) continue;
+      btn = _ref[key];
+      _results.push(btn.handleClick(e));
+    }
+    return _results;
+  };
 
-  Scene.prototype.mousedown = function(e) {};
+  Scene.prototype.mousedown = function(e) {
+    var btn, key, _ref, _results;
+    _ref = this.buttons;
+    _results = [];
+    for (key in _ref) {
+      if (!__hasProp.call(_ref, key)) continue;
+      btn = _ref[key];
+      _results.push(btn.handleMouseDown(e));
+    }
+    return _results;
+  };
 
-  Scene.prototype.mouseup = function(e) {};
+  Scene.prototype.mousemove = function(e) {
+    var btn, key, _ref, _results;
+    _ref = this.buttons;
+    _results = [];
+    for (key in _ref) {
+      if (!__hasProp.call(_ref, key)) continue;
+      btn = _ref[key];
+      _results.push(btn.handleMouseMove(e));
+    }
+    return _results;
+  };
 
-  Scene.prototype.mousemove = function(e) {};
+  Scene.prototype.mouseup = function(e) {
+    var btn, key, _ref, _results;
+    _ref = this.buttons;
+    _results = [];
+    for (key in _ref) {
+      if (!__hasProp.call(_ref, key)) continue;
+      btn = _ref[key];
+      _results.push(btn.handleMouseUp(e));
+    }
+    return _results;
+  };
+
+  Scene.prototype.buttonPressed = function() {};
 
   return Scene;
 

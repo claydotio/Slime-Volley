@@ -9,180 +9,65 @@ SlimeVolleyball = (function() {
     SlimeVolleyball.__super__.constructor.apply(this, arguments);
   }
 
-  SlimeVolleyball.prototype.start = function() {
-    var bottom, btn, key, loader, wall, wall_height, wall_width, walls, _i, _len, _ref;
-    this.world = new World();
+  SlimeVolleyball.prototype.init = function() {
+    var bottom, btn, gamepad, key, loader, wall, wall_height, wall_width, walls, _i, _len, _ref;
+    this.sprites = [];
     loader = Globals.Loader;
-    this.bg = new StretchySprite(0, 0, this.world.width, this.world.height, 200, 1, loader.getAsset('bg'));
-    this.p1 = new Slime(100, this.world.height - Constants.SLIME_START_HEIGHT, '#0f0', loader.getAsset('p1'), loader.getAsset('eye'));
-    this.p2 = new Slime(380, this.world.height - Constants.SLIME_START_HEIGHT, '#00f', loader.getAsset('p2'), loader.getAsset('eye'));
-    this.ball = new Ball(100, this.world.height - 340, loader.getAsset('ball'));
+    this.bg = new StretchySprite(0, 0, this.width, this.height, 200, 1, loader.getAsset('bg'));
+    this.p1 = new Slime(100, this.height - Constants.SLIME_START_HEIGHT, '#0f0', loader.getAsset('p1'), loader.getAsset('eye'));
+    this.p2 = new Slime(380, this.height - Constants.SLIME_START_HEIGHT, '#00f', loader.getAsset('p2'), loader.getAsset('eye'));
+    this.ball = new Sprite(100, this.height - 340, 62, 62, loader.getAsset('ball'));
     this.pole = new Sprite(this.center.x - 4, this.height - 60 - 64 - 1, 8, 64, loader.getAsset('pole'));
     this.ai = new AI();
     this.p1.ball = this.ball;
     this.p2.ball = this.ball;
     this.p2.isP2 = true;
-    this.p1Scoreboard = new Scoreboard(Constants.SCOREBOARD_PADDING, Constants.SCOREBOARD_PADDING, Constants.POINT_WIDTH * Constants.WIN_SCORE, Constants.POINT_WIDTH, loader.getAsset('blank_point'), loader.getAsset('ball'));
-    this.p2Scoreboard = new Scoreboard(this.world.width - Constants.WIN_SCORE * Constants.POINT_WIDTH - Constants.SCOREBOARD_PADDING, Constants.SCOREBOARD_PADDING, Constants.POINT_WIDTH * Constants.WIN_SCORE, Constants.POINT_WIDTH, loader.getAsset('blank_point'), loader.getAsset('ball'));
-    this.world.addStaticSprite(this.bg);
-    this.world.addStaticSprite(this.pole);
-    this.world.addSprite(this.p1);
-    this.world.addSprite(this.p2);
-    this.world.addSprite(this.ball);
-    this.world.addStaticSprite(this.p1Scoreboard);
-    this.world.addStaticSprite(this.p2Scoreboard);
-    this.onscreenRects = {
-      left: [0, this.world.height - Constants.BOTTOM, Constants.ARROW_WIDTH, Constants.BOTTOM],
-      right: [Constants.ARROW_WIDTH, this.world.height - Constants.BOTTOM, Constants.ARROW_WIDTH, Constants.BOTTOM],
-      up: [2 * Constants.ARROW_WIDTH, this.world.height - Constants.BOTTOM, this.world.width - 2 * Constants.ARROW_WIDTH, Constants.BOTTOM]
-    };
+    this.p1Scoreboard = new Scoreboard(Constants.SCOREBOARD_PADDING, Constants.SCOREBOARD_PADDING, Constants.POINT_WIDTH * Constants.WIN_SCORE, Constants.POINT_WIDTH, loader.getAsset('blank_point'), loader.getAsset('ball'), loader.getAsset('score_a'));
+    this.p2Scoreboard = new Scoreboard(this.width - Constants.WIN_SCORE * Constants.POINT_WIDTH - Constants.SCOREBOARD_PADDING, Constants.SCOREBOARD_PADDING, Constants.POINT_WIDTH * Constants.WIN_SCORE, Constants.POINT_WIDTH, loader.getAsset('blank_point'), loader.getAsset('ball'), loader.getAsset('score_b'));
+    this.sprites.push(this.bg);
+    this.sprites.push(this.pole);
+    this.sprites.push(this.p1);
+    this.sprites.push(this.p2);
+    this.sprites.push(this.ball);
+    this.sprites.push(this.p1Scoreboard);
+    this.sprites.push(this.p2Scoreboard);
     this.buttons = {
-      back: new Button(this.world.width / 2 - Constants.BACK_BTN_WIDTH / 2, Constants.SCOREBOARD_PADDING, Constants.BACK_BTN_WIDTH, Constants.BACK_BTN_HEIGHT, loader.getAsset('return'), loader.getAsset('return'), this)
+      back: new Button(this.width / 2 - Constants.BACK_BTN_WIDTH / 2, Constants.SCOREBOARD_PADDING, Constants.BACK_BTN_WIDTH, Constants.BACK_BTN_HEIGHT, loader.getAsset('return'), loader.getAsset('return'), this)
     };
     _ref = this.buttons;
     for (key in _ref) {
+      if (!__hasProp.call(_ref, key)) continue;
       btn = _ref[key];
-      this.world.addStaticSprite(btn);
+      this.sprites.push(btn);
     }
-    this.previousPos = {};
+    gamepad = new GamePad({
+      left: [0, this.height - Constants.BOTTOM, Constants.ARROW_WIDTH, Constants.BOTTOM],
+      right: [Constants.ARROW_WIDTH, this.height - Constants.BOTTOM, Constants.ARROW_WIDTH, Constants.BOTTOM],
+      up: [2 * Constants.ARROW_WIDTH, this.height - Constants.BOTTOM, this.width - 2 * Constants.ARROW_WIDTH, Constants.BOTTOM]
+    });
+    this.buttons['gamepad'] = gamepad;
     bottom = 60;
     wall_width = 1;
     wall_height = 1000;
-    walls = [new Box(-wall_width, -wall_height, wall_width, 2 * wall_height), new Box(0, this.world.height - bottom + this.p1.radius, this.world.width, wall_width), new Box(this.world.width, -wall_height, wall_width, 2 * wall_height), new Box(this.world.width / 2, this.world.height - bottom - 32, 4, 32)];
+    walls = [new Sprite(-wall_width, -wall_height, wall_width, 2 * wall_height), new Sprite(0, this.height - bottom + this.p1.radius, this.width, wall_width), new Sprite(this.width, -wall_height, wall_width, 2 * wall_height), new Sprite(this.width / 2, this.height - bottom - 32, 4, 32)];
     for (_i = 0, _len = walls.length; _i < _len; _i++) {
       wall = walls[_i];
-      this.world.addSprite(wall);
+      this.sprites.push(wall);
     }
     this.failMsgs = ['you failed miserably!', 'try harder, young one.', 'not even close!', 'he wins, you lose!', '"hahaha!" shouts your opponent.', '*** YOU LOST THE GAME ***'];
     this.winMsgs = ['nice shot!', 'good job!', 'you\'ve got this!', 'keep it up!', 'either you\'re good, or you got lucky!', '*** YOU WON THE GAME ***'];
     this.paused = false;
-    return SlimeVolleyball.__super__.start.call(this);
+    return SlimeVolleyball.__super__.init.call(this);
   };
 
   SlimeVolleyball.prototype.step = function(timestamp) {
-    var input, zero;
-    if (this.paused) {
-      if (new Date - this.pauseTime > Constants.SET_DELAY) {
-        input = Globals.Input;
-        if (input.up(0) || input.down(0) || input.left(0) || input.right(0)) {
-          this.p1.setPosition(100, this.world.height - Constants.SLIME_START_HEIGHT);
-          this.p2.setPosition(380, this.world.height - Constants.SLIME_START_HEIGHT);
-          this.ball.setPosition(100, this.world.height - 340);
-          zero = {
-            x: 0,
-            y: 0
-          };
-          this.p1.m_body.SetLinearVelocity(zero);
-          this.p1.m_body.SetAwake(false);
-          this.p2.m_body.SetLinearVelocity(zero);
-          this.p2.m_body.SetAwake(false);
-          this.ball.m_body.SetLinearVelocity(zero);
-          input.reset();
-          window.p1 = this.p1;
-          this.paused = false;
-        }
-      }
-      this.next();
-      return;
-    }
-    this.next();
-    this.world.step(timestamp);
-    this.p1.handleInput(Globals.Input, this.world);
-    this.p2.handleInput(this.ai.calculateInput(this.ball, this.p2, this.world), this.world);
-    if (this.p1.x + this.p1.radius > this.width / 2.0 - 4) {
-      this.p1.m_body.m_linearVelocity.x = -5;
-      this.p1.m_body.m_linearVelocity.y = 5;
-    }
-    if (this.p2.x - this.p2.radius < this.width / 2.0 + 4) {
-      this.p2.m_body.m_linearVelocity.x = 5;
-      this.p1.m_body.m_linearVelocity.y = 5;
-    }
-    if (this.ball.y > 0 && this.world.height - this.ball.y - this.ball.radius < 60) {
-      if (this.ball.x < this.world.width / 2) {
-        this.p2Scoreboard.score++;
-      } else {
-        this.p1Scoreboard.score++;
-      }
-      this.pauseTime = new Date();
-      this.paused = true;
-    }
-    return this.world.draw();
-  };
-
-  SlimeVolleyball.prototype.inRect = function(e, rect) {
-    if (!e) return false;
-    return Helpers.inRect(e.x, e.y, rect[0], rect[1], rect[2], rect[3]);
-  };
-
-  SlimeVolleyball.prototype.findRect = function(e) {
-    var left, right, up, _ref;
-    _ref = this.onscreenRects, left = _ref.left, right = _ref.right, up = _ref.up;
-    if (this.inRect(e, left)) return 'left';
-    if (this.inRect(e, right)) return 'right';
-    if (this.inRect(e, up)) return 'up';
-    return null;
-  };
-
-  SlimeVolleyball.prototype.savePreviousPos = function(e) {
-    return this.previousPos[(e.identifier || '0') + ''] = e;
-  };
-
-  SlimeVolleyball.prototype.getPreviousPos = function(e) {
-    return this.previousPos[(e.identifier || '0') + ''];
-  };
-
-  SlimeVolleyball.prototype.mousedown = function(e) {
-    var box, btn, key, _ref;
-    _ref = this.buttons;
-    for (key in _ref) {
-      btn = _ref[key];
-      btn.handleMouseDown(e);
-    }
-    box = this.findRect(e);
-    if (box) Globals.Input.set(box, true);
-    return this.savePreviousPos(e);
-  };
-
-  SlimeVolleyball.prototype.mousemove = function(e) {
-    var box, btn, key, prevBox, prevPos, _ref;
-    if (!e.identifier) return;
-    _ref = this.buttons;
-    for (key in _ref) {
-      btn = _ref[key];
-      btn.handleMouseMove(e);
-    }
-    box = this.findRect(e);
-    prevPos = this.getPreviousPos(e);
-    prevBox = prevPos ? this.findRect(prevPos) : null;
-    this.savePreviousPos(e);
-    console.log('mouse move. box: ' + box + ', prevbox: ' + prevBox);
-    if (prevBox && box === prevBox) {
-      return Globals.Input.set(prevBox, true);
-    } else if (prevBox && box !== prevBox) {
-      Globals.Input.set(prevBox, false);
-      if (box) return Globals.Input.set(box, false);
-    }
-  };
-
-  SlimeVolleyball.prototype.mouseup = function(e) {
-    var box, btn, key, _ref;
-    _ref = this.buttons;
-    for (key in _ref) {
-      btn = _ref[key];
-      btn.handleMouseUp(e);
-    }
-    box = this.findRect(e);
-    if (box) Globals.Input.set(box, false);
-    return this.savePreviousPos(e);
-  };
-
-  SlimeVolleyball.prototype.click = function(e) {
-    var btn, key, _ref, _results;
-    _ref = this.buttons;
+    var sprite, _i, _len, _ref, _results;
+    this.ctx.clearRect(0, 0, this.width, this.height);
+    _ref = this.sprites;
     _results = [];
-    for (key in _ref) {
-      btn = _ref[key];
-      _results.push(btn.handleClick(e));
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      sprite = _ref[_i];
+      _results.push(sprite.draw(this.ctx));
     }
     return _results;
   };

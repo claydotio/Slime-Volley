@@ -3,32 +3,14 @@ var World;
 World = (function() {
 
   function World() {
-    var gravity;
     this.canvas = Globals.Manager.canvas;
     this.ctx = this.canvas.getContext('2d');
-    this.width = parseFloat(this.canvas.width);
-    this.height = parseFloat(this.canvas.height);
-    this.ctx._world = this;
-    gravity = new Box2D.Common.Math.b2Vec2(0, Constants.GRAVITY);
-    this.world = new Box2D.Dynamics.b2World(gravity, true);
     this.sprites = [];
     this.oldTime = new Date();
   }
 
-  World.prototype.addStaticSprite = function(sprite) {
-    return this.sprites.push({
-      sprite: sprite
-    });
-  };
-
   World.prototype.addSprite = function(sprite) {
-    var body;
-    body = this.world.CreateBody(sprite.body);
-    body.CreateFixture(sprite.fixture);
-    return this.sprites.push({
-      sprite: sprite,
-      body: body
-    });
+    return this.sprites.push(sprite);
   };
 
   World.prototype.draw = function() {
@@ -38,7 +20,6 @@ World = (function() {
     _results = [];
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
       spriteData = _ref[_i];
-      if (spriteData.body) spriteData.sprite.updateBody(spriteData.body, this);
       _results.push(spriteData.sprite.draw(this.ctx));
     }
     return _results;

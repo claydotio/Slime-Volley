@@ -11,7 +11,7 @@ class SceneManager
 			@currScene.ctx = null
 		@currScene = scene
 		@currScene.ctx = @ctx
-		if @currScene.inited then @currScene.next() else @currScene.start()
+		if @currScene.initialized then @currScene.start() else @currScene.init()
 
 	popScene: () ->
 		if @currScene
@@ -21,5 +21,5 @@ class SceneManager
 		@currScene = @sceneStack[@sceneStack.length-1] || null
 		if @currScene
 			@currScene.ctx = @ctx
-			@currScene.restart()
+			@currScene.start()
 		oldScene

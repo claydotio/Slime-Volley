@@ -6,16 +6,13 @@
 //= require 'lib/scene'
 //= require 'lib/loader'
 //= require 'lib/input'
-//= require 'lib/physics'
-//= require 'lib/world'
 //= require 'lib/sprite'
 //= require 'lib/button'
+//= require 'lib/gamepad'
 
 //= require 'globals'
 //= require 'stretchy_sprite'
 //= require 'slime'
-//= require 'box'
-//= require 'ball'
 //= require 'ai'
 //= require 'scoreboard'
 

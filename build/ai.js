@@ -4,21 +4,37 @@ AI = (function() {
 
   function AI() {
     this._left = this._right = this._up = this._down = false;
-    this.ticksSkip = 58;
-    this.ticksWrap = 60;
+    this.ticksSkip = 2;
+    this.ticksWrap = 4;
     this.tick = 0;
   }
 
   AI.prototype.calculateInput = function(ball, p, world) {
-    var predictX, predictY;
+    var a, absA, bally, dist, py, t, targetX;
     this._left = this._right = this._up = this._down = false;
     this.tick++;
     if (this.tick <= this.ticksSkip) return this;
     this.tick = this.tick > this.ticksWrap ? 0 : this.tick;
-    predictX = 0;
-    predictY = 0;
-    if (ball.x > world.width / 2) {
-      if (ball.x < p.x) {
+    py = world.height - p.y;
+    bally = world.height - ball.y;
+    dist = Math.sqrt(Math.pow(ball.x - p.x, 2) + Math.pow(bally - py, 2));
+    t = Math.sqrt(bally / (.5 * Constants.GRAVITY));
+    targetX = ball.x + ball.m_body.m_linearVelocity.x * t + p.radius;
+    if (py - p.radius <= Constants.BOTTOM) {
+      if (dist < 200) {
+        a = Math.atan((ball.x - p.x) / (bally - py));
+        absA = Math.abs(a);
+        if (absA > 0.4666) this._up = true;
+      } else if (ball.x > world.width / 2) {
+        if (p.x > targetX) {
+          this._left = true;
+        } else {
+          this._right = true;
+        }
+      }
+    } else {
+      this._up = py < .75 * bally;
+      if (p.x > ball.x) {
         this._left = true;
       } else {
         this._right = true;

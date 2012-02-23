@@ -55,50 +55,6 @@ MenuScene = (function() {
     return this.logo.velocity += 2;
   };
 
-  MenuScene.prototype.click = function(e) {
-    var btn, key, _ref, _results;
-    _ref = this.buttons;
-    _results = [];
-    for (key in _ref) {
-      btn = _ref[key];
-      _results.push(btn.handleClick(e));
-    }
-    return _results;
-  };
-
-  MenuScene.prototype.mousedown = function(e) {
-    var btn, key, _ref, _results;
-    _ref = this.buttons;
-    _results = [];
-    for (key in _ref) {
-      btn = _ref[key];
-      _results.push(btn.handleMouseDown(e));
-    }
-    return _results;
-  };
-
-  MenuScene.prototype.mousemove = function(e) {
-    var btn, key, _ref, _results;
-    _ref = this.buttons;
-    _results = [];
-    for (key in _ref) {
-      btn = _ref[key];
-      _results.push(btn.handleMouseMove(e));
-    }
-    return _results;
-  };
-
-  MenuScene.prototype.mouseup = function(e) {
-    var btn, key, _ref, _results;
-    _ref = this.buttons;
-    _results = [];
-    for (key in _ref) {
-      btn = _ref[key];
-      _results.push(btn.handleMouseUp(e));
-    }
-    return _results;
-  };
-
   MenuScene.prototype.buttonPressed = function(btn) {
     var s;
     if (btn === this.buttons['instructions']) {} else if (btn === this.buttons['onePlayer']) {

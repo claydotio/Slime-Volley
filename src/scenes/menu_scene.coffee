@@ -43,12 +43,6 @@ class MenuScene extends Scene
 		@logo.y += Math.sin(Math.PI/180.0*@logo.velocity)/3
 		@logo.velocity += 2
 
-	# pass mouse events to buttons
-	click:     (e) -> btn.handleClick(e)     for key, btn of @buttons
-	mousedown: (e) -> btn.handleMouseDown(e) for key, btn of @buttons
-	mousemove: (e) -> btn.handleMouseMove(e) for key, btn of @buttons
-	mouseup:   (e) -> btn.handleMouseUp(e)   for key, btn of @buttons
-
 	# delegate callback when a button is pressed
 	buttonPressed: (btn) ->
 		if btn == @buttons['instructions']

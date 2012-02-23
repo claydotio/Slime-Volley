@@ -16,10 +16,10 @@ SceneManager = (function() {
     }
     this.currScene = scene;
     this.currScene.ctx = this.ctx;
-    if (this.currScene.inited) {
-      return this.currScene.next();
-    } else {
+    if (this.currScene.initialized) {
       return this.currScene.start();
+    } else {
+      return this.currScene.init();
     }
   };
 
@@ -33,7 +33,7 @@ SceneManager = (function() {
     this.currScene = this.sceneStack[this.sceneStack.length - 1] || null;
     if (this.currScene) {
       this.currScene.ctx = this.ctx;
-      this.currScene.restart();
+      this.currScene.start();
     }
     return oldScene;
   };

@@ -2,32 +2,30 @@
 # @author Joe Vennix 2012
 class Scene
 	constructor: ->
-		# perform some awkward scope scooping so we can use window.setTimeout
-		_this = this
 		@stopped = true
-		@inited = false
+		@initialized = false
 		@lastTimeout = 0
 		@width = Globals.Manager.canvas.width
 		@height = Globals.Manager.canvas.height
-		@center = 
-			x: @width/2
-			y: @height/2
+		@center = { x: @width/2, y: @height/2 }
 		@canvas = Globals.Manager.canvas
 		@ctx = @canvas.getContext('2d')
-		@stepCallback = (timestamp) ->
-			_this.step(timestamp)
+		@buttons ||= {}
+		@stepCallback = (timestamp) => # double arrow "saves" `this` reference
+			this.step(timestamp)
 
-	start: ->  # initialize vars for game loop
+	init: ->
 		@stopped = false
-		@inited = true
+		@initialized = true
 		this.step()
 
-	restart: -> 
+	start: -> 
 		@stopped = false
 		this.step()
 
 	step: (timestamp) -> # game logic goes here, in your subclass
 		console.log 'Implement me!!!'
+		# this.next() #
 
 	next: -> # iterate game "loop"
 		@lastTimeout = window.requestAnimationFrame(@stepCallback) unless @stopped
@@ -36,7 +34,10 @@ class Scene
 		@stopped = true
 		window.cancelAnimationFrame(@lastTimeout)
 
-	click: (e) -> # implement click event callback
-	mousedown: (e) -> #implement mousedown event callback
-	mouseup: (e) ->
-	mousemove: (e) -> 
+	# override the following methods to receive touch inputs
+	# pass mouse events to buttons
+	click:     (e) -> btn.handleClick(e)     for own key, btn of @buttons
+	mousedown: (e) -> btn.handleMouseDown(e) for own key, btn of @buttons
+	mousemove: (e) -> btn.handleMouseMove(e) for own key, btn of @buttons
+	mouseup:   (e) -> btn.handleMouseUp(e)   for own key, btn of @buttons
+	buttonPressed: -> # override me!
