@@ -16,7 +16,7 @@ SlimeVolleyball = (function() {
     this.bg = new StretchySprite(0, 0, this.width, this.height, 200, 1, loader.getAsset('bg'));
     this.p1 = new Slime(this.width / 4 - Constants.SLIME_RADIUS, this.height - Constants.SLIME_START_HEIGHT, '#0f0', loader.getAsset('p1'), loader.getAsset('eye'));
     this.p2 = new Slime(3 * this.width / 4 - Constants.SLIME_RADIUS, this.height - Constants.SLIME_START_HEIGHT, '#00f', loader.getAsset('p2'), loader.getAsset('eye'));
-    this.ball = new Ball(this.width / 2 - 9, this.height - Constants.BALL_START_HEIGHT, Constants.BALL_RADIUS, loader.getAsset('ball'));
+    this.ball = new Ball(this.width / 4 - Constants.BALL_RADIUS, this.height - Constants.BALL_START_HEIGHT, Constants.BALL_RADIUS, loader.getAsset('ball'));
     this.ball.mass = 0.25;
     this.pole = new Sprite(this.center.x - 4, this.height - 60 - 64 - 1, 8, 64, loader.getAsset('pole'));
     this.p1.ball = this.p2.ball = this.ball;

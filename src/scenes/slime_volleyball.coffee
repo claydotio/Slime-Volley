@@ -8,7 +8,7 @@ class SlimeVolleyball extends Scene
 		@bg = new StretchySprite(0, 0, @width, @height, 200, 1, loader.getAsset('bg'))
 		@p1 = new Slime(@width/4-Constants.SLIME_RADIUS, @height-Constants.SLIME_START_HEIGHT, '#0f0', loader.getAsset('p1'), loader.getAsset('eye'))
 		@p2 = new Slime(3*@width/4-Constants.SLIME_RADIUS, @height-Constants.SLIME_START_HEIGHT, '#00f', loader.getAsset('p2'), loader.getAsset('eye'))
-		@ball = new Ball(@width/2-9, @height-Constants.BALL_START_HEIGHT, Constants.BALL_RADIUS, loader.getAsset('ball'))
+		@ball = new Ball(@width/4-Constants.BALL_RADIUS, @height-Constants.BALL_START_HEIGHT, Constants.BALL_RADIUS, loader.getAsset('ball'))
 		@ball.mass = 0.25
 		@pole = new Sprite(@center.x-4, @height-60-64-1, 8, 64, loader.getAsset('pole'))
 		@p1.ball = @p2.ball = @ball
