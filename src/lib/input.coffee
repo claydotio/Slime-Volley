@@ -3,6 +3,8 @@ class Input
 		# bind to dom key events (and touch, if available)
 		@keys = {}
 		_keys = @keys # for shifty callbacks
+		_this = @
+		@anyInput = false
 		normalizeKeyEvent = (e) ->
 			e.which ||= e.charCode
 			e.which ||= e.keyCode
@@ -21,20 +23,25 @@ class Input
 			normalizeCoordinates { x: x, y: y, identifier: e.identifier }
 
 		handleKeyDown = (e) ->
+			_this.anyInput = true
 			_keys['key'+normalizeKeyEvent(e).which] = true
 
 		handleKeyUp = (e) ->
+			_this.anyInput = false
 			_keys['key'+normalizeKeyEvent(e).which] = false
 
 		handleMouseUp = (e) ->
+			_this.anyInput = false
 			e = normalizeMouseEvent(e)
 			Globals.Manager.currScene.mouseup(e)
 
 		handleMouseDown = (e) ->
+			_this.anyInput = true
 			e = normalizeMouseEvent(e)
 			Globals.Manager.currScene.mousedown(e)
 
 		handleMouseMove = (e) ->
+			_this.anyInput = true
 			e = normalizeMouseEvent(e)
 			Globals.Manager.currScene.mousemove(e)
 

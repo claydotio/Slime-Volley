@@ -8,7 +8,8 @@ class GamePad
 		return false if !e
 		Helpers.inRect(e.x, e.y, rect[0], rect[1], rect[2], rect[3])
 	findRect: (e) ->
-		return key if this.inRect(e, val) for own key, val in @btnRects
+		for own key, val in @btnRects
+			return key if this.inRect(e, val) 
 		null
 	savePreviousPos: (e) -> # since touch events might have >1 mouse events
 	                        # simultaneously, we must have a key for each touch point
@@ -18,6 +19,7 @@ class GamePad
 	# mouse handling
 	handleMouseDown: (e) ->
 		box = this.findRect(e)
+		console.log box
 		Globals.Input.set(box, true) if box
 		this.savePreviousPos(e)
 

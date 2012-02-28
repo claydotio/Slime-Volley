@@ -12,8 +12,8 @@
 
 //= require 'globals'
 //= require 'stretchy_sprite'
+//= require 'ball'
 //= require 'slime'
-//= require 'ai'
 //= require 'scoreboard'
 
 //= require 'scenes/loading_scene'

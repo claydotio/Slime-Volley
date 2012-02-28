@@ -3,9 +3,11 @@ var Input;
 Input = (function() {
 
   function Input() {
-    var canvas, handleClick, handleKeyDown, handleKeyUp, handleMouseDown, handleMouseMove, handleMouseUp, multitouchShim, normalizeCoordinates, normalizeKeyEvent, normalizeMouseEvent, _keys;
+    var canvas, handleClick, handleKeyDown, handleKeyUp, handleMouseDown, handleMouseMove, handleMouseUp, multitouchShim, normalizeCoordinates, normalizeKeyEvent, normalizeMouseEvent, _keys, _this;
     this.keys = {};
     _keys = this.keys;
+    _this = this;
+    this.anyInput = false;
     normalizeKeyEvent = function(e) {
       e.which || (e.which = e.charCode);
       e.which || (e.which = e.keyCode);
@@ -31,20 +33,25 @@ Input = (function() {
       });
     };
     handleKeyDown = function(e) {
+      _this.anyInput = true;
       return _keys['key' + normalizeKeyEvent(e).which] = true;
     };
     handleKeyUp = function(e) {
+      _this.anyInput = false;
       return _keys['key' + normalizeKeyEvent(e).which] = false;
     };
     handleMouseUp = function(e) {
+      _this.anyInput = false;
       e = normalizeMouseEvent(e);
       return Globals.Manager.currScene.mouseup(e);
     };
     handleMouseDown = function(e) {
+      _this.anyInput = true;
       e = normalizeMouseEvent(e);
       return Globals.Manager.currScene.mousedown(e);
     };
     handleMouseMove = function(e) {
+      _this.anyInput = true;
       e = normalizeMouseEvent(e);
       return Globals.Manager.currScene.mousemove(e);
     };

@@ -1,22 +1,34 @@
 class Slime extends Sprite
 	constructor: (@x, @y, @color, @img, @eyeImg) ->
-		@radius = 31
+		@radius = Constants.SLIME_RADIUS
 		@isP2 = false
 		@score = 0
-		super(@x, @y, @radius*2, @radius*2)
+		@gravTime = 0
+		@falling = true
+		@jumpSpeed = 0
+		super(@x, @y, @radius*2
+		, @radius, @img)
 
 	handleInput: (input, world) ->
 		# check for up, left, right, and down(?)
-		y = world.height - @y
 		pNum = if @isP2 then 1 else 0
-		# if input.left(pNum)
-		# if input.right(pNum)
-		# if input.up(pNum)
-		# else if @m_body && y < bottom
+		if input.left(pNum)
+			@x -= Constants.MOVEMENT_SPEED
+		if input.right(pNum)
+			@x += Constants.MOVEMENT_SPEED
+		if input.up(pNum)
+			@jumpSpeed = Constants.JUMP_SPEED if @jumpSpeed < .01
+		#else if @m_body && y < bottom
+
+	incrementGravity: ->
+		@gravTime++ if @gravTime < 10 * 60.0
+
+	applyGravity: ->
+		@y += 50.0 * (@gravTime / 60.0)
 
 	draw: (ctx) ->
 		# draw the slime sprite
-		ctx.drawImage(@img, Helpers.round(@x-@radius-1), Helpers.round(@y-@radius))
+		super(ctx)
 		# now draw the eyeball from the specified offsets
 		offsetY = @radius/2.0  # these are like constants
 		offsetX = offsetY*.95
@@ -34,4 +46,4 @@ class Slime extends Sprite
 		ballVec[0] = ballVec[0] / ballVecSize * 3 + localEyeVec[0]
 		ballVec[1] = ballVec[1] / ballVecSize * 3 + localEyeVec[1]
 		# draw pupil
-		ctx.drawImage(@eyeImg, Helpers.round(@x+ballVec[0]-2), Helpers.round(@y-ballVec[1]-2))
+		ctx.drawImage(@eyeImg, Helpers.round(@x+ballVec[0]-2+@radius), Helpers.round(@y-ballVec[1]-2+@radius))

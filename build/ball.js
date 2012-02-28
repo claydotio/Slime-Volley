@@ -5,31 +5,24 @@ Ball = (function() {
 
   __extends(Ball, Sprite);
 
-  function Ball(x, y, bg) {
-    var oldBg;
+  function Ball(x, y, radius, bg) {
     this.x = x;
     this.y = y;
+    this.radius = radius;
     this.bg = bg;
-    this.radius = 9;
-    this.color = '#000000';
-    oldBg = this.bg;
-    Ball.__super__.constructor.call(this, this.x, this.y, this.radius * 2, this.radius * 2);
-    this.bg || (this.bg = oldBg);
+    this.falling = true;
+    Ball.__super__.constructor.call(this, this.x, this.y, this.radius * 2, this.radius * 2, this.bg);
   }
 
-  Ball.prototype.createBody = function() {
-    this.fixture = new Box2D.Dynamics.b2FixtureDef();
-    this.fixture.density = .8;
-    this.fixture.friction = 1.0;
-    this.fixture.restitution = .25;
-    this.fixture.shape = new Box2D.Collision.Shapes.b2CircleShape(this.radius * Constants.SCALE);
-    this.body = new Box2D.Dynamics.b2BodyDef();
-    this.body.type = Box2D.Dynamics.b2Body.b2_dynamicBody;
-    return this.body.position.Set(this.scaledX, this.scaledY);
-  };
-
-  Ball.prototype.draw = function(ctx) {
-    return ctx.drawImage(this.bg, Helpers.round(this.x - this.radius), Helpers.round(this.y - this.radius));
+  Ball.prototype.applyGravity = function() {
+    if (!this.falling) return;
+    if (this.velocity.y < 10) {
+      this.velocity.y += .2;
+    } else {
+      this.velocity.y = 10;
+    }
+    if (this.velocity.x >= .03) this.velocity.x -= .01;
+    if (this.velocity.x <= -.03) return this.velocity.x += .01;
   };
 
   return Ball;
