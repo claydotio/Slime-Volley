@@ -41,7 +41,6 @@ class Input
 			Globals.Manager.currScene.mousedown(e)
 
 		handleMouseMove = (e) ->
-			_this.anyInput = true
 			e = normalizeMouseEvent(e)
 			Globals.Manager.currScene.mousemove(e)
 
@@ -53,7 +52,6 @@ class Input
 		multitouchShim = (callback) ->
 			return ((cb) ->  # create a scope to protect the callback param
 				return (e) ->
-					console.log (e)
 					e.preventDefault()
 					cb( x: t.clientX, y: t.clientY, identifier: t.identifier ) for t in e.changedTouches
 					return
@@ -64,7 +62,7 @@ class Input
 		canvas.addEventListener 'mouseup', handleMouseUp, true
 		canvas.addEventListener 'mousedown', handleMouseDown, true
 		canvas.addEventListener 'mousemove', handleMouseMove, true
-		canvas.addEventListener 'click', handleClick, true # NO NEED FOR CLICK EVENT
+		canvas.addEventListener 'click', handleClick, true # NO NEED FOR CLICK EVENT?
 		document.documentElement.addEventListener 'touchstart', multitouchShim(handleMouseDown), true
 		document.documentElement.addEventListener 'touchend',  multitouchShim(handleMouseUp), true
 		window.addEventListener 'touchmove', multitouchShim(handleMouseMove), true

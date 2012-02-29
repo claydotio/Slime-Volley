@@ -76,6 +76,44 @@ SlimeVolleyball = (function() {
     }
   };
 
+  SlimeVolleyball.prototype.handlePause = function() {
+    this.restartPause++;
+    if (this.restartPause === 60) {
+      this.p1.x = this.width / 4 - Constants.SLIME_RADIUS;
+      this.p1.y = this.height - Constants.SLIME_START_HEIGHT;
+      this.p2.x = 3 * this.width / 4 - Constants.SLIME_RADIUS;
+      this.p2.y = this.height - Constants.SLIME_START_HEIGHT;
+      this.ball.x = (this.whoWon === 'P2' ? 3 : 1) * this.width / 4 - this.ball.radius;
+      this.ball.y = this.height - Constants.BALL_START_HEIGHT;
+      this.ball.velocity.x = this.ball.velocity.y = this.p1.velocity.x = this.p1.velocity.y = this.p2.velocity.x = this.p2.velocity.y = 0;
+      this.ball.falling = false;
+      this.p1.falling = this.p2.falling = false;
+      this.p1.gravTime = this.ball.gravTime = this.p2.gravTime = 0;
+      this.p1.jumpSpeed = this.p2.jumpSpeed = 0;
+      if (this.p1.score >= Constants.WIN_SCORE || this.p2.score >= Constants.WIN_SCORE) {
+        this.displayMsg += "\nPress any key to continue.";
+        return this.ball.x = this.width / 4 - this.ball.radius;
+      } else {
+        this.restartPause = -1;
+        this.ball.velocity.y = 2;
+        this.ball.falling = true;
+        return this.displayMsg = null;
+      }
+    } else if (this.restartPause > 60) {
+      if (this.p1.score >= Constants.WIN_SCORE || this.p2.score >= Constants.WIN_SCORE) {
+        if (Globals.Input.anyInput) {
+          this.displayMsg = null;
+          this.restartPause = -1;
+          this.p1.score = this.p2.score = 0;
+          this.ball.velocity.y = 2;
+          this.ball.falling = true;
+          this.whoWon = 'NONE';
+          return this.ulTime = 0;
+        }
+      }
+    }
+  };
+
   SlimeVolleyball.prototype.resolveCollision = function(c1, c2) {
     var center1, center2, size;
     center1 = [c1.x + c1.radius, this.height - (c1.y + c1.radius)];
@@ -149,42 +187,7 @@ SlimeVolleyball = (function() {
         }
       }
     }
-    if (this.restartPause > -1) {
-      this.restartPause++;
-      if (this.restartPause === 60) {
-        this.p1.x = this.width / 4 - Constants.SLIME_RADIUS;
-        this.p1.y = this.height - Constants.SLIME_START_HEIGHT;
-        this.p2.x = 3 * this.width / 4 - Constants.SLIME_RADIUS;
-        this.p2.y = this.height - Constants.SLIME_START_HEIGHT;
-        this.ball.x = (this.whoWon === 'P2' ? 3 : 1) * this.width / 4 - this.ball.radius;
-        this.ball.y = this.height - Constants.BALL_START_HEIGHT;
-        this.ball.velocity.x = this.ball.velocity.y = this.p1.velocity.x = this.p1.velocity.y = this.p2.velocity.x = this.p2.velocity.y = 0;
-        this.ball.falling = false;
-        this.p1.falling = this.p2.falling = false;
-        this.p1.gravTime = this.ball.gravTime = this.p2.gravTime = 0;
-        this.p1.jumpSpeed = this.p2.jumpSpeed = 0;
-        if (this.p1.score >= Constants.WIN_SCORE || this.p2.score >= Constants.WIN_SCORE) {
-          this.displayMsg += "\nPress any key to continue.";
-          this.ball.x = this.width / 4 - this.ball.radius;
-        } else {
-          this.restartPause = -1;
-          this.ball.velocity.y = 2;
-          this.ball.falling = true;
-          this.displayMsg = null;
-        }
-      } else if (this.restartPause > 60) {
-        if (this.p1.score >= Constants.WIN_SCORE || this.p2.score >= Constants.WIN_SCORE) {
-          if (Globals.Input.anyInput) {
-            this.displayMsg = null;
-            this.restartPause = -1;
-            this.p1.score = this.p2.score = 0;
-            this.ball.velocity.y = 2;
-            this.ball.falling = true;
-            this.whoWon = 'NONE';
-          }
-        }
-      }
-    }
+    if (this.restartPause > -1) this.handlePause();
     if (this.ball.y + this.ball.height < this.p1.y + this.p1.height && Math.sqrt(Math.pow((this.ball.x + this.ball.radius) - (this.p1.x + this.p1.radius), 2) + Math.pow((this.ball.y + this.ball.radius) - (this.p1.y + this.p1.radius), 2)) < this.ball.radius + this.p1.radius) {
       a = Helpers.rad2Deg(Math.atan(-((this.ball.x + this.ball.radius) - (this.p1.x + this.p1.radius)) / ((this.ball.y + this.ball.radius) - (this.p1.y + this.p1.radius))));
       this.ball.velocity.x = Helpers.xFromAngle(a) * (6.5 + 1.5 * Constants.AI_DIFFICULTY);

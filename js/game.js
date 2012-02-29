@@ -42,7 +42,9 @@ Constants = {
     blank_point: 'assets/images/blank_point.png',
     "return": 'assets/images/return.png',
     score_a: 'assets/images/score_a.png',
-    score_b: 'assets/images/score_b.png'
+    score_b: 'assets/images/score_b.png',
+    instructions: 'assets/images/instructions.png',
+    back_arrow: 'assets/images/back_arrow.png'
   }
 };
 
@@ -164,6 +166,7 @@ SceneManager = (function() {
       this.currScene.ctx = null;
     }
     oldScene = this.sceneStack.pop();
+    if (oldScene && oldScene.destroy) oldScene.destroy();
     this.currScene = this.sceneStack[this.sceneStack.length - 1] || null;
     if (this.currScene) {
       this.currScene.ctx = this.ctx;
@@ -394,7 +397,6 @@ Input = (function() {
       return Globals.Manager.currScene.mousedown(e);
     };
     handleMouseMove = function(e) {
-      _this.anyInput = true;
       e = normalizeMouseEvent(e);
       return Globals.Manager.currScene.mousemove(e);
     };
@@ -406,7 +408,6 @@ Input = (function() {
       return (function(cb) {
         return function(e) {
           var t, _i, _len, _ref;
-          console.log(e);
           e.preventDefault();
           _ref = e.changedTouches;
           for (_i = 0, _len = _ref.length; _i < _len; _i++) {
@@ -581,10 +582,11 @@ GamePad = (function() {
   };
 
   GamePad.prototype.findRect = function(e) {
-    var key, val, _len, _ref;
+    var key, val, _ref;
+    console.log(this.btnRects);
     _ref = this.btnRects;
-    for (val = 0, _len = _ref.length; val < _len; val++) {
-      key = _ref[val];
+    for (key in _ref) {
+      val = _ref[key];
       if (this.inRect(e, val)) return key;
     }
     return null;
@@ -601,7 +603,6 @@ GamePad = (function() {
   GamePad.prototype.handleMouseDown = function(e) {
     var box;
     box = this.findRect(e);
-    console.log(box);
     if (box) Globals.Input.set(box, true);
     return this.savePreviousPos(e);
   };
@@ -905,10 +906,10 @@ MenuScene = (function() {
     btnHeight = 44;
     yOffset = 58;
     this.buttons = {
-      instructions: new Button(this.center.x + (this.center.x - btnWidth) / 2, dy, btnWidth, btnHeight, loader.getAsset('btn_a'), loader.getAsset('btn_b'), this),
+      instructions: new Button((this.center.x - btnWidth) / 2, dy + yOffset, btnWidth, btnHeight, loader.getAsset('btn_a'), loader.getAsset('btn_b'), this),
       onePlayer: new Button((this.center.x - btnWidth) / 2, dy, btnWidth, btnHeight, loader.getAsset('btn_a'), loader.getAsset('btn_b'), this),
       options: new Button(this.center.x + (this.center.x - btnWidth) / 2, dy + yOffset, btnWidth, btnHeight, loader.getAsset('btn_a'), loader.getAsset('btn_b'), this),
-      wifi: new Button((this.center.x - btnWidth) / 2, dy + yOffset, btnWidth, btnHeight, loader.getAsset('btn_a'), loader.getAsset('btn_b'), this)
+      wifi: new Button(this.center.x + (this.center.x - btnWidth) / 2, dy, btnWidth, btnHeight, loader.getAsset('btn_a'), loader.getAsset('btn_b'), this)
     };
     this.labels = [];
     labelImgs = ['btn_wifi', 'btn_options', 'btn_one', 'btn_instructions'];
@@ -920,6 +921,7 @@ MenuScene = (function() {
       key = _ref[_i];
       _fn.call(this, this.buttons[key]);
     }
+    this.instructions = new InstructionsScene();
   }
 
   MenuScene.prototype.step = function(timestamp) {
@@ -944,12 +946,12 @@ MenuScene = (function() {
   };
 
   MenuScene.prototype.buttonPressed = function(btn) {
-    var s;
-    if (btn === this.buttons['instructions']) {} else if (btn === this.buttons['onePlayer']) {
-      SlimeVolleyball(s = new SlimeVolleyball());
-      return Globals.Manager.pushScene(s);
+    if (btn === this.buttons['instructions']) {
+      return Globals.Manager.pushScene(this.instructions);
+    } else if (btn === this.buttons['onePlayer']) {
+      return Globals.Manager.pushScene(new SlimeVolleyball());
     } else if (btn === this.buttons['options']) {} else if (btn === this.buttons['wifi']) {
-      if (console) return console.log('wifi');
+      return Globals.Manager.pushScene(new NetworkSlimeVolleyball());
     }
   };
 
@@ -1035,6 +1037,44 @@ SlimeVolleyball = (function() {
     }
   };
 
+  SlimeVolleyball.prototype.handlePause = function() {
+    this.restartPause++;
+    if (this.restartPause === 60) {
+      this.p1.x = this.width / 4 - Constants.SLIME_RADIUS;
+      this.p1.y = this.height - Constants.SLIME_START_HEIGHT;
+      this.p2.x = 3 * this.width / 4 - Constants.SLIME_RADIUS;
+      this.p2.y = this.height - Constants.SLIME_START_HEIGHT;
+      this.ball.x = (this.whoWon === 'P2' ? 3 : 1) * this.width / 4 - this.ball.radius;
+      this.ball.y = this.height - Constants.BALL_START_HEIGHT;
+      this.ball.velocity.x = this.ball.velocity.y = this.p1.velocity.x = this.p1.velocity.y = this.p2.velocity.x = this.p2.velocity.y = 0;
+      this.ball.falling = false;
+      this.p1.falling = this.p2.falling = false;
+      this.p1.gravTime = this.ball.gravTime = this.p2.gravTime = 0;
+      this.p1.jumpSpeed = this.p2.jumpSpeed = 0;
+      if (this.p1.score >= Constants.WIN_SCORE || this.p2.score >= Constants.WIN_SCORE) {
+        this.displayMsg += "\nPress any key to continue.";
+        return this.ball.x = this.width / 4 - this.ball.radius;
+      } else {
+        this.restartPause = -1;
+        this.ball.velocity.y = 2;
+        this.ball.falling = true;
+        return this.displayMsg = null;
+      }
+    } else if (this.restartPause > 60) {
+      if (this.p1.score >= Constants.WIN_SCORE || this.p2.score >= Constants.WIN_SCORE) {
+        if (Globals.Input.anyInput) {
+          this.displayMsg = null;
+          this.restartPause = -1;
+          this.p1.score = this.p2.score = 0;
+          this.ball.velocity.y = 2;
+          this.ball.falling = true;
+          this.whoWon = 'NONE';
+          return this.ulTime = 0;
+        }
+      }
+    }
+  };
+
   SlimeVolleyball.prototype.resolveCollision = function(c1, c2) {
     var center1, center2, size;
     center1 = [c1.x + c1.radius, this.height - (c1.y + c1.radius)];
@@ -1108,42 +1148,7 @@ SlimeVolleyball = (function() {
         }
       }
     }
-    if (this.restartPause > -1) {
-      this.restartPause++;
-      if (this.restartPause === 60) {
-        this.p1.x = this.width / 4 - Constants.SLIME_RADIUS;
-        this.p1.y = this.height - Constants.SLIME_START_HEIGHT;
-        this.p2.x = 3 * this.width / 4 - Constants.SLIME_RADIUS;
-        this.p2.y = this.height - Constants.SLIME_START_HEIGHT;
-        this.ball.x = (this.whoWon === 'P2' ? 3 : 1) * this.width / 4 - this.ball.radius;
-        this.ball.y = this.height - Constants.BALL_START_HEIGHT;
-        this.ball.velocity.x = this.ball.velocity.y = this.p1.velocity.x = this.p1.velocity.y = this.p2.velocity.x = this.p2.velocity.y = 0;
-        this.ball.falling = false;
-        this.p1.falling = this.p2.falling = false;
-        this.p1.gravTime = this.ball.gravTime = this.p2.gravTime = 0;
-        this.p1.jumpSpeed = this.p2.jumpSpeed = 0;
-        if (this.p1.score >= Constants.WIN_SCORE || this.p2.score >= Constants.WIN_SCORE) {
-          this.displayMsg += "\nPress any key to continue.";
-          this.ball.x = this.width / 4 - this.ball.radius;
-        } else {
-          this.restartPause = -1;
-          this.ball.velocity.y = 2;
-          this.ball.falling = true;
-          this.displayMsg = null;
-        }
-      } else if (this.restartPause > 60) {
-        if (this.p1.score >= Constants.WIN_SCORE || this.p2.score >= Constants.WIN_SCORE) {
-          if (Globals.Input.anyInput) {
-            this.displayMsg = null;
-            this.restartPause = -1;
-            this.p1.score = this.p2.score = 0;
-            this.ball.velocity.y = 2;
-            this.ball.falling = true;
-            this.whoWon = 'NONE';
-          }
-        }
-      }
-    }
+    if (this.restartPause > -1) this.handlePause();
     if (this.ball.y + this.ball.height < this.p1.y + this.p1.height && Math.sqrt(Math.pow((this.ball.x + this.ball.radius) - (this.p1.x + this.p1.radius), 2) + Math.pow((this.ball.y + this.ball.radius) - (this.p1.y + this.p1.radius), 2)) < this.ball.radius + this.p1.radius) {
       a = Helpers.rad2Deg(Math.atan(-((this.ball.x + this.ball.radius) - (this.p1.x + this.p1.radius)) / ((this.ball.y + this.ball.radius) - (this.p1.y + this.p1.radius))));
       this.ball.velocity.x = Helpers.xFromAngle(a) * (6.5 + 1.5 * Constants.AI_DIFFICULTY);
@@ -1256,6 +1261,92 @@ SlimeVolleyball = (function() {
   };
 
   return SlimeVolleyball;
+
+})();
+
+var NetworkSlimeVolleyball, s;
+var __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
+
+s = document.createElement('script');
+
+s.setAttribute('src', '/socket.io/socket.io.js');
+
+document.head.appendChild(s);
+
+NetworkSlimeVolleyball = (function() {
+
+  __extends(NetworkSlimeVolleyball, SlimeVolleyball);
+
+  function NetworkSlimeVolleyball() {
+    NetworkSlimeVolleyball.__super__.constructor.apply(this, arguments);
+  }
+
+  NetworkSlimeVolleyball.prototype.init = function() {
+    var _this = this;
+    console.log('networked');
+    NetworkSlimeVolleyball.__super__.init.call(this);
+    this.restartPause = -1;
+    this.socket = io.connect();
+    this.socket.on('connect', function() {
+      return _this.displayMsg = 'Connected. Waiting for opponent...';
+    });
+    this.socket.on('data', function(data) {
+      return _this.frame = data;
+    });
+    this.frame = null;
+    return this.displayMsg = 'Loading...';
+  };
+
+  NetworkSlimeVolleyball.prototype.step = function(timestamp) {
+    NetworkSlimeVolleyball.__super__.step.call(this, timestamp);
+    if (this.frame) return this.frame = null;
+  };
+
+  NetworkSlimeVolleyball.prototype.destroy = function() {
+    return this.socket.disconnect();
+  };
+
+  return NetworkSlimeVolleyball;
+
+})();
+
+var InstructionsScene;
+var __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
+
+InstructionsScene = (function() {
+
+  __extends(InstructionsScene, Scene);
+
+  function InstructionsScene() {
+    var backImg;
+    InstructionsScene.__super__.constructor.call(this);
+    this.bg = new StretchySprite(0, 0, this.width, this.height, 1, 1, Globals.Loader.getAsset('instructions'));
+    backImg = Globals.Loader.getAsset('back_arrow');
+    this.buttons = {
+      back: new Button(10, 10, 50, 50, backImg, backImg, this)
+    };
+  }
+
+  InstructionsScene.prototype.step = function(timestamp) {
+    var btn, key, _ref, _results;
+    if (!this.ctx) return;
+    this.next();
+    this.ctx.clearRect(0, 0, this.width, this.height);
+    this.bg.draw(this.ctx);
+    _ref = this.buttons;
+    _results = [];
+    for (key in _ref) {
+      btn = _ref[key];
+      _results.push(btn.draw(this.ctx));
+    }
+    return _results;
+  };
+
+  InstructionsScene.prototype.buttonPressed = function(btn) {
+    return Globals.Manager.popScene();
+  };
+
+  return InstructionsScene;
 
 })();
 

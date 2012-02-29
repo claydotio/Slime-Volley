@@ -19,5 +19,7 @@
 //= require 'scenes/loading_scene'
 //= require 'scenes/menu_scene'
 //= require 'scenes/slime_volleyball'
+//= require 'scenes/network_slime_volleyball'
+//= require 'scenes/instructions_scene'
 
 //= require 'main'

@@ -42,6 +42,8 @@ Constants = {
     blank_point: 'assets/images/blank_point.png',
     "return": 'assets/images/return.png',
     score_a: 'assets/images/score_a.png',
-    score_b: 'assets/images/score_b.png'
+    score_b: 'assets/images/score_b.png',
+    instructions: 'assets/images/instructions.png',
+    back_arrow: 'assets/images/back_arrow.png'
   }
 };

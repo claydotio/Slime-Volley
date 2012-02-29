@@ -13,10 +13,11 @@ GamePad = (function() {
   };
 
   GamePad.prototype.findRect = function(e) {
-    var key, val, _len, _ref;
+    var key, val, _ref;
+    console.log(this.btnRects);
     _ref = this.btnRects;
-    for (val = 0, _len = _ref.length; val < _len; val++) {
-      key = _ref[val];
+    for (key in _ref) {
+      val = _ref[key];
       if (this.inRect(e, val)) return key;
     }
     return null;
@@ -33,7 +34,6 @@ GamePad = (function() {
   GamePad.prototype.handleMouseDown = function(e) {
     var box;
     box = this.findRect(e);
-    console.log(box);
     if (box) Globals.Input.set(box, true);
     return this.savePreviousPos(e);
   };

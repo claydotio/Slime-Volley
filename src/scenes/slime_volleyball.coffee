@@ -64,6 +64,40 @@ class SlimeVolleyball extends Scene
 		if @ball.x + @ball.radius > @p2.x + 30 && @ball.x + @ball.radius < @p2.x + 34
 			@p2.x += (Constants.MOVEMENT_SPEED*.75) + (Constants.MOVEMENT_SPEED*Constants.AI_DIFFICULTY)
 
+	# handlePause is called by the step() method when the game is paused
+	handlePause: ->
+		@restartPause++
+		if @restartPause == 60
+			@p1.x = @width/4-Constants.SLIME_RADIUS
+			@p1.y = @height-Constants.SLIME_START_HEIGHT
+			@p2.x = 3*@width/4-Constants.SLIME_RADIUS
+			@p2.y = @height-Constants.SLIME_START_HEIGHT
+			@ball.x = (if @whoWon == 'P2' then 3 else 1) * @width/4-@ball.radius
+			@ball.y = @height-Constants.BALL_START_HEIGHT
+			@ball.velocity.x = @ball.velocity.y = @p1.velocity.x = @p1.velocity.y = @p2.velocity.x = @p2.velocity.y = 0
+			@ball.falling = false
+			@p1.falling = @p2.falling = false
+			@p1.gravTime = @ball.gravTime = @p2.gravTime = 0
+			@p1.jumpSpeed = @p2.jumpSpeed = 0
+			if @p1.score >= Constants.WIN_SCORE || @p2.score >= Constants.WIN_SCORE # game ended, hold on!
+				@displayMsg += "\nPress any key to continue."
+				@ball.x = @width/4-@ball.radius
+			else # round ended, it's been 1 second, start next round
+				@restartPause = -1
+				@ball.velocity.y = 2
+				@ball.falling = true
+				@displayMsg = null
+		else if @restartPause > 60
+			if @p1.score >= Constants.WIN_SCORE || @p2.score >= Constants.WIN_SCORE # ensure game is won
+				if Globals.Input.anyInput # restart the game!
+					@displayMsg = null
+					@restartPause = -1
+					@p1.score = @p2.score = 0
+					@ball.velocity.y = 2
+					@ball.falling = true
+					@whoWon = 'NONE'
+					@ulTime = 0
+
 	# resolve collisions between two circles. returns a point that is c2.radius units
 	# along c1's tangent to c2, so that it can move back a minimal amount of steps to prevent
 	# it from being drawn "inside" the other
@@ -132,36 +166,7 @@ class SlimeVolleyball extends Scene
 					@displayMsg = @failMsgs[@failMsgs.length - 1]
 		
 		if @restartPause > -1 # draw paused stuff
-			@restartPause++
-			if @restartPause == 60
-				@p1.x = @width/4-Constants.SLIME_RADIUS
-				@p1.y = @height-Constants.SLIME_START_HEIGHT
-				@p2.x = 3*@width/4-Constants.SLIME_RADIUS
-				@p2.y = @height-Constants.SLIME_START_HEIGHT
-				@ball.x = (if @whoWon == 'P2' then 3 else 1) * @width/4-@ball.radius
-				@ball.y = @height-Constants.BALL_START_HEIGHT
-				@ball.velocity.x = @ball.velocity.y = @p1.velocity.x = @p1.velocity.y = @p2.velocity.x = @p2.velocity.y = 0
-				@ball.falling = false
-				@p1.falling = @p2.falling = false
-				@p1.gravTime = @ball.gravTime = @p2.gravTime = 0
-				@p1.jumpSpeed = @p2.jumpSpeed = 0
-				if @p1.score >= Constants.WIN_SCORE || @p2.score >= Constants.WIN_SCORE # game ended, hold on!
-					@displayMsg += "\nPress any key to continue."
-					@ball.x = @width/4-@ball.radius
-				else # round ended, it's been 1 second, start next round
-					@restartPause = -1
-					@ball.velocity.y = 2
-					@ball.falling = true
-					@displayMsg = null
-			else if @restartPause > 60
-				if @p1.score >= Constants.WIN_SCORE || @p2.score >= Constants.WIN_SCORE # ensure game is won
-					if Globals.Input.anyInput # restart the game!
-						@displayMsg = null
-						@restartPause = -1
-						@p1.score = @p2.score = 0
-						@ball.velocity.y = 2
-						@ball.falling = true
-						@whoWon = 'NONE'
+			this.handlePause()
 
 		# apply collisions against slimes
 		if @ball.y + @ball.height < @p1.y + @p1.height && Math.sqrt(Math.pow((@ball.x + @ball.radius) - (@p1.x + @p1.radius), 2) + Math.pow((@ball.y + @ball.radius) - (@p1.y + @p1.radius), 2)) < @ball.radius + @p1.radius

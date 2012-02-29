@@ -30,6 +30,7 @@ SceneManager = (function() {
       this.currScene.ctx = null;
     }
     oldScene = this.sceneStack.pop();
+    if (oldScene && oldScene.destroy) oldScene.destroy();
     this.currScene = this.sceneStack[this.sceneStack.length - 1] || null;
     if (this.currScene) {
       this.currScene.ctx = this.ctx;

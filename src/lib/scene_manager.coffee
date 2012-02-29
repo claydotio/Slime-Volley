@@ -18,6 +18,7 @@ class SceneManager
 			@currScene.stop()
 			@currScene.ctx = null
 		oldScene = @sceneStack.pop()
+		oldScene.destroy() if oldScene && oldScene.destroy
 		@currScene = @sceneStack[@sceneStack.length-1] || null
 		if @currScene
 			@currScene.ctx = @ctx

@@ -17,10 +17,10 @@ MenuScene = (function() {
     btnHeight = 44;
     yOffset = 58;
     this.buttons = {
-      instructions: new Button(this.center.x + (this.center.x - btnWidth) / 2, dy, btnWidth, btnHeight, loader.getAsset('btn_a'), loader.getAsset('btn_b'), this),
+      instructions: new Button((this.center.x - btnWidth) / 2, dy + yOffset, btnWidth, btnHeight, loader.getAsset('btn_a'), loader.getAsset('btn_b'), this),
       onePlayer: new Button((this.center.x - btnWidth) / 2, dy, btnWidth, btnHeight, loader.getAsset('btn_a'), loader.getAsset('btn_b'), this),
       options: new Button(this.center.x + (this.center.x - btnWidth) / 2, dy + yOffset, btnWidth, btnHeight, loader.getAsset('btn_a'), loader.getAsset('btn_b'), this),
-      wifi: new Button((this.center.x - btnWidth) / 2, dy + yOffset, btnWidth, btnHeight, loader.getAsset('btn_a'), loader.getAsset('btn_b'), this)
+      wifi: new Button(this.center.x + (this.center.x - btnWidth) / 2, dy, btnWidth, btnHeight, loader.getAsset('btn_a'), loader.getAsset('btn_b'), this)
     };
     this.labels = [];
     labelImgs = ['btn_wifi', 'btn_options', 'btn_one', 'btn_instructions'];
@@ -32,6 +32,7 @@ MenuScene = (function() {
       key = _ref[_i];
       _fn.call(this, this.buttons[key]);
     }
+    this.instructions = new InstructionsScene();
   }
 
   MenuScene.prototype.step = function(timestamp) {
@@ -56,12 +57,12 @@ MenuScene = (function() {
   };
 
   MenuScene.prototype.buttonPressed = function(btn) {
-    var s;
-    if (btn === this.buttons['instructions']) {} else if (btn === this.buttons['onePlayer']) {
-      SlimeVolleyball(s = new SlimeVolleyball());
-      return Globals.Manager.pushScene(s);
+    if (btn === this.buttons['instructions']) {
+      return Globals.Manager.pushScene(this.instructions);
+    } else if (btn === this.buttons['onePlayer']) {
+      return Globals.Manager.pushScene(new SlimeVolleyball());
     } else if (btn === this.buttons['options']) {} else if (btn === this.buttons['wifi']) {
-      if (console) return console.log('wifi');
+      return Globals.Manager.pushScene(new NetworkSlimeVolleyball());
     }
   };
 

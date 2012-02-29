@@ -51,7 +51,6 @@ Input = (function() {
       return Globals.Manager.currScene.mousedown(e);
     };
     handleMouseMove = function(e) {
-      _this.anyInput = true;
       e = normalizeMouseEvent(e);
       return Globals.Manager.currScene.mousemove(e);
     };
@@ -63,7 +62,6 @@ Input = (function() {
       return (function(cb) {
         return function(e) {
           var t, _i, _len, _ref;
-          console.log(e);
           e.preventDefault();
           _ref = e.changedTouches;
           for (_i = 0, _len = _ref.length; _i < _len; _i++) {
