@@ -17,18 +17,21 @@ NetworkSlimeVolleyball = (function() {
 
   NetworkSlimeVolleyball.prototype.init = function() {
     var _this = this;
-    console.log('networked');
     NetworkSlimeVolleyball.__super__.init.call(this);
-    this.restartPause = -1;
+    this.freezeGame = true;
+    this.displayMsg = 'Loading...';
+    if (this.socket) this.socket.disconnect() && (this.socket = null);
     this.socket = io.connect();
     this.socket.on('connect', function() {
       return _this.displayMsg = 'Connected. Waiting for opponent...';
     });
-    this.socket.on('data', function(data) {
+    this.socket.on('opponentFound', function(data) {
       return _this.frame = data;
     });
-    this.frame = null;
-    return this.displayMsg = 'Loading...';
+    this.socket.on('gameStart', function(data) {
+      return _this.freezeGame = false;
+    });
+    return this.frame = null;
   };
 
   NetworkSlimeVolleyball.prototype.step = function(timestamp) {

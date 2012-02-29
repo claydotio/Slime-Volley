@@ -52,6 +52,7 @@ SlimeVolleyball = (function() {
     this.restartPause = -1;
     this.ulTime = 0;
     this.whoWon = 'NONE';
+    this.freezeGame = false;
     this.ball.velocity = {
       x: 0,
       y: 2
@@ -114,6 +115,27 @@ SlimeVolleyball = (function() {
     }
   };
 
+  SlimeVolleyball.prototype.draw = function() {
+    var msgs, sprite, _i, _len, _ref;
+    this.ctx.clearRect(0, 0, this.width, this.height);
+    _ref = this.sprites;
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      sprite = _ref[_i];
+      sprite.draw(this.ctx);
+    }
+    if (this.displayMsg) {
+      this.ctx.font = 'bold 14px ' + Constants.MSG_FONT;
+      this.ctx.fillStyle = '#ffffff';
+      this.ctx.textAlign = 'center';
+      msgs = this.displayMsg.split("\n");
+      this.ctx.fillText(msgs[0], this.width / 2, 85);
+      if (msgs.length > 1) {
+        this.ctx.font = 'bold 11px ' + Constants.MSG_FONT;
+        return this.ctx.fillText(msgs[1], this.width / 2, 110);
+      }
+    }
+  };
+
   SlimeVolleyball.prototype.resolveCollision = function(c1, c2) {
     var center1, center2, size;
     center1 = [c1.x + c1.radius, this.height - (c1.y + c1.radius)];
@@ -130,10 +152,11 @@ SlimeVolleyball = (function() {
   };
 
   SlimeVolleyball.prototype.step = function(timestamp) {
-    var a, borderRadius, circle, dist, msgs, sprite, _i, _len, _ref;
+    var a, borderRadius, circle, dist;
     this.next();
     this.loopCount++;
     if (this.loopCount >= 60) this.loopCount = 0 && this.ulTime++;
+    if (this.freezeGame) return this.draw();
     this.ball.incrementPosition();
     this.ball.applyGravity();
     if (this.p1.falling && this.restartPause < 0) {
@@ -275,24 +298,7 @@ SlimeVolleyball = (function() {
     if (this.p2.x > this.width - this.p2.width) {
       this.p2.x = this.width - this.p2.width;
     }
-    this.ctx.clearRect(0, 0, this.width, this.height);
-    _ref = this.sprites;
-    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-      sprite = _ref[_i];
-      sprite.draw(this.ctx);
-    }
-    if (this.displayMsg) {
-      this.ctx.font = 'bold 14px ' + Constants.MSG_FONT;
-      console.log(this.ctx.font);
-      this.ctx.fillStyle = '#ffffff';
-      this.ctx.textAlign = 'center';
-      msgs = this.displayMsg.split("\n");
-      this.ctx.fillText(msgs[0], this.width / 2, 85);
-      if (msgs.length > 1) {
-        this.ctx.font = 'bold 11px ' + Constants.MSG_FONT;
-        return this.ctx.fillText(msgs[1], this.width / 2, 110);
-      }
-    }
+    return this.draw();
   };
 
   SlimeVolleyball.prototype.buttonPressed = function(e) {

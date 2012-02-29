@@ -8,7 +8,6 @@ class GamePad
 		return false if !e
 		Helpers.inRect(e.x, e.y, rect[0], rect[1], rect[2], rect[3])
 	findRect: (e) ->
-		console.log @btnRects
 		for key, val of @btnRects
 			return key if this.inRect(e, val) 
 		null
@@ -20,7 +19,6 @@ class GamePad
 	# mouse handling
 	handleMouseDown: (e) ->
 		box = this.findRect(e)
-		#console.log box
 		Globals.Input.set(box, true) if box
 		this.savePreviousPos(e)
 

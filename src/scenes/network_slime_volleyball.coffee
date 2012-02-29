@@ -5,16 +5,19 @@ document.head.appendChild(s)
 
 class NetworkSlimeVolleyball extends SlimeVolleyball
 	init: -> # load socket.io asynchronously
-		console.log 'networked'
 		super()
-		@restartPause = -1
+		@freezeGame = true
+		@displayMsg = 'Loading...'
+		@socket.disconnect() && @socket = null if @socket
 		@socket = io.connect()
 		@socket.on 'connect', =>
 			@displayMsg = 'Connected. Waiting for opponent...'
-		@socket.on 'data', (data) =>
+		@socket.on 'opponentFound', (data) =>
 			@frame = data
+		@socket.on 'gameStart', (data) =>
+			@freezeGame = false
 		@frame = null
-		@displayMsg = 'Loading...'
+	
 
 	step: (timestamp) ->
 		super(timestamp)

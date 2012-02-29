@@ -49,6 +49,7 @@ class SlimeVolleyball extends Scene
 		@restartPause = -1
 		@ulTime = 0
 		@whoWon = 'NONE'
+		@freezeGame = false
 		@ball.velocity = { x: 0, y: 2 }
 		super()
 	
@@ -98,6 +99,22 @@ class SlimeVolleyball extends Scene
 					@whoWon = 'NONE'
 					@ulTime = 0
 
+	draw: ->
+		# draw everything!
+		@ctx.clearRect(0, 0, @width, @height) 
+		sprite.draw(@ctx) for sprite in @sprites
+
+		# draw displayMsg, if any
+		if @displayMsg
+			@ctx.font = 'bold 14px '+ Constants.MSG_FONT
+			@ctx.fillStyle = '#ffffff'
+			@ctx.textAlign = 'center'
+			msgs = @displayMsg.split("\n")
+			@ctx.fillText(msgs[0], @width/2, 85)
+			if msgs.length > 1 # draw sub text
+				@ctx.font = 'bold 11px ' + Constants.MSG_FONT
+				@ctx.fillText(msgs[1], @width/2, 110)
+
 	# resolve collisions between two circles. returns a point that is c2.radius units
 	# along c1's tangent to c2, so that it can move back a minimal amount of steps to prevent
 	# it from being drawn "inside" the other
@@ -120,7 +137,7 @@ class SlimeVolleyball extends Scene
 		this.next()
 		@loopCount++
 		@loopCount = 0 && @ulTime++ if @loopCount >= 60
-
+		return this.draw() if @freezeGame # freeze everything!
 		# apply gravity and ground collision
 		@ball.incrementPosition()
 		@ball.applyGravity()
@@ -246,22 +263,7 @@ class SlimeVolleyball extends Scene
 		@p1.x = @pole.x - @p1.width if @p1.x + @p1.width > @pole.x
 		@p2.x = @pole.x + @pole.width if @p2.x < @pole.x + @pole.width
 		@p2.x = @width - @p2.width if @p2.x > @width - @p2.width
-
-		# draw everything!
-		@ctx.clearRect(0, 0, @width, @height) 
-		sprite.draw(@ctx) for sprite in @sprites
-
-		# draw displayMsg, if any
-		if @displayMsg
-			@ctx.font = 'bold 14px '+ Constants.MSG_FONT
-			console.log @ctx.font
-			@ctx.fillStyle = '#ffffff'
-			@ctx.textAlign = 'center'
-			msgs = @displayMsg.split("\n")
-			@ctx.fillText(msgs[0], @width/2, 85)
-			if msgs.length > 1 # draw sub text
-				@ctx.font = 'bold 11px ' + Constants.MSG_FONT
-				@ctx.fillText(msgs[1], @width/2, 110)
+		this.draw()
 	
 	buttonPressed: (e) ->
 		Globals.Manager.popScene()

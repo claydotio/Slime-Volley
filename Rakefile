@@ -13,6 +13,7 @@ task :dist do
   files = manifest.scan(/\/\/= require '(.*)'/)
   coffee = files.collect {|m| File.join(SRC_PATH, m[0]+'.coffee')}.join ' '
   #puts "coffee --output #{BUILD_PATH} --compile #{coffee}"
+  `coffee -b --output ./ --compile src/server.coffee`
   `coffee -b --output #{BUILD_PATH} --compile #{coffee}`
   if $?.to_i == 0 # cmd ran successfully, continue minification
     puts 'Compiled successfully.'
@@ -20,7 +21,6 @@ task :dist do
     minjs = Uglifier.new.compile(js)
     File.open("#{OUT_PATH}.js", 'w') { |f| f.write(js) }
     File.open("#{OUT_PATH}.min.js", 'w') { |f| f.write(minjs) }
-    
   end
 end
 

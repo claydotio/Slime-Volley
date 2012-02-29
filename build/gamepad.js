@@ -14,7 +14,6 @@ GamePad = (function() {
 
   GamePad.prototype.findRect = function(e) {
     var key, val, _ref;
-    console.log(this.btnRects);
     _ref = this.btnRects;
     for (key in _ref) {
       val = _ref[key];
