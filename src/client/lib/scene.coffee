@@ -17,11 +17,11 @@ class Scene
 	init: ->
 		@stopped = false
 		@initialized = true
-		this.step()
+		this.step(new Date().getTime())
 
 	start: -> 
 		@stopped = false
-		this.step()
+		this.step(new Date().getTime())
 
 	step: (timestamp) -> # game logic goes here, in your subclass
 		console.log 'Implement me!!!'

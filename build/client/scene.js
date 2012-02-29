@@ -25,12 +25,12 @@ Scene = (function() {
   Scene.prototype.init = function() {
     this.stopped = false;
     this.initialized = true;
-    return this.step();
+    return this.step(new Date().getTime());
   };
 
   Scene.prototype.start = function() {
     this.stopped = false;
-    return this.step();
+    return this.step(new Date().getTime());
   };
 
   Scene.prototype.step = function(timestamp) {

@@ -50,6 +50,7 @@ class SlimeVolleyball extends Scene
 		@ulTime = 0
 		@whoWon = 'NONE'
 		@freezeGame = false
+		@lastTimestamp = new Date().getTime()
 		@ball.velocity = { x: 0, y: 2 }
 		super()
 	
@@ -136,7 +137,9 @@ class SlimeVolleyball extends Scene
 	step: (timestamp) ->
 		this.next()
 		@loopCount++
-		@loopCount = 0 && @ulTime++ if @loopCount >= 60
+		if @loopCount >= 60
+			@loopCount = 0
+			@ulTime++ 
 		return this.draw() if @freezeGame # freeze everything!
 		# apply gravity and ground collision
 		@ball.incrementPosition()

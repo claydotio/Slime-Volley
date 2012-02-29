@@ -53,6 +53,7 @@ SlimeVolleyball = (function() {
     this.ulTime = 0;
     this.whoWon = 'NONE';
     this.freezeGame = false;
+    this.lastTimestamp = new Date().getTime();
     this.ball.velocity = {
       x: 0,
       y: 2
@@ -155,7 +156,10 @@ SlimeVolleyball = (function() {
     var a, borderRadius, circle, dist;
     this.next();
     this.loopCount++;
-    if (this.loopCount >= 60) this.loopCount = 0 && this.ulTime++;
+    if (this.loopCount >= 60) {
+      this.loopCount = 0;
+      this.ulTime++;
+    }
     if (this.freezeGame) return this.draw();
     this.ball.incrementPosition();
     this.ball.applyGravity();
