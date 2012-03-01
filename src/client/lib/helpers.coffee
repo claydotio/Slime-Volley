@@ -6,3 +6,6 @@ Helpers =
 	yFromAngle: (angle) -> -Math.cos(Helpers.deg2Rad(angle))
 	xFromAngle: (angle) -> Math.sin(Helpers.deg2Rad(angle))
 	rand: (max) -> Math.floor(Math.random()*(max+1))
+	dist: (obj1, obj2) -> Math.sqrt(Math.pow(obj1.x-obj2.x, 2) + Math.pow(obj1.y - obj2.y, 2))
+	velocityMag: (obj) -> Math.sqrt(Math.pow(obj.velocity.x, 2) + Math.pow(obj.velocity.y, 2))
+module.exports = Helpers if module

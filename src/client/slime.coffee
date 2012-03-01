@@ -1,3 +1,7 @@
+if module
+	Sprite = require('./sprite') 
+	Constants = require('./constants')
+
 class Slime extends Sprite
 	constructor: (@x, @y, @color, @img, @eyeImg) ->
 		@radius = Constants.SLIME_RADIUS
@@ -47,3 +51,5 @@ class Slime extends Sprite
 		ballVec[1] = ballVec[1] / ballVecSize * 3 + localEyeVec[1]
 		# draw pupil
 		ctx.drawImage(@eyeImg, Helpers.round(@x+ballVec[0]-2+@radius), Helpers.round(@y-ballVec[1]-2+@radius))
+
+module.exports = Slime if module

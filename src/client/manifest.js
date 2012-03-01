@@ -1,7 +1,7 @@
+//= require 'lib/shims'
 //= require 'constants'
 
 //= require 'lib/helpers'
-//= require 'lib/shims'
 //= require 'lib/scene_manager'
 //= require 'lib/scene'
 //= require 'lib/loader'
@@ -15,6 +15,7 @@
 //= require 'ball'
 //= require 'slime'
 //= require 'scoreboard'
+//= require 'world'
 
 //= require 'scenes/loading_scene'
 //= require 'scenes/menu_scene'

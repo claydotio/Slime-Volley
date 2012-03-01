@@ -9,7 +9,6 @@ class SlimeVolleyball extends Scene
 		@p1 = new Slime(@width/4-Constants.SLIME_RADIUS, @height-Constants.SLIME_START_HEIGHT, '#0f0', loader.getAsset('p1'), loader.getAsset('eye'))
 		@p2 = new Slime(3*@width/4-Constants.SLIME_RADIUS, @height-Constants.SLIME_START_HEIGHT, '#00f', loader.getAsset('p2'), loader.getAsset('eye'))
 		@ball = new Ball(@width/4-Constants.BALL_RADIUS, @height-Constants.BALL_START_HEIGHT, Constants.BALL_RADIUS, loader.getAsset('ball'))
-		@ball.mass = 0.25
 		@pole = new Sprite(@center.x-4, @height-60-64-1, 8, 64, loader.getAsset('pole'))
 		@p1.ball = @p2.ball = @ball
 		@p2.isP2 = true # face left
@@ -24,6 +23,9 @@ class SlimeVolleyball extends Scene
 		@sprites.push(@ball)
 		@sprites.push(@p1Scoreboard)
 		@sprites.push(@p2Scoreboard)
+
+		# create physics simulation
+		@world = new World(@width, @height, @p1, @p2, @ball, @pole)
 
 		# create a back button
 		@buttons = {
@@ -45,12 +47,9 @@ class SlimeVolleyball extends Scene
 			'nice shot!', 'good job!', 'you\'ve got this!', 'keep it up!',
 			'either you\'re good, or you got lucky!', '*** YOU WON THE GAME ***' ]
 		@displayMsg = null
-		@loopCount = 0
 		@restartPause = -1
-		@ulTime = 0
 		@whoWon = 'NONE'
 		@freezeGame = false
-		@lastTimestamp = new Date().getTime()
 		@ball.velocity = { x: 0, y: 2 }
 		super()
 	
@@ -116,58 +115,13 @@ class SlimeVolleyball extends Scene
 				@ctx.font = 'bold 11px ' + Constants.MSG_FONT
 				@ctx.fillText(msgs[1], @width/2, 110)
 
-	# resolve collisions between two circles. returns a point that is c2.radius units
-	# along c1's tangent to c2, so that it can move back a minimal amount of steps to prevent
-	# it from being drawn "inside" the other
-	# TODO: using trig is probably a better solution
-	resolveCollision: (c1, c2) -> 
-		center1 = [c1.x+c1.radius, @height-(c1.y+c1.radius)]
-		center2 = [c2.x+c2.radius, @height-(c2.y+c2.radius)]
-		center1[0] -= center2[0]
-		center1[1] -= center2[1]
-		size = Math.sqrt(Math.pow(center1[0], 2) + Math.pow(center1[1], 2))
-		center1[0] = (center1[0] / size) * (c2.radius+c1.radius) + c2.x + c2.radius
-		center1[1] = (center1[1] / size) * (c2.radius+c1.radius) + @height - c2.y - c2.radius
-		return { 
-			x: center1[0] - @ball.radius
-			y: @height - (center1[1] + @ball.radius)
-		}
-
 	# main "loop" iteration
 	step: (timestamp) ->
 		this.next()
-		@loopCount++
-		if @loopCount >= 60
-			@loopCount = 0
-			@ulTime++ 
 		return this.draw() if @freezeGame # freeze everything!
-		# apply gravity and ground collision
-		@ball.incrementPosition()
-		@ball.applyGravity()
-		if @p1.falling && @restartPause < 0
-			@p1.y -= @p1.jumpSpeed
-			@p1.incrementGravity()
-			@p1.applyGravity()
-		if @p2.falling && @restartPause < 0
-			@p2.y -= @p2.jumpSpeed
-			@p2.incrementGravity()
-			@p2.applyGravity()
-		if @p1.y + @p1.height > @height - Constants.BOTTOM
-			@p1.y = @height - Constants.BOTTOM - @p1.height
-			@p1.falling = false
-			@p1.gravTime = 0
-			@p1.jumpSpeed = 0
-		else @p1.falling = true
-		if @p2.y + @p2.height > @height - Constants.BOTTOM
-			@p2.y = @height - Constants.BOTTOM - @p2.height
-			@p2.falling = false
-			@p2.gravTime = 0
-			@p2.jumpSpeed = 0
-		else @p2.falling = true
-
 		# end game when ball hits ground
 		if @ball.y + @ball.height >= @height-Constants.BOTTOM && @restartPause < 0
-			@restartPause = 0
+			@restartPause = @world.restartPause = 0
 			@ball.y = @height-Constants.BOTTOM-@ball.height
 			@ball.velocity = { x: 0, y: 0 }
 			@ball.falling = false
@@ -184,88 +138,16 @@ class SlimeVolleyball extends Scene
 					@displayMsg = @failMsgs[Helpers.rand(@failMsgs.length-2)] 
 				else 
 					@displayMsg = @failMsgs[@failMsgs.length - 1]
-		
-		if @restartPause > -1 # draw paused stuff
-			this.handlePause()
-
-		# apply collisions against slimes
-		if @ball.y + @ball.height < @p1.y + @p1.height && Math.sqrt(Math.pow((@ball.x + @ball.radius) - (@p1.x + @p1.radius), 2) + Math.pow((@ball.y + @ball.radius) - (@p1.y + @p1.radius), 2)) < @ball.radius + @p1.radius
-			a = Helpers.rad2Deg(Math.atan(-((@ball.x + @ball.radius) - (@p1.x + @p1.radius)) / ((@ball.y + @ball.radius) - (@p1.y + @p1.radius))))
-			@ball.velocity.x = Helpers.xFromAngle(a) * (6.5 + 1.5 * Constants.AI_DIFFICULTY)
-			@ball.velocity.y = Helpers.yFromAngle(a) * (6.5 + 1.5 * Constants.AI_DIFFICULTY)
-			# position ball to prevent it from sinking into slime
-			@ball.setPosition(this.resolveCollision(@ball, @p1))
-		if @ball.y + @ball.height < @p2.y + @p2.radius && Math.sqrt(Math.pow((@ball.x + @ball.radius) - (@p2.x + @p2.radius), 2) + Math.pow((@ball.y + @ball.radius) - (@p2.y + @p2.radius), 2)) < @ball.radius + @p2.radius
-			a = Helpers.rad2Deg(Math.atan(-((@ball.x + @ball.radius) - (@p2.x + @p2.radius)) / ((@ball.y + @ball.radius) - (@p2.y + @p2.radius))))
-			@ball.velocity.x = Helpers.xFromAngle(a) * (6.5 + 1.5 * Constants.AI_DIFFICULTY)
-			@ball.velocity.y = Helpers.yFromAngle(a) * (6.5 + 1.5 * Constants.AI_DIFFICULTY)
-			@ball.setPosition(this.resolveCollision(@ball, @p2))
-		# check collisions against left and right walls
-		if @ball.x + @ball.width > @width
-			@ball.x = @width - @ball.width
-			@ball.velocity.x *= -1
-			@ball.velocity.y = Helpers.yFromAngle(180-@ball.velocity.x/@ball.velocity.y) * @ball.velocity.y
-			@ball.velocity.x = -1 if Math.abs(@ball.velocity.x) <= 0.1
-		else if @ball.x < 0
-			@ball.x = 0
-			@ball.velocity.x *= -1
-			@ball.velocity.y = Helpers.yFromAngle(180-@ball.velocity.x/@ball.velocity.y) * @ball.velocity.y
-			@ball.velocity.x = 1 if Math.abs(@ball.velocity.x) <= 0.1
-		
 
 
-		# ball collision against pole: mimics a rounded rec
-		# TODO: move this to a library
-		borderRadius = 2
-		if @ball.x + @ball.width > @pole.x && @ball.x < @pole.x + @pole.width && @ball.y + @ball.height >= @pole.y && @ball.y <= @pole.y + @pole.height
-			#debugger
-			if @ball.y + @ball.radius >= @pole.y + borderRadius # middle and bottom of pole
-				@ball.x = if @ball.velocity.x > 0 then @pole.x - @ball.width else @pole.x + @pole.width
-				@ball.velocity.x *= -1
-				@ball.velocity.y = Helpers.yFromAngle(180-(@ball.velocity.x/@ball.velocity.y)) * @ball.velocity.y
-			else # top of pole, handle like bouncing off a quarter of a ball
-				if @ball.x + @ball.radius < @pole.x + borderRadius # left corner
-					# check if the circles are actually touching
-					circle = { x: @pole.x + borderRadius, y: @pole.y + borderRadius, radius: borderRadius }
-					dist = Math.sqrt(Math.pow(@ball.x+@ball.radius-circle.x, 2) + Math.pow(@ball.y+@ball.radius-circle.y, 2))
-					if dist < circle.radius + @ball.radius # collision!
-						a = Helpers.rad2Deg(Math.atan(-((@ball.x + @ball.radius) - (circle.x + circle.radius)) / ((@ball.y + @ball.radius) - (circle.y + circle.radius))))
-						@ball.velocity.x = Helpers.xFromAngle(a) * 6
-						@ball.velocity.y = Helpers.yFromAngle(a) * 6
-						@ball.setPosition(this.resolveCollision(@ball, circle))
-				else if @ball.x + @ball.radius > @pole.x + @pole.width - borderRadius # right corner
-					circle = { x: @pole.x+@pole.width - borderRadius, y: @pole.y + borderRadius, radius: borderRadius }
-					dist = Math.sqrt(Math.pow(@ball.x+@ball.radius-circle.x, 2) + Math.pow(@ball.y+@ball.radius-circle.y, 2))
-					if dist < circle.radius + @ball.radius # collision!
-						a = Helpers.rad2Deg(Math.atan(-((@ball.x + @ball.radius) - (circle.x + circle.radius)) / ((@ball.y + @ball.radius) - (circle.y + circle.radius))))
-						@ball.velocity.x = Helpers.xFromAngle(a) * 6
-						@ball.velocity.y = Helpers.yFromAngle(a) * 6
-						@ball.setPosition(this.resolveCollision(@ball, circle))
-				else # top (flat bounce)
-					@ball.velocity.y *= -1
-					@ball.velocity.x = .5 if Math.abs(@ball.velocity.x) < 0.1
-					@ball.y = @pole.y - @ball.height
-		else if @ball.x < @pole.x + @pole.width && @ball.x > @pole.x + @ball.velocity.x && @ball.y >= @pole.y && @ball.y <= @pole.y + @pole.height && @ball.velocity.x < 0 # coming from the right
-			if @ball.y + @ball.height >= @pole.y + borderRadius # middle and bottom of pole
-				@ball.x = @pole.x + @pole.width
-				@ball.velocity.x *= -1
-				@ball.velocity.y = Helpers.yFromAngle(180-(@ball.velocity.x/@ball.velocity.y)) * @ball.velocity.y
-			else # top of pole, handle like bouncing off a quarter of a ball
-				@ball.velocity.y *= -1
-				@ball.velocity.x = .5 if Math.abs(@ball.velocity.x) < 0.1
-				@ball.y = @pole.y - @ball.height
-				
+		@world.step() # step physics
+		this.handlePause() if @restartPause > -1 # draw paused stuff			
 
 		# apply player moves
 		if @restartPause < 0
 			this.moveCPU()
 			@p1.handleInput(Globals.Input)
-
-		# world bounds checking
-		@p1.x = 0 if @p1.x < 0
-		@p1.x = @pole.x - @p1.width if @p1.x + @p1.width > @pole.x
-		@p2.x = @pole.x + @pole.width if @p2.x < @pole.x + @pole.width
-		@p2.x = @width - @p2.width if @p2.x > @width - @p2.width
+		@world.boundsCheck() # resolve illegal positions
 		this.draw()
 	
 	buttonPressed: (e) ->

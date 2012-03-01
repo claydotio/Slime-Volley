@@ -45,3 +45,6 @@ if !window.addEventListener
 # iphone specific: hide address bar
 window.addEventListener "load", ->
   setTimeout (-> window.scrollTo(0, 1)), 0
+
+# to prevent our node-js code from failing in the browser
+window.module ||= false 

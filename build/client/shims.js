@@ -57,3 +57,5 @@ window.addEventListener("load", function() {
     return window.scrollTo(0, 1);
   }), 0);
 });
+
+window.module || (window.module = false);
