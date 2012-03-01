@@ -53,8 +53,9 @@ Room = (function() {
   };
 
   Room.prototype.stopGame = function() {
-    this.game.stop();
-    return this.game = null;
+    if (this.game) this.game.stop();
+    this.game = null;
+    return this.emit('gameDestroy');
   };
 
   Room.prototype.isFull = function() {

@@ -25,7 +25,7 @@ Constants = {
   AI_DIFFICULTY: 1.0,
   MSG_FONT: 'Courier, monospace, sans-serif',
   SERVER_TICK_DURATION: 16,
-  LAG_JUMP_THRESHOLD: 15,
+  FRAME_DROP_THRESHOLD: 20,
   ASSETS: {
     p1: 'assets/images/s_0.png',
     p2: 'assets/images/s_1.png',
