@@ -21,7 +21,7 @@ end
 # base path, and flattens them into a string for cmd line usage
 # e.g. join_filenames(['A.coffee', 'B.coffee'], '../') => "../A.coffee ../B.coffee"
 def join_filenames(filenames, base='./')
-  filenames.collect {|f| File.join(base, f)}.join ' '
+  filenames.collect {|f| File.expand_path(File.join(base, f)) }.join ' '
 end
 
 desc "Compiles client coffeescript."
