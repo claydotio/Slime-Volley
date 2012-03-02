@@ -2,49 +2,47 @@ class Input
 	constructor: ->
 		# bind to dom key events (and touch, if available)
 		@keys = {}
-		_keys = @keys # for shifty callbacks
-		_this = @
 		@anyInput = false
-		normalizeKeyEvent = (e) ->
+		normalizeKeyEvent = (e) =>
 			e.which ||= e.charCode
 			e.which ||= e.keyCode
 			e
 		# resize mouse event into css-scaled canvas (from the rhino book p662)
-		normalizeCoordinates = (o) ->
+		normalizeCoordinates = (o) =>
 			c = Globals.Manager.canvas
 			bb = c.getBoundingClientRect()
 			o.x = (o.x-bb.left) * (c.width/bb.width)
 			o.y = (o.y-bb.top)  * (c.height/bb.height)
 			o
-		normalizeMouseEvent = (e) ->
+		normalizeMouseEvent = (e) =>
 			c = Globals.Manager.canvas
 			x = e.clientX || e.x || e.layerX
 			y = e.clientY || e.y || e.layerY 
 			normalizeCoordinates { x: x, y: y, identifier: e.identifier }
 
-		handleKeyDown = (e) ->
-			_this.anyInput = true
-			_keys['key'+normalizeKeyEvent(e).which] = true
+		handleKeyDown = (e) =>
+			@anyInput = true
+			@keys['key'+normalizeKeyEvent(e).which] = true
 
-		handleKeyUp = (e) ->
-			_this.anyInput = false
-			_keys['key'+normalizeKeyEvent(e).which] = false
+		handleKeyUp = (e) =>
+			@anyInput = false
+			@keys['key'+normalizeKeyEvent(e).which] = false
 
-		handleMouseUp = (e) ->
-			_this.anyInput = false
+		handleMouseUp = (e) =>
+			@anyInput = false
 			e = normalizeMouseEvent(e)
 			Globals.Manager.currScene.mouseup(e)
 
-		handleMouseDown = (e) ->
-			_this.anyInput = true
+		handleMouseDown = (e) =>
+			@anyInput = true
 			e = normalizeMouseEvent(e)
 			Globals.Manager.currScene.mousedown(e)
 
-		handleMouseMove = (e) ->
+		handleMouseMove = (e) =>
 			e = normalizeMouseEvent(e)
 			Globals.Manager.currScene.mousemove(e)
 
-		handleClick = (e) ->
+		handleClick = (e) =>
 			e = normalizeMouseEvent(e)
 			Globals.Manager.currScene.click(e)
 

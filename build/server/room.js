@@ -26,6 +26,7 @@ Room = (function() {
       this.p1 = p;
     }
     this.players.push(p);
+    p.room = this;
     p.socket.on('disconnect', function() {
       return _this.stopGame();
     });
@@ -56,6 +57,10 @@ Room = (function() {
     if (this.game) this.game.stop();
     this.game = null;
     return this.emit('gameDestroy');
+  };
+
+  Room.prototype.gameRunning = function() {
+    return this.game && this.game.running;
   };
 
   Room.prototype.isFull = function() {

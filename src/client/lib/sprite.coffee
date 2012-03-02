@@ -1,3 +1,5 @@
+Constants = require('./constants') if module
+
 # Sprite class - a base class for anything that exists in a World
 # Contains x,y coordinates and a draw(ctx) method
 class Sprite
@@ -8,9 +10,10 @@ class Sprite
 		x = x['x'] if x['x']
 		@x = x
 		@y = y
-	incrementPosition: ->
-		@x += @velocity.x
-		@y += @velocity.y
+	incrementPosition: (numFrames) ->
+		fraction ?= 1
+		@x += @velocity.x*numFrames
+		@y += @velocity.y*numFrames
 	draw: (ctx) -> ctx.drawImage(@bg, Helpers.round(@x), Helpers.round(@y)) if @bg
 
 module.exports = Sprite if module

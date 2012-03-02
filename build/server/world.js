@@ -15,6 +15,7 @@ World = (function() {
     this.ball = ball;
     this.pole = pole;
     this.needsUpdate = false;
+    this.lastStep = null;
   }
 
   World.prototype.resolveCollision = function(c1, c2) {
@@ -33,18 +34,23 @@ World = (function() {
   };
 
   World.prototype.step = function() {
-    var a, borderRadius, circle, dist;
+    var a, borderRadius, circle, dist, now, numFrames;
+    now = new Date().getTime();
+    numFrames = Constants.TICK_DURATION / (now - this.lastStep) || 1;
+    this.lastStep = now;
     this.needsUpdate = false;
-    this.ball.incrementPosition();
+    this.ball.incrementPosition(numFrames);
+    this.p1.incrementPosition(numFrames);
+    this.p2.incrementPosition(numFrames);
     this.ball.applyGravity();
     if (this.p1.falling) {
       this.p1.y -= this.p1.jumpSpeed;
-      this.p1.incrementGravity();
+      this.p1.incrementGravity(numFrames);
       this.p1.applyGravity();
     }
     if (this.p2.falling) {
       this.p2.y -= this.p2.jumpSpeed;
-      this.p2.incrementGravity();
+      this.p2.incrementGravity(numFrames);
       this.p2.applyGravity();
     }
     if (this.p1.y + this.p1.height > this.height - Constants.BOTTOM) {

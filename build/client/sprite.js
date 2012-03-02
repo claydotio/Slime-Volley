@@ -1,4 +1,6 @@
-var Sprite;
+var Constants, Sprite;
+
+if (module) Constants = require('./constants');
 
 Sprite = (function() {
 
@@ -21,9 +23,10 @@ Sprite = (function() {
     return this.y = y;
   };
 
-  Sprite.prototype.incrementPosition = function() {
-    this.x += this.velocity.x;
-    return this.y += this.velocity.y;
+  Sprite.prototype.incrementPosition = function(numFrames) {
+    if (typeof fraction === "undefined" || fraction === null) fraction = 1;
+    this.x += this.velocity.x * numFrames;
+    return this.y += this.velocity.y * numFrames;
   };
 
   Sprite.prototype.draw = function(ctx) {

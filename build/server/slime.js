@@ -25,18 +25,23 @@ Slime = (function() {
     Slime.__super__.constructor.call(this, this.x, this.y, this.radius * 2, this.radius, this.img);
   }
 
-  Slime.prototype.handleInput = function(input, world) {
+  Slime.prototype.handleInput = function(input) {
     var pNum;
     pNum = this.isP2 ? 1 : 0;
-    if (input.left(pNum)) this.x -= Constants.MOVEMENT_SPEED;
-    if (input.right(pNum)) this.x += Constants.MOVEMENT_SPEED;
+    if (input.left(pNum)) {
+      this.velocity.x = -Constants.MOVEMENT_SPEED;
+    } else if (input.right(pNum)) {
+      this.velocity.x = Constants.MOVEMENT_SPEED;
+    } else {
+      this.velocity.x = 0;
+    }
     if (input.up(pNum)) {
       if (this.jumpSpeed < .01) return this.jumpSpeed = Constants.JUMP_SPEED;
     }
   };
 
-  Slime.prototype.incrementGravity = function() {
-    if (this.gravTime < 10 * 60.0) return this.gravTime++;
+  Slime.prototype.incrementGravity = function(numFrames) {
+    if (this.gravTime < 10 * 60.0) return this.gravTime += numFrames;
   };
 
   Slime.prototype.applyGravity = function() {

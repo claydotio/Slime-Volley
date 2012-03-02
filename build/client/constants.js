@@ -24,7 +24,7 @@ Constants = {
   SLIME_START_HEIGHT: 91,
   AI_DIFFICULTY: 1.0,
   MSG_FONT: 'Courier, monospace, sans-serif',
-  SERVER_TICK_DURATION: 16,
+  TICK_DURATION: 16,
   FRAME_DROP_THRESHOLD: 20,
   ASSETS: {
     p1: 'assets/images/s_0.png',

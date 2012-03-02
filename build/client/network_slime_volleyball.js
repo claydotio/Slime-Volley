@@ -45,21 +45,55 @@ NetworkSlimeVolleyball = (function() {
       return _this.displayMsg = 'Lost connection to opponent. Looking for new match...';
     });
     window.socket = this.socket;
-    return this.first = true;
+    this.framesBehind = 0;
+    this.frameDropStart = 0;
+    return this.keyState = {
+      left: false,
+      right: false,
+      up: false
+    };
   };
 
-  NetworkSlimeVolleyball.prototype.moveCPU = function() {};
+  NetworkSlimeVolleyball.prototype.inputChanged = function() {
+    var changed, currState, input, key, val, _ref;
+    input = Globals.Input;
+    changed = false;
+    _ref = this.keyState;
+    for (key in _ref) {
+      if (!__hasProp.call(_ref, key)) continue;
+      val = _ref[key];
+      currState = input[key](0);
+      if (val !== currState) {
+        changed = true;
+        this.keyState[key] = currState;
+      }
+    }
+    return changed;
+  };
+
+  NetworkSlimeVolleyball.prototype.interpolateFrameDrops = function() {
+    var dropFrame;
+    dropFrame = false;
+    if (this.framesBehind > 0) {
+      this.frameDropStart++;
+      if (this.frameDropStart > 4) {
+        this.frameDropStart = 0;
+        dropFrame = true;
+        this.framesBehind = Math.max(this.framesBehind - 1, 0);
+      }
+    }
+    return dropFrame;
+  };
 
   NetworkSlimeVolleyball.prototype.applyFrameData = function(frameObj, myObj) {
-    var betweenAngle, distance, frameVelocityAngle, framesBehind, key, myVelocityAngle, val, _results, _results2;
-    this.first = false;
+    var betweenAngle, distance, frameVelocityAngle, key, myVelocityAngle, val, _results, _results2;
     frameVelocityAngle = Math.atan(frameObj.velocity.y / frameObj.velocity.x);
     myVelocityAngle = Math.atan(myObj.velocity.y / myObj.velocity.x);
     if (Math.abs(frameVelocityAngle - myVelocityAngle) < 45) {
       distance = Helpers.dist(frameObj, myObj);
-      framesBehind = distance / Helpers.velocityMag(myObj);
-      console.log('framesBehind = ' + framesBehind);
-      if (framesBehind > Constants.FRAME_DROP_THRESHOLD) {
+      this.framesBehind += distance / ((Helpers.velocityMag(myObj) + Helpers.velocityMag(frameObj)) / 2);
+      if (this.framesBehind > Constants.FRAME_DROP_THRESHOLD) {
+        this.framesBehind = 0;
         for (key in frameObj) {
           if (!__hasProp.call(frameObj, key)) continue;
           val = frameObj[key];
@@ -90,32 +124,44 @@ NetworkSlimeVolleyball = (function() {
     }
   };
 
+  NetworkSlimeVolleyball.prototype.applyInputData = function(inputData) {
+    var input;
+    console.log('applying input data');
+    input = Globals.Input;
+    input.set('left', inputData['left'], 1);
+    input.set('right', inputData['right'], 1);
+    return input.set('up', inputData['up'], 1);
+  };
+
   NetworkSlimeVolleyball.prototype.applyFrame = function(frame) {
-    var key, val, _results;
-    _results = [];
-    for (key in frame) {
-      if (!__hasProp.call(frame, key)) continue;
-      val = frame[key];
-      _results.push(this.applyFrameData(val, this[key]));
-    }
-    return _results;
+    this.applyFrameData(frame.ball, this.ball);
+    this.applyFrameData(frame.p1, this.p1);
+    this.applyFrameData(frame.p2, this.p2);
+    if (frame.input) return this.applyInputData(frame.input);
   };
 
   NetworkSlimeVolleyball.prototype.step = function(timestamp) {
-    var oldFrame;
+    var oldFrame, pState;
     if (this.frame) {
       oldFrame = this.frame;
       this.frame = null;
-      console.log('received frame! applying...');
       this.applyFrame(oldFrame);
     }
     this.next();
     if (this.freezeGame) return this.draw();
+    if (this.interpolateFrameDrops()) return;
     this.world.step();
     if (this.restartPause > -1) this.handlePause();
     if (this.restartPause < 0) {
-      this.moveCPU();
       this.p1.handleInput(Globals.Input);
+      this.p2.handleInput(Globals.Input);
+    }
+    if (this.inputChanged()) {
+      pState = {
+        x: this.p1.x,
+        y: this.p1.y
+      };
+      this.socket.emit('input', this.keyState, pState);
     }
     this.world.boundsCheck();
     return this.draw();

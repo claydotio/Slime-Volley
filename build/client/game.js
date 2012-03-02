@@ -86,7 +86,7 @@ Constants = {
   SLIME_START_HEIGHT: 91,
   AI_DIFFICULTY: 1.0,
   MSG_FONT: 'Courier, monospace, sans-serif',
-  SERVER_TICK_DURATION: 16,
+  TICK_DURATION: 16,
   FRAME_DROP_THRESHOLD: 20,
   ASSETS: {
     p1: 'assets/images/s_0.png',
@@ -363,10 +363,9 @@ var Input;
 Input = (function() {
 
   function Input() {
-    var canvas, handleClick, handleKeyDown, handleKeyUp, handleMouseDown, handleMouseMove, handleMouseUp, multitouchShim, normalizeCoordinates, normalizeKeyEvent, normalizeMouseEvent, _keys, _this;
+    var canvas, handleClick, handleKeyDown, handleKeyUp, handleMouseDown, handleMouseMove, handleMouseUp, multitouchShim, normalizeCoordinates, normalizeKeyEvent, normalizeMouseEvent;
+    var _this = this;
     this.keys = {};
-    _keys = this.keys;
-    _this = this;
     this.anyInput = false;
     normalizeKeyEvent = function(e) {
       e.which || (e.which = e.charCode);
@@ -394,11 +393,11 @@ Input = (function() {
     };
     handleKeyDown = function(e) {
       _this.anyInput = true;
-      return _keys['key' + normalizeKeyEvent(e).which] = true;
+      return _this.keys['key' + normalizeKeyEvent(e).which] = true;
     };
     handleKeyUp = function(e) {
       _this.anyInput = false;
-      return _keys['key' + normalizeKeyEvent(e).which] = false;
+      return _this.keys['key' + normalizeKeyEvent(e).which] = false;
     };
     handleMouseUp = function(e) {
       _this.anyInput = false;
@@ -490,7 +489,9 @@ Input = (function() {
 
 })();
 
-var Sprite;
+var Constants, Sprite;
+
+if (module) Constants = require('./constants');
 
 Sprite = (function() {
 
@@ -513,9 +514,10 @@ Sprite = (function() {
     return this.y = y;
   };
 
-  Sprite.prototype.incrementPosition = function() {
-    this.x += this.velocity.x;
-    return this.y += this.velocity.y;
+  Sprite.prototype.incrementPosition = function(numFrames) {
+    if (typeof fraction === "undefined" || fraction === null) fraction = 1;
+    this.x += this.velocity.x * numFrames;
+    return this.y += this.velocity.y * numFrames;
   };
 
   Sprite.prototype.draw = function(ctx) {
@@ -774,18 +776,23 @@ Slime = (function() {
     Slime.__super__.constructor.call(this, this.x, this.y, this.radius * 2, this.radius, this.img);
   }
 
-  Slime.prototype.handleInput = function(input, world) {
+  Slime.prototype.handleInput = function(input) {
     var pNum;
     pNum = this.isP2 ? 1 : 0;
-    if (input.left(pNum)) this.x -= Constants.MOVEMENT_SPEED;
-    if (input.right(pNum)) this.x += Constants.MOVEMENT_SPEED;
+    if (input.left(pNum)) {
+      this.velocity.x = -Constants.MOVEMENT_SPEED;
+    } else if (input.right(pNum)) {
+      this.velocity.x = Constants.MOVEMENT_SPEED;
+    } else {
+      this.velocity.x = 0;
+    }
     if (input.up(pNum)) {
       if (this.jumpSpeed < .01) return this.jumpSpeed = Constants.JUMP_SPEED;
     }
   };
 
-  Slime.prototype.incrementGravity = function() {
-    if (this.gravTime < 10 * 60.0) return this.gravTime++;
+  Slime.prototype.incrementGravity = function(numFrames) {
+    if (this.gravTime < 10 * 60.0) return this.gravTime += numFrames;
   };
 
   Slime.prototype.applyGravity = function() {
@@ -868,6 +875,7 @@ World = (function() {
     this.ball = ball;
     this.pole = pole;
     this.needsUpdate = false;
+    this.lastStep = null;
   }
 
   World.prototype.resolveCollision = function(c1, c2) {
@@ -886,18 +894,23 @@ World = (function() {
   };
 
   World.prototype.step = function() {
-    var a, borderRadius, circle, dist;
+    var a, borderRadius, circle, dist, now, numFrames;
+    now = new Date().getTime();
+    numFrames = Constants.TICK_DURATION / (now - this.lastStep) || 1;
+    this.lastStep = now;
     this.needsUpdate = false;
-    this.ball.incrementPosition();
+    this.ball.incrementPosition(numFrames);
+    this.p1.incrementPosition(numFrames);
+    this.p2.incrementPosition(numFrames);
     this.ball.applyGravity();
     if (this.p1.falling) {
       this.p1.y -= this.p1.jumpSpeed;
-      this.p1.incrementGravity();
+      this.p1.incrementGravity(numFrames);
       this.p1.applyGravity();
     }
     if (this.p2.falling) {
       this.p2.y -= this.p2.jumpSpeed;
-      this.p2.incrementGravity();
+      this.p2.incrementGravity(numFrames);
       this.p2.applyGravity();
     }
     if (this.p1.y + this.p1.height > this.height - Constants.BOTTOM) {
@@ -1382,21 +1395,55 @@ NetworkSlimeVolleyball = (function() {
       return _this.displayMsg = 'Lost connection to opponent. Looking for new match...';
     });
     window.socket = this.socket;
-    return this.first = true;
+    this.framesBehind = 0;
+    this.frameDropStart = 0;
+    return this.keyState = {
+      left: false,
+      right: false,
+      up: false
+    };
   };
 
-  NetworkSlimeVolleyball.prototype.moveCPU = function() {};
+  NetworkSlimeVolleyball.prototype.inputChanged = function() {
+    var changed, currState, input, key, val, _ref;
+    input = Globals.Input;
+    changed = false;
+    _ref = this.keyState;
+    for (key in _ref) {
+      if (!__hasProp.call(_ref, key)) continue;
+      val = _ref[key];
+      currState = input[key](0);
+      if (val !== currState) {
+        changed = true;
+        this.keyState[key] = currState;
+      }
+    }
+    return changed;
+  };
+
+  NetworkSlimeVolleyball.prototype.interpolateFrameDrops = function() {
+    var dropFrame;
+    dropFrame = false;
+    if (this.framesBehind > 0) {
+      this.frameDropStart++;
+      if (this.frameDropStart > 4) {
+        this.frameDropStart = 0;
+        dropFrame = true;
+        this.framesBehind = Math.max(this.framesBehind - 1, 0);
+      }
+    }
+    return dropFrame;
+  };
 
   NetworkSlimeVolleyball.prototype.applyFrameData = function(frameObj, myObj) {
-    var betweenAngle, distance, frameVelocityAngle, framesBehind, key, myVelocityAngle, val, _results, _results2;
-    this.first = false;
+    var betweenAngle, distance, frameVelocityAngle, key, myVelocityAngle, val, _results, _results2;
     frameVelocityAngle = Math.atan(frameObj.velocity.y / frameObj.velocity.x);
     myVelocityAngle = Math.atan(myObj.velocity.y / myObj.velocity.x);
     if (Math.abs(frameVelocityAngle - myVelocityAngle) < 45) {
       distance = Helpers.dist(frameObj, myObj);
-      framesBehind = distance / Helpers.velocityMag(myObj);
-      console.log('framesBehind = ' + framesBehind);
-      if (framesBehind > Constants.FRAME_DROP_THRESHOLD) {
+      this.framesBehind += distance / ((Helpers.velocityMag(myObj) + Helpers.velocityMag(frameObj)) / 2);
+      if (this.framesBehind > Constants.FRAME_DROP_THRESHOLD) {
+        this.framesBehind = 0;
         for (key in frameObj) {
           if (!__hasProp.call(frameObj, key)) continue;
           val = frameObj[key];
@@ -1427,32 +1474,44 @@ NetworkSlimeVolleyball = (function() {
     }
   };
 
+  NetworkSlimeVolleyball.prototype.applyInputData = function(inputData) {
+    var input;
+    console.log('applying input data');
+    input = Globals.Input;
+    input.set('left', inputData['left'], 1);
+    input.set('right', inputData['right'], 1);
+    return input.set('up', inputData['up'], 1);
+  };
+
   NetworkSlimeVolleyball.prototype.applyFrame = function(frame) {
-    var key, val, _results;
-    _results = [];
-    for (key in frame) {
-      if (!__hasProp.call(frame, key)) continue;
-      val = frame[key];
-      _results.push(this.applyFrameData(val, this[key]));
-    }
-    return _results;
+    this.applyFrameData(frame.ball, this.ball);
+    this.applyFrameData(frame.p1, this.p1);
+    this.applyFrameData(frame.p2, this.p2);
+    if (frame.input) return this.applyInputData(frame.input);
   };
 
   NetworkSlimeVolleyball.prototype.step = function(timestamp) {
-    var oldFrame;
+    var oldFrame, pState;
     if (this.frame) {
       oldFrame = this.frame;
       this.frame = null;
-      console.log('received frame! applying...');
       this.applyFrame(oldFrame);
     }
     this.next();
     if (this.freezeGame) return this.draw();
+    if (this.interpolateFrameDrops()) return;
     this.world.step();
     if (this.restartPause > -1) this.handlePause();
     if (this.restartPause < 0) {
-      this.moveCPU();
       this.p1.handleInput(Globals.Input);
+      this.p2.handleInput(Globals.Input);
+    }
+    if (this.inputChanged()) {
+      pState = {
+        x: this.p1.x,
+        y: this.p1.y
+      };
+      this.socket.emit('input', this.keyState, pState);
     }
     this.world.boundsCheck();
     return this.draw();

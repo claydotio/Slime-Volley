@@ -23,7 +23,7 @@ Constants =
 	SLIME_START_HEIGHT: 91
 	AI_DIFFICULTY: 1.0
 	MSG_FONT: 'Courier, monospace, sans-serif'
-	SERVER_TICK_DURATION: 16 #ms
+	TICK_DURATION: 16 #ms
 	FRAME_DROP_THRESHOLD: 20 # number of frames we can ignore
 	ASSETS: # images and sounds
 		p1:      'assets/images/s_0.png',

@@ -10,22 +10,24 @@ class Slime extends Sprite
 		@gravTime = 0
 		@falling = true
 		@jumpSpeed = 0
-		super(@x, @y, @radius*2
-		, @radius, @img)
+		super(@x, @y, @radius*2, @radius, @img)
 
-	handleInput: (input, world) ->
-		# check for up, left, right, and down(?)
+	handleInput: (input) ->
+		# check for up, left, right
 		pNum = if @isP2 then 1 else 0
 		if input.left(pNum)
-			@x -= Constants.MOVEMENT_SPEED
-		if input.right(pNum)
-			@x += Constants.MOVEMENT_SPEED
+			@velocity.x = -Constants.MOVEMENT_SPEED
+		else if input.right(pNum)
+			@velocity.x = Constants.MOVEMENT_SPEED
+		else
+			@velocity.x = 0
+
 		if input.up(pNum)
 			@jumpSpeed = Constants.JUMP_SPEED if @jumpSpeed < .01
 		#else if @m_body && y < bottom
 
-	incrementGravity: ->
-		@gravTime++ if @gravTime < 10 * 60.0
+	incrementGravity: (numFrames) ->
+		@gravTime += numFrames if @gravTime < 10 * 60.0
 
 	applyGravity: ->
 		@y += 50.0 * (@gravTime / 60.0)

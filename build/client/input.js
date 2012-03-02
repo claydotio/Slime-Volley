@@ -3,10 +3,9 @@ var Input;
 Input = (function() {
 
   function Input() {
-    var canvas, handleClick, handleKeyDown, handleKeyUp, handleMouseDown, handleMouseMove, handleMouseUp, multitouchShim, normalizeCoordinates, normalizeKeyEvent, normalizeMouseEvent, _keys, _this;
+    var canvas, handleClick, handleKeyDown, handleKeyUp, handleMouseDown, handleMouseMove, handleMouseUp, multitouchShim, normalizeCoordinates, normalizeKeyEvent, normalizeMouseEvent;
+    var _this = this;
     this.keys = {};
-    _keys = this.keys;
-    _this = this;
     this.anyInput = false;
     normalizeKeyEvent = function(e) {
       e.which || (e.which = e.charCode);
@@ -34,11 +33,11 @@ Input = (function() {
     };
     handleKeyDown = function(e) {
       _this.anyInput = true;
-      return _keys['key' + normalizeKeyEvent(e).which] = true;
+      return _this.keys['key' + normalizeKeyEvent(e).which] = true;
     };
     handleKeyUp = function(e) {
       _this.anyInput = false;
-      return _keys['key' + normalizeKeyEvent(e).which] = false;
+      return _this.keys['key' + normalizeKeyEvent(e).which] = false;
     };
     handleMouseUp = function(e) {
       _this.anyInput = false;
