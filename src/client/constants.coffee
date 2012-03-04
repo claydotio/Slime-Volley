@@ -21,10 +21,10 @@ Constants =
 	MOVEMENT_SPEED: 4
 	JUMP_SPEED: 12
 	SLIME_START_HEIGHT: 91
-	AI_DIFFICULTY: 1.0
+	AI_DIFFICULTY: 0.25
 	MSG_FONT: 'Courier, monospace, sans-serif'
 	TICK_DURATION: 16 #ms
-	FRAME_DROP_THRESHOLD: 20 # number of frames we can ignore
+	FRAME_DELAY: 5
 	ASSETS: # images and sounds
 		p1:      'assets/images/s_0.png',
 		p2:      'assets/images/s_1.png'
@@ -45,6 +45,7 @@ Constants =
 		score_a:     'assets/images/score_a.png',
 		score_b:     'assets/images/score_b.png',
 		instructions: 'assets/images/instructions.png',
-		back_arrow:   'assets/images/back_arrow.png'
+		back_arrow:   'assets/images/back_arrow.png',
+		options:      'assets/images/options.png'
 
 module.exports = Constants if module

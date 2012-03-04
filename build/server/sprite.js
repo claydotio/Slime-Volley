@@ -29,10 +29,10 @@ Sprite = (function() {
     return this.y += this.velocity.y * numFrames;
   };
 
-  Sprite.prototype.draw = function(ctx) {
-    if (this.bg) {
-      return ctx.drawImage(this.bg, Helpers.round(this.x), Helpers.round(this.y));
-    }
+  Sprite.prototype.draw = function(ctx, x, y) {
+    x || (x = this.x);
+    y || (y = this.y);
+    if (this.bg) return ctx.drawImage(this.bg, Helpers.round(x), Helpers.round(y));
   };
 
   return Sprite;

@@ -27,7 +27,6 @@ class MenuScene extends Scene
 		( (btn) ->
 			@labels.push new Sprite(btn.x, btn.y, btn.width, btn.height, loader.getAsset(labelImgs.pop()))
 		).call(this, @buttons[key]) for key in ['instructions', 'onePlayer', 'options', 'wifi']
-		@instructions = new InstructionsScene()
 
 	step: (timestamp) ->
 		return unless @ctx
@@ -45,11 +44,11 @@ class MenuScene extends Scene
 	# delegate callback when a button is pressed
 	buttonPressed: (btn) ->
 		if btn == @buttons['instructions']
-			Globals.Manager.pushScene @instructions
+			Globals.Manager.pushScene new InstructionsScene()
 		else if btn == @buttons['onePlayer']
 			# new volleyball game
 			Globals.Manager.pushScene new SlimeVolleyball()
 		else if btn == @buttons['options']
-			#console.log 'opt'
+			Globals.Manager.pushScene new OptionsScene()
 		else if btn == @buttons['wifi']
 			Globals.Manager.pushScene new NetworkSlimeVolleyball()

@@ -14,6 +14,9 @@ class Sprite
 		fraction ?= 1
 		@x += @velocity.x*numFrames
 		@y += @velocity.y*numFrames
-	draw: (ctx) -> ctx.drawImage(@bg, Helpers.round(@x), Helpers.round(@y)) if @bg
+	draw: (ctx, x, y) -> 
+		x ||= @x
+		y ||= @y
+		ctx.drawImage(@bg, Helpers.round(x), Helpers.round(y)) if @bg
 
 module.exports = Sprite if module

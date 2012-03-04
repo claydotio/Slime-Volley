@@ -84,10 +84,10 @@ Constants = {
   MOVEMENT_SPEED: 4,
   JUMP_SPEED: 12,
   SLIME_START_HEIGHT: 91,
-  AI_DIFFICULTY: 1.0,
+  AI_DIFFICULTY: 0.25,
   MSG_FONT: 'Courier, monospace, sans-serif',
   TICK_DURATION: 16,
-  FRAME_DROP_THRESHOLD: 20,
+  FRAME_DELAY: 5,
   ASSETS: {
     p1: 'assets/images/s_0.png',
     p2: 'assets/images/s_1.png',
@@ -108,7 +108,8 @@ Constants = {
     score_a: 'assets/images/score_a.png',
     score_b: 'assets/images/score_b.png',
     instructions: 'assets/images/instructions.png',
-    back_arrow: 'assets/images/back_arrow.png'
+    back_arrow: 'assets/images/back_arrow.png',
+    options: 'assets/images/options.png'
   }
 };
 
@@ -291,6 +292,8 @@ Scene = (function() {
     return _results;
   };
 
+  Scene.prototype.mouseout = function(e) {};
+
   Scene.prototype.buttonPressed = function() {};
 
   return Scene;
@@ -363,7 +366,7 @@ var Input;
 Input = (function() {
 
   function Input() {
-    var canvas, handleClick, handleKeyDown, handleKeyUp, handleMouseDown, handleMouseMove, handleMouseUp, multitouchShim, normalizeCoordinates, normalizeKeyEvent, normalizeMouseEvent;
+    var canvas, handleClick, handleKeyDown, handleKeyUp, handleMouseDown, handleMouseMove, handleMouseOut, handleMouseUp, multitouchShim, normalizeCoordinates, normalizeKeyEvent, normalizeMouseEvent;
     var _this = this;
     this.keys = {};
     this.anyInput = false;
@@ -417,6 +420,10 @@ Input = (function() {
       e = normalizeMouseEvent(e);
       return Globals.Manager.currScene.click(e);
     };
+    handleMouseOut = function(e) {
+      e = normalizeMouseEvent(e);
+      return Globals.Manager.currScene.mouseout(e);
+    };
     multitouchShim = function(callback) {
       return (function(cb) {
         return function(e) {
@@ -440,6 +447,7 @@ Input = (function() {
     canvas.addEventListener('mouseup', handleMouseUp, true);
     canvas.addEventListener('mousedown', handleMouseDown, true);
     canvas.addEventListener('mousemove', handleMouseMove, true);
+    canvas.addEventListener('mouseout', handleMouseOut, true);
     canvas.addEventListener('click', handleClick, true);
     document.documentElement.addEventListener('touchstart', multitouchShim(handleMouseDown), true);
     document.documentElement.addEventListener('touchend', multitouchShim(handleMouseUp), true);
@@ -520,10 +528,10 @@ Sprite = (function() {
     return this.y += this.velocity.y * numFrames;
   };
 
-  Sprite.prototype.draw = function(ctx) {
-    if (this.bg) {
-      return ctx.drawImage(this.bg, Helpers.round(this.x), Helpers.round(this.y));
-    }
+  Sprite.prototype.draw = function(ctx, x, y) {
+    x || (x = this.x);
+    y || (y = this.y);
+    if (this.bg) return ctx.drawImage(this.bg, Helpers.round(x), Helpers.round(y));
   };
 
   return Sprite;
@@ -732,15 +740,17 @@ Ball = (function() {
     Ball.__super__.constructor.call(this, this.x, this.y, this.radius * 2, this.radius * 2, this.bg);
   }
 
-  Ball.prototype.applyGravity = function() {
+  Ball.prototype.applyGravity = function(numFrames) {
     if (!this.falling) return;
-    if (this.velocity.y < 10) {
-      this.velocity.y += .2;
+    if (this.velocity.y < 10 * numFrames) {
+      this.velocity.y += .2 * numFrames;
     } else {
-      this.velocity.y = 10;
+      this.velocity.y = 10 * numFrames;
     }
-    if (this.velocity.x >= .03) this.velocity.x -= .01;
-    if (this.velocity.x <= -.03) return this.velocity.x += .01;
+    if (this.velocity.x >= .03 * numFrames) this.velocity.x -= .01 * numFrames;
+    if (this.velocity.x <= -.03 * numFrames) {
+      return this.velocity.x += .01 * numFrames;
+    }
   };
 
   return Ball;
@@ -783,6 +793,7 @@ Slime = (function() {
       this.velocity.x = -Constants.MOVEMENT_SPEED;
     } else if (input.right(pNum)) {
       this.velocity.x = Constants.MOVEMENT_SPEED;
+      if (module) console.log('RIGHT PRESSED!');
     } else {
       this.velocity.x = 0;
     }
@@ -795,8 +806,8 @@ Slime = (function() {
     if (this.gravTime < 10 * 60.0) return this.gravTime += numFrames;
   };
 
-  Slime.prototype.applyGravity = function() {
-    return this.y += 50.0 * (this.gravTime / 60.0);
+  Slime.prototype.applyGravity = function(numFrames) {
+    return this.y += 50.0 * (this.gravTime / 60.0) * numFrames;
   };
 
   Slime.prototype.draw = function(ctx) {
@@ -876,6 +887,8 @@ World = (function() {
     this.pole = pole;
     this.needsUpdate = false;
     this.lastStep = null;
+    this.clock = 0;
+    this.numFrames = 1;
   }
 
   World.prototype.resolveCollision = function(c1, c2) {
@@ -893,25 +906,30 @@ World = (function() {
     };
   };
 
-  World.prototype.step = function() {
-    var a, borderRadius, circle, dist, now, numFrames;
-    now = new Date().getTime();
-    numFrames = Constants.TICK_DURATION / (now - this.lastStep) || 1;
-    this.lastStep = now;
+  World.prototype.step = function(interval) {
+    var a, borderRadius, circle, dist, now;
+    if (interval) {
+      this.numFrames = interval / Constants.TICK_DURATION;
+    } else {
+      now = new Date().getTime();
+      this.numFrames = Constants.TICK_DURATION / (now - this.lastStep) || 1;
+      this.lastStep = now;
+    }
+    this.clock += interval;
     this.needsUpdate = false;
-    this.ball.incrementPosition(numFrames);
-    this.p1.incrementPosition(numFrames);
-    this.p2.incrementPosition(numFrames);
-    this.ball.applyGravity();
+    this.ball.incrementPosition(this.numFrames);
+    this.p1.incrementPosition(this.numFrames);
+    this.p2.incrementPosition(this.numFrames);
+    this.ball.applyGravity(this.numFrames);
     if (this.p1.falling) {
-      this.p1.y -= this.p1.jumpSpeed;
-      this.p1.incrementGravity(numFrames);
-      this.p1.applyGravity();
+      this.p1.y -= this.p1.jumpSpeed * this.numFrames;
+      this.p1.incrementGravity(this.numFrames);
+      this.p1.applyGravity(this.numFrames);
     }
     if (this.p2.falling) {
-      this.p2.y -= this.p2.jumpSpeed;
-      this.p2.incrementGravity(numFrames);
-      this.p2.applyGravity();
+      this.p2.y -= this.p2.jumpSpeed * this.numFrames;
+      this.p2.incrementGravity(this.numFrames);
+      this.p2.applyGravity(this.numFrames);
     }
     if (this.p1.y + this.p1.height > this.height - Constants.BOTTOM) {
       this.p1.y = this.height - Constants.BOTTOM - this.p1.height;
@@ -1027,6 +1045,30 @@ World = (function() {
     }
   };
 
+  World.prototype.getObjState = function(obj) {
+    return {
+      x: obj.x,
+      y: obj.y,
+      velocity: {
+        x: obj.velocity.networkX || obj.velocity.x,
+        y: obj.velocity.networkX || obj.velocity.y
+      },
+      falling: obj.falling,
+      jumpSpeed: obj.networkJumpSpeed || obj.jumpSpeed
+    };
+  };
+
+  World.prototype.getState = function() {
+    return {
+      p1: this.getObjState(this.p1),
+      p2: this.getObjState(this.p2),
+      ball: this.getObjState(this.ball),
+      clock: this.clock
+    };
+  };
+
+  World.prototype.injectInputUpdate = function(player, input, time) {};
+
   return World;
 
 })();
@@ -1128,7 +1170,6 @@ MenuScene = (function() {
       key = _ref[_i];
       _fn.call(this, this.buttons[key]);
     }
-    this.instructions = new InstructionsScene();
   }
 
   MenuScene.prototype.step = function(timestamp) {
@@ -1154,10 +1195,12 @@ MenuScene = (function() {
 
   MenuScene.prototype.buttonPressed = function(btn) {
     if (btn === this.buttons['instructions']) {
-      return Globals.Manager.pushScene(this.instructions);
+      return Globals.Manager.pushScene(new InstructionsScene());
     } else if (btn === this.buttons['onePlayer']) {
       return Globals.Manager.pushScene(new SlimeVolleyball());
-    } else if (btn === this.buttons['options']) {} else if (btn === this.buttons['wifi']) {
+    } else if (btn === this.buttons['options']) {
+      return Globals.Manager.pushScene(new OptionsScene());
+    } else if (btn === this.buttons['wifi']) {
       return Globals.Manager.pushScene(new NetworkSlimeVolleyball());
     }
   };
@@ -1371,7 +1414,29 @@ NetworkSlimeVolleyball = (function() {
     this.freezeGame = true;
     this.displayMsg = 'Loading...';
     this.frame = null;
-    this.frameSent = 0;
+    this.gameStateBuffer = [];
+    this.networkInterpolationRemainder = 0;
+    this.keyState = {
+      left: false,
+      right: false,
+      up: false
+    };
+    this.p1.handleInput = this.p2.handleInput = function(input) {
+      var pNum;
+      pNum = this.isP2 ? 1 : 0;
+      if (input.left(pNum)) {
+        this.velocity.networkX = -Constants.MOVEMENT_SPEED;
+      } else if (input.right(pNum)) {
+        this.velocity.networkX = Constants.MOVEMENT_SPEED;
+      } else {
+        this.velocity.networkX = 0;
+      }
+      if (input.up(pNum)) {
+        if (this.jumpSpeed < .01) {
+          return this.networkJumpSpeed = Constants.JUMP_SPEED;
+        }
+      }
+    };
     if (this.socket) this.socket.disconnect() && (this.socket = null);
     this.socket = io.connect();
     this.socket.on('connect', function() {
@@ -1381,11 +1446,25 @@ NetworkSlimeVolleyball = (function() {
       return _this.displayMsg = 'Opponent found! Game begins in 1 second...';
     });
     this.socket.on('gameStart', function() {
+      _this.start();
       _this.freezeGame = false;
       return _this.displayMsg = null;
     });
     this.socket.on('gameFrame', function(data) {
+      console.log('gameFrame!');
       return _this.frame = data;
+    });
+    this.socket.on('roundEnd', function(didWin, frame) {
+      console.log('roundEnd!' + didWin);
+      _this.freezeGame = true;
+      if (didWin) {
+        _this.displayMsg = _this.winMsgs[Helpers.rand(_this.winMsgs.length - 2)];
+        _this.p1.score += 1;
+      } else {
+        _this.displayMsg = _this.failMsgs[Helpers.rand(_this.winMsgs.length - 2)];
+        _this.p2.score += 1;
+      }
+      return _this.applyFrame(frame);
     });
     this.socket.on('gameEnd', function(winner) {
       return _this.freezeGame = true;
@@ -1394,14 +1473,50 @@ NetworkSlimeVolleyball = (function() {
       _this.freezeGame = true;
       return _this.displayMsg = 'Lost connection to opponent. Looking for new match...';
     });
-    window.socket = this.socket;
-    this.framesBehind = 0;
-    this.frameDropStart = 0;
-    return this.keyState = {
-      left: false,
-      right: false,
-      up: false
-    };
+    return this.socketInitialized = true;
+  };
+
+  NetworkSlimeVolleyball.prototype.start = function() {
+    var i, _ref, _results;
+    _results = [];
+    for (i = 0, _ref = Constants.FRAME_DELAY; 0 <= _ref ? i < _ref : i > _ref; 0 <= _ref ? i++ : i--) {
+      this.world.step(Constants.TICK_DURATION);
+      _results.push(this.gameStateBuffer.push(world.getState()));
+    }
+    return _results;
+  };
+
+  NetworkSlimeVolleyball.prototype.applyInterpolation = function(obj) {
+    var complete;
+    console.log('ApplyInterpolation!');
+    complete = Constants.FRAME_DELAY - this.networkInterpolationRemainder;
+    obj.x = obj.origX + obj.dx * (this.world.numFrames + complete - 1);
+    return obj.y = obj.origY + obj.dy * (this.world.numFrames + complete - 1);
+  };
+
+  NetworkSlimeVolleyball.prototype.draw = function() {
+    var frame, msgs;
+    if (this.gameStateBuffer) frame = this.gameStateBuffer.shift();
+    frame || (frame = this.getFrame());
+    this.ctx.clearRect(0, 0, this.width, this.height);
+    this.bg.draw(this.ctx);
+    this.p1.draw(this.ctx, frame.p1.x, frame.p1.y);
+    this.p2.draw(this.ctx, frame.p2.x, frame.p2.y);
+    this.pole.draw(this.ctx);
+    this.p1Scoreboard.draw(this.ctx);
+    this.p2Scoreboard.draw(this.ctx);
+    this.ball.draw(this.ctx, frame.ball.x, frame.ball.y);
+    if (this.displayMsg) {
+      this.ctx.font = 'bold 14px ' + Constants.MSG_FONT;
+      this.ctx.fillStyle = '#ffffff';
+      this.ctx.textAlign = 'center';
+      msgs = this.displayMsg.split("\n");
+      this.ctx.fillText(msgs[0], this.width / 2, 85);
+      if (msgs.length > 1) {
+        this.ctx.font = 'bold 11px ' + Constants.MSG_FONT;
+        return this.ctx.fillText(msgs[1], this.width / 2, 110);
+      }
+    }
   };
 
   NetworkSlimeVolleyball.prototype.inputChanged = function() {
@@ -1421,99 +1536,37 @@ NetworkSlimeVolleyball = (function() {
     return changed;
   };
 
-  NetworkSlimeVolleyball.prototype.interpolateFrameDrops = function() {
-    var dropFrame;
-    dropFrame = false;
-    if (this.framesBehind > 0) {
-      this.frameDropStart++;
-      if (this.frameDropStart > 4) {
-        this.frameDropStart = 0;
-        dropFrame = true;
-        this.framesBehind = Math.max(this.framesBehind - 1, 0);
-      }
-    }
-    return dropFrame;
-  };
-
-  NetworkSlimeVolleyball.prototype.applyFrameData = function(frameObj, myObj) {
-    var betweenAngle, distance, frameVelocityAngle, key, myVelocityAngle, val, _results, _results2;
-    frameVelocityAngle = Math.atan(frameObj.velocity.y / frameObj.velocity.x);
-    myVelocityAngle = Math.atan(myObj.velocity.y / myObj.velocity.x);
-    if (Math.abs(frameVelocityAngle - myVelocityAngle) < 45) {
-      distance = Helpers.dist(frameObj, myObj);
-      this.framesBehind += distance / ((Helpers.velocityMag(myObj) + Helpers.velocityMag(frameObj)) / 2);
-      if (this.framesBehind > Constants.FRAME_DROP_THRESHOLD) {
-        this.framesBehind = 0;
-        for (key in frameObj) {
-          if (!__hasProp.call(frameObj, key)) continue;
-          val = frameObj[key];
-          myObj[key] = val;
-        }
-        return;
-      }
-      betweenAngle = Math.atan((myObj.y - frameObj.y) / (myObj.x - frameObj.x));
-      if (Math.abs(betweenAngle - frameVelocityAngle) > 22) {
-        _results = [];
-        for (key in frameObj) {
-          if (!__hasProp.call(frameObj, key)) continue;
-          val = frameObj[key];
-          _results.push(myObj[key] = val);
-        }
-        return _results;
-      } else {
-
-      }
-    } else {
-      _results2 = [];
-      for (key in frameObj) {
-        if (!__hasProp.call(frameObj, key)) continue;
-        val = frameObj[key];
-        _results2.push(myObj[key] = val);
-      }
-      return _results2;
-    }
-  };
-
-  NetworkSlimeVolleyball.prototype.applyInputData = function(inputData) {
-    var input;
-    console.log('applying input data');
-    input = Globals.Input;
-    input.set('left', inputData['left'], 1);
-    input.set('right', inputData['right'], 1);
-    return input.set('up', inputData['up'], 1);
-  };
-
-  NetworkSlimeVolleyball.prototype.applyFrame = function(frame) {
-    this.applyFrameData(frame.ball, this.ball);
-    this.applyFrameData(frame.p1, this.p1);
-    this.applyFrameData(frame.p2, this.p2);
-    if (frame.input) return this.applyInputData(frame.input);
-  };
-
   NetworkSlimeVolleyball.prototype.step = function(timestamp) {
-    var oldFrame, pState;
+    var oldFrame, topFrame;
     if (this.frame) {
       oldFrame = this.frame;
       this.frame = null;
       this.applyFrame(oldFrame);
     }
     this.next();
-    if (this.freezeGame) return this.draw();
-    if (this.interpolateFrameDrops()) return;
-    this.world.step();
-    if (this.restartPause > -1) this.handlePause();
-    if (this.restartPause < 0) {
+    if (this.freezeGame || !this.socketInitialized) {
+      if (this.gameStateBuffer) this.gameStateBuffer.push(this.getFrame());
+      this.draw();
+      return;
+    } else {
       this.p1.handleInput(Globals.Input);
       this.p2.handleInput(Globals.Input);
+      this.world.step();
     }
     if (this.inputChanged()) {
-      pState = {
-        x: this.p1.x,
-        y: this.p1.y
-      };
-      this.socket.emit('input', this.keyState, pState);
+      console.log('input Changed!');
+      this.socket.emit('input', this.keyState);
+    }
+    if (this.networkInterpolationRemainder > 0) {
+      console.log(this.networkInterpolationRemainder);
+      topFrame = this.gameStateBuffer[0];
+      this.applyInterpolation(this.p1);
+      this.applyInterpolation(this.p2);
+      this.applyInterpolation(this.ball);
+      this.networkInterpolationRemainder -= this.world.numFrames;
     }
     this.world.boundsCheck();
+    this.gameStateBuffer.push(this.getFrame());
     return this.draw();
   };
 
@@ -1562,6 +1615,84 @@ InstructionsScene = (function() {
   };
 
   return InstructionsScene;
+
+})();
+
+var OptionsScene;
+var __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
+
+OptionsScene = (function() {
+
+  __extends(OptionsScene, Scene);
+
+  function OptionsScene() {
+    var backImg;
+    OptionsScene.__super__.constructor.call(this);
+    this.bg = new StretchySprite(0, 0, this.width, this.height, 1, 1, Globals.Loader.getAsset('options'));
+    backImg = Globals.Loader.getAsset('back_arrow');
+    this.buttons = {
+      back: new Button(10, 10, 50, 50, backImg, backImg, this)
+    };
+    this.dragger = new Sprite(258, this.height - 215 - Constants.BALL_RADIUS, Constants.BALL_RADIUS * 2, Constants.BALL_RADIUS * 2, Globals.Loader.getAsset('ball'));
+    try {
+      this.percent = document.cookie.match(/AI_DIFFICULTY=(\d\.\d*)/i)[1];
+    } catch (e) {
+      this.percent = Constants.AI_DIFFICULTY;
+    } finally {
+      Constants.AI_DIFFICULTY = this.percent;
+    }
+    this.mdown = false;
+  }
+
+  OptionsScene.prototype.step = function(timestamp) {
+    var btn, key, _ref;
+    if (!this.ctx) return;
+    this.next();
+    this.ctx.clearRect(0, 0, this.width, this.height);
+    this.bg.draw(this.ctx);
+    _ref = this.buttons;
+    for (key in _ref) {
+      btn = _ref[key];
+      btn.draw(this.ctx);
+    }
+    this.dragger.x = this.percent * (450 - 258) + 258 - this.dragger.width / 2;
+    return this.dragger.draw(this.ctx);
+  };
+
+  OptionsScene.prototype.buttonPressed = function(btn) {
+    return Globals.Manager.popScene();
+  };
+
+  OptionsScene.prototype.mousedown = function(e) {
+    if (Helpers.inRect(e.x, e.y, 244, this.height - 240, 225, 52)) {
+      this.mdown = true;
+      this.percent = Math.max(Math.min((e.x - 244) / (469 - 244), 1), 0);
+      Constants.AI_DIFFICULTY = this.percent;
+      document.cookie = 'AI_DIFFICULTY=' + this.percent;
+    }
+    return OptionsScene.__super__.mousedown.call(this, e);
+  };
+
+  OptionsScene.prototype.mousemove = function(e) {
+    if (this.mdown) {
+      this.percent = Math.max(Math.min((e.x - 244) / (469 - 244), 1), 0);
+      Constants.AI_DIFFICULTY = this.percent;
+      document.cookie = 'AI_DIFFICULTY=' + this.percent;
+    }
+    return OptionsScene.__super__.mousemove.call(this, e);
+  };
+
+  OptionsScene.prototype.mouseup = function(e) {
+    this.mdown = false;
+    return OptionsScene.__super__.mouseup.call(this, e);
+  };
+
+  OptionsScene.prototype.mouseout = function(e) {
+    this.mdown = false;
+    return OptionsScene.__super__.mouseout.call(this, e);
+  };
+
+  return OptionsScene;
 
 })();
 

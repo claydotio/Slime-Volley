@@ -96,6 +96,8 @@ Scene = (function() {
     return _results;
   };
 
+  Scene.prototype.mouseout = function(e) {};
+
   Scene.prototype.buttonPressed = function() {};
 
   return Scene;

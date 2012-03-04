@@ -27,6 +27,8 @@ GameRunner = (function() {
     this.p2.isP2 = true;
     this.world = new World(this.width, this.height, this.p1, this.p2, this.ball, this.pole);
     this.running = false;
+    this.lastWinner = this.p1;
+    this.loopCount = 0;
     this.stepCallback = function() {
       return _this.step();
     };
@@ -36,14 +38,10 @@ GameRunner = (function() {
     return this.lastTimeout = setTimeout(this.stepCallback, Constants.TICK_DURATION);
   };
 
-  GameRunner.prototype.start = function() {
-    var _this = this;
-    this.room.emit('gameInit');
-    this.running = true;
-    console.log('-- GAME INIT ---');
+  GameRunner.prototype.reset = function() {
     this.p1.setPosition(this.width / 4 - Constants.SLIME_RADIUS, this.height - Constants.SLIME_START_HEIGHT);
     this.p2.setPosition(3 * this.width / 4 - Constants.SLIME_RADIUS, this.height - Constants.SLIME_START_HEIGHT);
-    this.ball.setPosition(this.width / 4 - Constants.BALL_RADIUS, this.height - Constants.BALL_START_HEIGHT);
+    this.ball.setPosition((this.p1 === this.lastWinner ? 1 : 3) * this.width / 4 - Constants.BALL_RADIUS, this.height - Constants.BALL_START_HEIGHT);
     this.pole.setPosition(this.width / 2 - 4, this.height - 60 - 64 - 1, 8, 64);
     this.p1.velocity = {
       x: 0,
@@ -57,48 +55,76 @@ GameRunner = (function() {
       x: 0,
       y: 2
     };
+    this.ball.falling = true;
+    this.p1.falling = this.p2.falling = false;
+    return this.newInput = false;
+  };
+
+  GameRunner.prototype.start = function() {
+    var _this = this;
+    this.room.emit('gameInit');
+    this.running = true;
+    console.log('-- GAME INIT ---');
+    this.reset();
     this.sendFrame();
     return this.lastTimeout = setTimeout((function() {
-      _this.step();
-      return _this.room.emit('gameStart');
+      _this.freezeGame = false;
+      _this.room.emit('gameStart');
+      return _this.step();
     }), 1000);
   };
 
-  GameRunner.prototype.injectInput = function(newInput, pData, isP2) {
-    var frame, left;
+  GameRunner.prototype.injectInput = function(newInput, isP2, clockTime) {
+    var left;
     console.log('injecting input!');
-    input.set(newInput, (isP2 ? 1 : 0));
+    console.log(newInput);
     if (isP2) {
-      this.p2.x = this.width - pData.x - this.p2.width;
-      frame = this.generateFrame();
-      frame.p2.y = this.p2.y = pData.y;
-      frame.input = input.getState(1);
-      left = frame.input.left;
-      frame.input.left = frame.input.right;
-      frame.input.right = left;
-      return this.room.p1.socket.emit('gameFrame', frame);
-    } else {
-      frame = this.generateFrame(true);
-      frame.p1.x = this.p1.x = pData.x;
-      frame.p1.y = this.p1.y = pData.y;
-      frame.input = input.getState(0);
-      left = frame.input.left;
-      frame.input.left = frame.input.right;
-      frame.input.right = left;
-      return this.room.p2.socket.emit('gameFrame', frame);
+      left = newInput.left;
+      newInput.left = newInput.right;
+      newInput.right = left;
     }
+    input.set(newInput, (isP2 ? 1 : 0));
+    return this.newInput = true;
   };
 
   GameRunner.prototype.applyInput = function() {
+    if (this.freezeGame) return;
     this.p1.handleInput(input);
     return this.p2.handleInput(input);
   };
 
   GameRunner.prototype.step = function() {
+    var p1Won;
+    var _this = this;
+    if (this.freezeGame) return;
+    if (this.ball.y + this.ball.height >= this.height - Constants.BOTTOM) {
+      console.log('HIT THE GROUND!');
+      this.freezeGame = true;
+      this.ball.y = this.height - Constants.BOTTOM - this.ball.height;
+      this.ball.velocity = {
+        x: 0,
+        y: 0
+      };
+      this.ball.falling = false;
+      p1Won = this.ball.x + this.ball.radius > this.width / 2;
+      this.room.p1.socket.emit('roundEnd', p1Won, this.generateFrame());
+      this.room.p2.socket.emit('roundEnd', !p1Won, this.generateFrame(true));
+      this.lastWinner = p1Won ? this.p1 : this.p2;
+      this.lastTimeout = setTimeout((function() {
+        _this.freezeGame = false;
+        _this.reset();
+        _this.room.emit('gameStart');
+        return _this.step();
+      }), 1000);
+      return;
+    }
+    this.loopCount++;
     this.next();
     this.applyInput();
     this.world.step();
-    if (this.world.needsUpdate) return this.sendFrame();
+    this.world.boundsCheck();
+    if (this.world.needsUpdate || this.newInput) this.sendFrame();
+    return this.newInput = false;
   };
 
   GameRunner.prototype.stop = function() {
@@ -106,8 +132,7 @@ GameRunner = (function() {
   };
 
   GameRunner.prototype.extractObjData = function(obj) {
-    var data;
-    data = {
+    return {
       x: obj.x,
       y: obj.y,
       velocity: {
@@ -116,12 +141,10 @@ GameRunner = (function() {
       },
       falling: obj.falling
     };
-    return data;
   };
 
   GameRunner.prototype.extractInvertedObjData = function(obj) {
-    var data;
-    data = {
+    return {
       x: this.width - obj.x - obj.width,
       y: obj.y,
       velocity: {
@@ -130,7 +153,6 @@ GameRunner = (function() {
       },
       falling: obj.falling
     };
-    return data;
   };
 
   GameRunner.prototype.generateFrame = function(inverted) {

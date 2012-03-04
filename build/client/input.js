@@ -3,7 +3,7 @@ var Input;
 Input = (function() {
 
   function Input() {
-    var canvas, handleClick, handleKeyDown, handleKeyUp, handleMouseDown, handleMouseMove, handleMouseUp, multitouchShim, normalizeCoordinates, normalizeKeyEvent, normalizeMouseEvent;
+    var canvas, handleClick, handleKeyDown, handleKeyUp, handleMouseDown, handleMouseMove, handleMouseOut, handleMouseUp, multitouchShim, normalizeCoordinates, normalizeKeyEvent, normalizeMouseEvent;
     var _this = this;
     this.keys = {};
     this.anyInput = false;
@@ -57,6 +57,10 @@ Input = (function() {
       e = normalizeMouseEvent(e);
       return Globals.Manager.currScene.click(e);
     };
+    handleMouseOut = function(e) {
+      e = normalizeMouseEvent(e);
+      return Globals.Manager.currScene.mouseout(e);
+    };
     multitouchShim = function(callback) {
       return (function(cb) {
         return function(e) {
@@ -80,6 +84,7 @@ Input = (function() {
     canvas.addEventListener('mouseup', handleMouseUp, true);
     canvas.addEventListener('mousedown', handleMouseDown, true);
     canvas.addEventListener('mousemove', handleMouseMove, true);
+    canvas.addEventListener('mouseout', handleMouseOut, true);
     canvas.addEventListener('click', handleClick, true);
     document.documentElement.addEventListener('touchstart', multitouchShim(handleMouseDown), true);
     document.documentElement.addEventListener('touchend', multitouchShim(handleMouseUp), true);

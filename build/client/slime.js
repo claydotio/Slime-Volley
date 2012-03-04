@@ -32,6 +32,7 @@ Slime = (function() {
       this.velocity.x = -Constants.MOVEMENT_SPEED;
     } else if (input.right(pNum)) {
       this.velocity.x = Constants.MOVEMENT_SPEED;
+      if (module) console.log('RIGHT PRESSED!');
     } else {
       this.velocity.x = 0;
     }
@@ -44,8 +45,8 @@ Slime = (function() {
     if (this.gravTime < 10 * 60.0) return this.gravTime += numFrames;
   };
 
-  Slime.prototype.applyGravity = function() {
-    return this.y += 50.0 * (this.gravTime / 60.0);
+  Slime.prototype.applyGravity = function(numFrames) {
+    return this.y += 50.0 * (this.gravTime / 60.0) * numFrames;
   };
 
   Slime.prototype.draw = function(ctx) {

@@ -16,6 +16,8 @@ World = (function() {
     this.pole = pole;
     this.needsUpdate = false;
     this.lastStep = null;
+    this.clock = 0;
+    this.numFrames = 1;
   }
 
   World.prototype.resolveCollision = function(c1, c2) {
@@ -33,25 +35,30 @@ World = (function() {
     };
   };
 
-  World.prototype.step = function() {
-    var a, borderRadius, circle, dist, now, numFrames;
-    now = new Date().getTime();
-    numFrames = Constants.TICK_DURATION / (now - this.lastStep) || 1;
-    this.lastStep = now;
+  World.prototype.step = function(interval) {
+    var a, borderRadius, circle, dist, now;
+    if (interval) {
+      this.numFrames = interval / Constants.TICK_DURATION;
+    } else {
+      now = new Date().getTime();
+      this.numFrames = Constants.TICK_DURATION / (now - this.lastStep) || 1;
+      this.lastStep = now;
+    }
+    this.clock += interval;
     this.needsUpdate = false;
-    this.ball.incrementPosition(numFrames);
-    this.p1.incrementPosition(numFrames);
-    this.p2.incrementPosition(numFrames);
-    this.ball.applyGravity();
+    this.ball.incrementPosition(this.numFrames);
+    this.p1.incrementPosition(this.numFrames);
+    this.p2.incrementPosition(this.numFrames);
+    this.ball.applyGravity(this.numFrames);
     if (this.p1.falling) {
-      this.p1.y -= this.p1.jumpSpeed;
-      this.p1.incrementGravity(numFrames);
-      this.p1.applyGravity();
+      this.p1.y -= this.p1.jumpSpeed * this.numFrames;
+      this.p1.incrementGravity(this.numFrames);
+      this.p1.applyGravity(this.numFrames);
     }
     if (this.p2.falling) {
-      this.p2.y -= this.p2.jumpSpeed;
-      this.p2.incrementGravity(numFrames);
-      this.p2.applyGravity();
+      this.p2.y -= this.p2.jumpSpeed * this.numFrames;
+      this.p2.incrementGravity(this.numFrames);
+      this.p2.applyGravity(this.numFrames);
     }
     if (this.p1.y + this.p1.height > this.height - Constants.BOTTOM) {
       this.p1.y = this.height - Constants.BOTTOM - this.p1.height;
@@ -166,6 +173,30 @@ World = (function() {
       return this.p2.x = this.width - this.p2.width;
     }
   };
+
+  World.prototype.getObjState = function(obj) {
+    return {
+      x: obj.x,
+      y: obj.y,
+      velocity: {
+        x: obj.velocity.networkX || obj.velocity.x,
+        y: obj.velocity.networkX || obj.velocity.y
+      },
+      falling: obj.falling,
+      jumpSpeed: obj.networkJumpSpeed || obj.jumpSpeed,
+      clock: this.clock
+    };
+  };
+
+  World.prototype.getState = function() {
+    return {
+      p1: this.getObjState(this.p1),
+      p2: this.getObjState(this.p2),
+      ball: this.getObjState(this.ball)
+    };
+  };
+
+  World.prototype.injectInputUpdate = function(player, input, time) {};
 
   return World;
 

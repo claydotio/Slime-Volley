@@ -40,4 +40,5 @@ class Scene
 	mousedown: (e) -> btn.handleMouseDown(e) for own key, btn of @buttons
 	mousemove: (e) -> btn.handleMouseMove(e) for own key, btn of @buttons
 	mouseup:   (e) -> btn.handleMouseUp(e)   for own key, btn of @buttons
+	mouseout:  (e) -> # override me!
 	buttonPressed: -> # override me!

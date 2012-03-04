@@ -16,15 +16,17 @@ Ball = (function() {
     Ball.__super__.constructor.call(this, this.x, this.y, this.radius * 2, this.radius * 2, this.bg);
   }
 
-  Ball.prototype.applyGravity = function() {
+  Ball.prototype.applyGravity = function(numFrames) {
     if (!this.falling) return;
-    if (this.velocity.y < 10) {
-      this.velocity.y += .2;
+    if (this.velocity.y < 10 * numFrames) {
+      this.velocity.y += .2 * numFrames;
     } else {
-      this.velocity.y = 10;
+      this.velocity.y = 10 * numFrames;
     }
-    if (this.velocity.x >= .03) this.velocity.x -= .01;
-    if (this.velocity.x <= -.03) return this.velocity.x += .01;
+    if (this.velocity.x >= .03 * numFrames) this.velocity.x -= .01 * numFrames;
+    if (this.velocity.x <= -.03 * numFrames) {
+      return this.velocity.x += .01 * numFrames;
+    }
   };
 
   return Ball;

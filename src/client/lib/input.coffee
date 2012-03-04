@@ -46,6 +46,10 @@ class Input
 			e = normalizeMouseEvent(e)
 			Globals.Manager.currScene.click(e)
 
+		handleMouseOut = (e) =>
+			e = normalizeMouseEvent(e)
+			Globals.Manager.currScene.mouseout(e)
+
 		# multitouch shim wraps a callback and applies it for each individual touch 
 		multitouchShim = (callback) ->
 			return ((cb) ->  # create a scope to protect the callback param
@@ -54,13 +58,15 @@ class Input
 					cb( x: t.clientX, y: t.clientY, identifier: t.identifier ) for t in e.changedTouches
 					return
 			).call(this, callback)
+		# filter + pass all events to the current scene
 		canvas = Globals.Manager.canvas
 		document.addEventListener 'keydown', handleKeyDown, true
 		document.addEventListener 'keyup', handleKeyUp, true
 		canvas.addEventListener 'mouseup', handleMouseUp, true
 		canvas.addEventListener 'mousedown', handleMouseDown, true
 		canvas.addEventListener 'mousemove', handleMouseMove, true
-		canvas.addEventListener 'click', handleClick, true # NO NEED FOR CLICK EVENT?
+		canvas.addEventListener 'mouseout', handleMouseOut, true
+		canvas.addEventListener 'click', handleClick, true 
 		document.documentElement.addEventListener 'touchstart', multitouchShim(handleMouseDown), true
 		document.documentElement.addEventListener 'touchend',  multitouchShim(handleMouseUp), true
 		window.addEventListener 'touchmove', multitouchShim(handleMouseMove), true

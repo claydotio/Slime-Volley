@@ -21,7 +21,29 @@ NetworkSlimeVolleyball = (function() {
     this.freezeGame = true;
     this.displayMsg = 'Loading...';
     this.frame = null;
-    this.frameSent = 0;
+    this.gameStateBuffer = [];
+    this.networkInterpolationRemainder = 0;
+    this.keyState = {
+      left: false,
+      right: false,
+      up: false
+    };
+    this.p1.handleInput = this.p2.handleInput = function(input) {
+      var pNum;
+      pNum = this.isP2 ? 1 : 0;
+      if (input.left(pNum)) {
+        this.velocity.networkX = -Constants.MOVEMENT_SPEED;
+      } else if (input.right(pNum)) {
+        this.velocity.networkX = Constants.MOVEMENT_SPEED;
+      } else {
+        this.velocity.networkX = 0;
+      }
+      if (input.up(pNum)) {
+        if (this.jumpSpeed < .01) {
+          return this.networkJumpSpeed = Constants.JUMP_SPEED;
+        }
+      }
+    };
     if (this.socket) this.socket.disconnect() && (this.socket = null);
     this.socket = io.connect();
     this.socket.on('connect', function() {
@@ -31,11 +53,25 @@ NetworkSlimeVolleyball = (function() {
       return _this.displayMsg = 'Opponent found! Game begins in 1 second...';
     });
     this.socket.on('gameStart', function() {
+      _this.start();
       _this.freezeGame = false;
       return _this.displayMsg = null;
     });
     this.socket.on('gameFrame', function(data) {
+      console.log('gameFrame!');
       return _this.frame = data;
+    });
+    this.socket.on('roundEnd', function(didWin, frame) {
+      console.log('roundEnd!' + didWin);
+      _this.freezeGame = true;
+      if (didWin) {
+        _this.displayMsg = _this.winMsgs[Helpers.rand(_this.winMsgs.length - 2)];
+        _this.p1.score += 1;
+      } else {
+        _this.displayMsg = _this.failMsgs[Helpers.rand(_this.winMsgs.length - 2)];
+        _this.p2.score += 1;
+      }
+      return _this.applyFrame(frame);
     });
     this.socket.on('gameEnd', function(winner) {
       return _this.freezeGame = true;
@@ -44,14 +80,50 @@ NetworkSlimeVolleyball = (function() {
       _this.freezeGame = true;
       return _this.displayMsg = 'Lost connection to opponent. Looking for new match...';
     });
-    window.socket = this.socket;
-    this.framesBehind = 0;
-    this.frameDropStart = 0;
-    return this.keyState = {
-      left: false,
-      right: false,
-      up: false
-    };
+    return this.socketInitialized = true;
+  };
+
+  NetworkSlimeVolleyball.prototype.start = function() {
+    var i, _ref, _results;
+    _results = [];
+    for (i = 0, _ref = Constants.FRAME_DELAY; 0 <= _ref ? i < _ref : i > _ref; 0 <= _ref ? i++ : i--) {
+      this.world.step(Constants.TICK_DURATION);
+      _results.push(this.gameStateBuffer.push(world.getState()));
+    }
+    return _results;
+  };
+
+  NetworkSlimeVolleyball.prototype.applyInterpolation = function(obj) {
+    var complete;
+    console.log('ApplyInterpolation!');
+    complete = Constants.FRAME_DELAY - this.networkInterpolationRemainder;
+    obj.x = obj.origX + obj.dx * (this.world.numFrames + complete - 1);
+    return obj.y = obj.origY + obj.dy * (this.world.numFrames + complete - 1);
+  };
+
+  NetworkSlimeVolleyball.prototype.draw = function() {
+    var frame, msgs;
+    if (this.gameStateBuffer) frame = this.gameStateBuffer.shift();
+    frame || (frame = this.getFrame());
+    this.ctx.clearRect(0, 0, this.width, this.height);
+    this.bg.draw(this.ctx);
+    this.p1.draw(this.ctx, frame.p1.x, frame.p1.y);
+    this.p2.draw(this.ctx, frame.p2.x, frame.p2.y);
+    this.pole.draw(this.ctx);
+    this.p1Scoreboard.draw(this.ctx);
+    this.p2Scoreboard.draw(this.ctx);
+    this.ball.draw(this.ctx, frame.ball.x, frame.ball.y);
+    if (this.displayMsg) {
+      this.ctx.font = 'bold 14px ' + Constants.MSG_FONT;
+      this.ctx.fillStyle = '#ffffff';
+      this.ctx.textAlign = 'center';
+      msgs = this.displayMsg.split("\n");
+      this.ctx.fillText(msgs[0], this.width / 2, 85);
+      if (msgs.length > 1) {
+        this.ctx.font = 'bold 11px ' + Constants.MSG_FONT;
+        return this.ctx.fillText(msgs[1], this.width / 2, 110);
+      }
+    }
   };
 
   NetworkSlimeVolleyball.prototype.inputChanged = function() {
@@ -71,99 +143,37 @@ NetworkSlimeVolleyball = (function() {
     return changed;
   };
 
-  NetworkSlimeVolleyball.prototype.interpolateFrameDrops = function() {
-    var dropFrame;
-    dropFrame = false;
-    if (this.framesBehind > 0) {
-      this.frameDropStart++;
-      if (this.frameDropStart > 4) {
-        this.frameDropStart = 0;
-        dropFrame = true;
-        this.framesBehind = Math.max(this.framesBehind - 1, 0);
-      }
-    }
-    return dropFrame;
-  };
-
-  NetworkSlimeVolleyball.prototype.applyFrameData = function(frameObj, myObj) {
-    var betweenAngle, distance, frameVelocityAngle, key, myVelocityAngle, val, _results, _results2;
-    frameVelocityAngle = Math.atan(frameObj.velocity.y / frameObj.velocity.x);
-    myVelocityAngle = Math.atan(myObj.velocity.y / myObj.velocity.x);
-    if (Math.abs(frameVelocityAngle - myVelocityAngle) < 45) {
-      distance = Helpers.dist(frameObj, myObj);
-      this.framesBehind += distance / ((Helpers.velocityMag(myObj) + Helpers.velocityMag(frameObj)) / 2);
-      if (this.framesBehind > Constants.FRAME_DROP_THRESHOLD) {
-        this.framesBehind = 0;
-        for (key in frameObj) {
-          if (!__hasProp.call(frameObj, key)) continue;
-          val = frameObj[key];
-          myObj[key] = val;
-        }
-        return;
-      }
-      betweenAngle = Math.atan((myObj.y - frameObj.y) / (myObj.x - frameObj.x));
-      if (Math.abs(betweenAngle - frameVelocityAngle) > 22) {
-        _results = [];
-        for (key in frameObj) {
-          if (!__hasProp.call(frameObj, key)) continue;
-          val = frameObj[key];
-          _results.push(myObj[key] = val);
-        }
-        return _results;
-      } else {
-
-      }
-    } else {
-      _results2 = [];
-      for (key in frameObj) {
-        if (!__hasProp.call(frameObj, key)) continue;
-        val = frameObj[key];
-        _results2.push(myObj[key] = val);
-      }
-      return _results2;
-    }
-  };
-
-  NetworkSlimeVolleyball.prototype.applyInputData = function(inputData) {
-    var input;
-    console.log('applying input data');
-    input = Globals.Input;
-    input.set('left', inputData['left'], 1);
-    input.set('right', inputData['right'], 1);
-    return input.set('up', inputData['up'], 1);
-  };
-
-  NetworkSlimeVolleyball.prototype.applyFrame = function(frame) {
-    this.applyFrameData(frame.ball, this.ball);
-    this.applyFrameData(frame.p1, this.p1);
-    this.applyFrameData(frame.p2, this.p2);
-    if (frame.input) return this.applyInputData(frame.input);
-  };
-
   NetworkSlimeVolleyball.prototype.step = function(timestamp) {
-    var oldFrame, pState;
+    var oldFrame, topFrame;
     if (this.frame) {
       oldFrame = this.frame;
       this.frame = null;
       this.applyFrame(oldFrame);
     }
     this.next();
-    if (this.freezeGame) return this.draw();
-    if (this.interpolateFrameDrops()) return;
-    this.world.step();
-    if (this.restartPause > -1) this.handlePause();
-    if (this.restartPause < 0) {
+    if (this.freezeGame || !this.socketInitialized) {
+      if (this.gameStateBuffer) this.gameStateBuffer.push(this.getFrame());
+      this.draw();
+      return;
+    } else {
       this.p1.handleInput(Globals.Input);
       this.p2.handleInput(Globals.Input);
+      this.world.step();
     }
     if (this.inputChanged()) {
-      pState = {
-        x: this.p1.x,
-        y: this.p1.y
-      };
-      this.socket.emit('input', this.keyState, pState);
+      console.log('input Changed!');
+      this.socket.emit('input', this.keyState);
+    }
+    if (this.networkInterpolationRemainder > 0) {
+      console.log(this.networkInterpolationRemainder);
+      topFrame = this.gameStateBuffer[0];
+      this.applyInterpolation(this.p1);
+      this.applyInterpolation(this.p2);
+      this.applyInterpolation(this.ball);
+      this.networkInterpolationRemainder -= this.world.numFrames;
     }
     this.world.boundsCheck();
+    this.gameStateBuffer.push(this.getFrame());
     return this.draw();
   };
 

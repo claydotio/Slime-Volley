@@ -19,6 +19,8 @@ class Slime extends Sprite
 			@velocity.x = -Constants.MOVEMENT_SPEED
 		else if input.right(pNum)
 			@velocity.x = Constants.MOVEMENT_SPEED
+			if module
+				console.log 'RIGHT PRESSED!'
 		else
 			@velocity.x = 0
 
@@ -29,8 +31,8 @@ class Slime extends Sprite
 	incrementGravity: (numFrames) ->
 		@gravTime += numFrames if @gravTime < 10 * 60.0
 
-	applyGravity: ->
-		@y += 50.0 * (@gravTime / 60.0)
+	applyGravity: (numFrames) ->
+		@y += 50.0 * (@gravTime / 60.0) * numFrames
 
 	draw: (ctx) ->
 		# draw the slime sprite

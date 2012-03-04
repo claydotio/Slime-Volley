@@ -1,4 +1,4 @@
-# SlimeVolleyball is the main class containing start() and step()
+# SlimeVolleyball is the main class containing init() and step()
 class SlimeVolleyball extends Scene
 	# will be called when load complete
 	init: ->

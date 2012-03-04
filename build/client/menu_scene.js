@@ -32,7 +32,6 @@ MenuScene = (function() {
       key = _ref[_i];
       _fn.call(this, this.buttons[key]);
     }
-    this.instructions = new InstructionsScene();
   }
 
   MenuScene.prototype.step = function(timestamp) {
@@ -58,10 +57,12 @@ MenuScene = (function() {
 
   MenuScene.prototype.buttonPressed = function(btn) {
     if (btn === this.buttons['instructions']) {
-      return Globals.Manager.pushScene(this.instructions);
+      return Globals.Manager.pushScene(new InstructionsScene());
     } else if (btn === this.buttons['onePlayer']) {
       return Globals.Manager.pushScene(new SlimeVolleyball());
-    } else if (btn === this.buttons['options']) {} else if (btn === this.buttons['wifi']) {
+    } else if (btn === this.buttons['options']) {
+      return Globals.Manager.pushScene(new OptionsScene());
+    } else if (btn === this.buttons['wifi']) {
       return Globals.Manager.pushScene(new NetworkSlimeVolleyball());
     }
   };
