@@ -57,6 +57,7 @@ Sprite = (function() {
   };
 
   Sprite.prototype.setState = function(objState) {
+    if (!objState) return;
     this.x = objState.x;
     this.y = objState.y;
     this.width = objState.width;

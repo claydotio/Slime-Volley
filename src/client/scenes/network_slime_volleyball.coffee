@@ -6,11 +6,11 @@ unless window.io
 
 class NetworkSlimeVolleyball extends SlimeVolleyball
 	init: -> # load socket.io asynchronously
-		super()
+		super(true)
 		@freezeGame = true
 		@displayMsg = 'Loading...'
 		@gameFrame = null
-		@gameStateBuffer = []
+		@framebuffer = []
 		@networkInterpolationRemainder = 0
 		@world.deterministic = true # necessary for sync
 		
@@ -19,18 +19,16 @@ class NetworkSlimeVolleyball extends SlimeVolleyball
 		@socket = io.connect()
 		@socket.on 'connect', =>
 			@displayMsg = 'Connected. Waiting for opponent...'
-		@socket.on 'gameInit', =>
+		@socket.on 'gameInit', (frame) =>
 			@displayMsg = 'Opponent found! Game begins in 1 second...'
+			@world.setFrame(frame)
 		@socket.on 'gameStart', =>
-			console.log 'here we go.'
 			@freezeGame = false
 			@displayMsg = null
 			this.start()
 		@socket.on 'gameFrame', (data) =>
-			console.log 'gameFrame!'
 			@gameFrame = data
 		@socket.on 'roundEnd', (didWin, frame) =>
-			console.log 'roundEnd!'+ didWin
 			@freezeGame = true
 			if didWin
 				@displayMsg = @winMsgs[Helpers.rand(@winMsgs.length-2)] 
@@ -48,12 +46,12 @@ class NetworkSlimeVolleyball extends SlimeVolleyball
 	start: -> # prebuffer the first Constants.FRAME_DELAY frames
 		for i in [0...Constants.FRAME_DELAY]
 			@world.step(Constants.TICK_DURATION)
-			@gameStateBuffer.push(@world.getState())
+			@framebuffer.push(@world.getState())
 		super()
 
 	draw: ->
-		frame = @gameStateBuffer.shift() if @gameStateBuffer # shift the front frame out of buf
-		return unless frame
+		frame = @framebuffer.shift() if @framebuffer # shift the front frame out of buf
+		frame ||= @world.getState()
 		# draw everything!
 		@ctx.clearRect(0, 0, @width, @height) 
 		@bg.draw(@ctx)
@@ -63,7 +61,6 @@ class NetworkSlimeVolleyball extends SlimeVolleyball
 		@p1Scoreboard.draw(@ctx)
 		@p2Scoreboard.draw(@ctx)
 		@world.ball.draw(@ctx, frame.ball.x, frame.ball.y)
-		console.log frame.ball.y
 
 		# draw displayMsg, if any
 		if @displayMsg
@@ -81,15 +78,24 @@ class NetworkSlimeVolleyball extends SlimeVolleyball
 		if @gameFrame
 			f = @gameFrame
 			@gameFrame = null
-			console.log 'setting state.'
-			@world.setState(f.state)
+			@world.injectFrame(f)
 
 		if @freezeGame || !@socketInitialized # freeze everything!
 			@gameStateBuffer.push(@world.getState()) if @gameStateBuffer
 			this.draw()
 			return
+		if this.inputChanged() # send update to server that input has changed
+			frame = 
+				input: 
+					p1: @keyState
+				state: 
+					p1: @world.p1.getState()
+					clock: @world.clock
+			#eval('debugger')
+			@socket.emit('input', frame)
+			#@world.injectFrame(frame)
 		@world.step() # step physics
-		@gameStateBuffer.push(@world.getState()) # save in buffer
+		@framebuffer.push(@world.getState()) # save in buffer
 		this.draw() # we overrode this to draw frame at front of buffer
 
 	destroy: ->

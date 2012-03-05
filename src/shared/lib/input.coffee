@@ -77,15 +77,16 @@ class Input
 			left: ['key37', 'key65']
 			right: ['key39', 'key68']
 			up: ['key38', 'key87']
-			down: ['key40', 'key83']
 
 	# shortcuts for arrow states
 	left:  (p2) -> @keys[@shortcuts['left'][p2]] || false
 	right: (p2) -> @keys[@shortcuts['right'][p2]] || false
 	up:    (p2) -> @keys[@shortcuts['up'][p2]] || false
-	down:  (p2) -> @keys[@shortcuts['down'][p2]] || false
 	reset:      -> @keys[key] = false for key, val of @keys
-
+	getState: (p2) ->
+		left: @keys[@shortcuts['left'][p2]]
+		right: @keys[@shortcuts['right'][p2]]
+		up: @keys[@shortcuts['up'][p2]]
 	# setters for up, left, right
 	set: (shortcut, val, p2) ->
 		p2 ?= 0

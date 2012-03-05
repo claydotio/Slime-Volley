@@ -30,6 +30,8 @@ Constants =
 	MSG_FONT: 'Courier, monospace, sans-serif'
 	TICK_DURATION: 16 #ms
 	FRAME_DELAY: 5
+	STATE_SAVE: 500
+	SAVE_LIFETIME: 2000 # save for 2s
 	ASSETS: # images and sounds
 		p1:      'assets/images/s_0.png',
 		p2:      'assets/images/s_1.png'

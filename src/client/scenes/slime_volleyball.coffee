@@ -1,9 +1,9 @@
 # SlimeVolleyball is the main class containing init() and step()
 class SlimeVolleyball extends Scene
 	# will be called when load complete
-	init: ->
+	init: (dontOverrideInput) ->
 		# create physics simulation
-		@world = new World(@width, @height)
+		@world = new World(@width, @height, Globals.Input)
 		@world.deterministic = false # results in a smoother game
 		loader =  Globals.Loader
 		@world.pole.bg = loader.getAsset('pole')
@@ -37,6 +37,10 @@ class SlimeVolleyball extends Scene
 			right: false
 			up: false
 		}
+		unless dontOverrideInput
+			@world.handleInput = => # override handleInput
+				@world.p1.handleInput(Globals.Input)
+				this.moveCPU.apply(@world)
 		super()
 
 	inputChanged: -> # returns whether input has been received since last check
@@ -110,8 +114,6 @@ class SlimeVolleyball extends Scene
 		this.next() # constantly demand ~60fps
 		return this.draw() if @freezeGame # don't change anything!
 		# apply input and then step
-		@world.p1.handleInput(Globals.Input)
-		this.moveCPU.apply(@world)
 		@world.step() # step physics
 		# end game when ball hits ground
 		if @world.ball.y + @world.ball.height >= @world.height-Constants.BOTTOM			

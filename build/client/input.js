@@ -93,8 +93,7 @@ Input = (function() {
     this.shortcuts = {
       left: ['key37', 'key65'],
       right: ['key39', 'key68'],
-      up: ['key38', 'key87'],
-      down: ['key40', 'key83']
+      up: ['key38', 'key87']
     };
   }
 
@@ -110,10 +109,6 @@ Input = (function() {
     return this.keys[this.shortcuts['up'][p2]] || false;
   };
 
-  Input.prototype.down = function(p2) {
-    return this.keys[this.shortcuts['down'][p2]] || false;
-  };
-
   Input.prototype.reset = function() {
     var key, val, _ref, _results;
     _ref = this.keys;
@@ -123,6 +118,14 @@ Input = (function() {
       _results.push(this.keys[key] = false);
     }
     return _results;
+  };
+
+  Input.prototype.getState = function(p2) {
+    return {
+      left: this.keys[this.shortcuts['left'][p2]],
+      right: this.keys[this.shortcuts['right'][p2]],
+      up: this.keys[this.shortcuts['up'][p2]]
+    };
   };
 
   Input.prototype.set = function(shortcut, val, p2) {

@@ -93,6 +93,8 @@ Constants = {
   MSG_FONT: 'Courier, monospace, sans-serif',
   TICK_DURATION: 16,
   FRAME_DELAY: 5,
+  STATE_SAVE: 500,
+  SAVE_LIFETIME: 2000,
   ASSETS: {
     p1: 'assets/images/s_0.png',
     p2: 'assets/images/s_1.png',
@@ -459,8 +461,7 @@ Input = (function() {
     this.shortcuts = {
       left: ['key37', 'key65'],
       right: ['key39', 'key68'],
-      up: ['key38', 'key87'],
-      down: ['key40', 'key83']
+      up: ['key38', 'key87']
     };
   }
 
@@ -476,10 +477,6 @@ Input = (function() {
     return this.keys[this.shortcuts['up'][p2]] || false;
   };
 
-  Input.prototype.down = function(p2) {
-    return this.keys[this.shortcuts['down'][p2]] || false;
-  };
-
   Input.prototype.reset = function() {
     var key, val, _ref, _results;
     _ref = this.keys;
@@ -489,6 +486,14 @@ Input = (function() {
       _results.push(this.keys[key] = false);
     }
     return _results;
+  };
+
+  Input.prototype.getState = function(p2) {
+    return {
+      left: this.keys[this.shortcuts['left'][p2]],
+      right: this.keys[this.shortcuts['right'][p2]],
+      up: this.keys[this.shortcuts['up'][p2]]
+    };
   };
 
   Input.prototype.set = function(shortcut, val, p2) {
@@ -559,6 +564,7 @@ Sprite = (function() {
   };
 
   Sprite.prototype.setState = function(objState) {
+    if (!objState) return;
     this.x = objState.x;
     this.y = objState.y;
     this.width = objState.width;
@@ -886,7 +892,7 @@ Scoreboard = (function() {
 
 })();
 
-var Ball, Constants, GameState, GameStateBuffer, Helpers, Slime, Sprite, World;
+var Ball, Constants, GameStateBuffer, Helpers, Slime, Sprite, World;
 
 if (module) {
   Constants = require('./constants');
@@ -896,47 +902,93 @@ if (module) {
   Ball = require('./ball');
 }
 
-GameState = (function() {
-
-  function GameState() {}
-
-  return GameState;
-
-})();
-
 GameStateBuffer = (function() {
 
-  function GameStateBuffer(maxLength) {
-    this.maxLength = maxLength;
-    this.maxLength || (this.maxLength = 30);
+  function GameStateBuffer() {
     this.first = this.last = null;
     this.length = 0;
+    this.lastPush = 0;
   }
 
   GameStateBuffer.prototype.push = function(gs) {
-    var _results;
-    if (!this.first) return this.first = this.last = gs;
-    gs.next = this.first;
-    this.first.prev = gs;
-    this.first = gs;
-    this.length += 1;
-    _results = [];
-    while (this.length > this.maxLength) {
-      _results.push(this.pop());
+    var idx, ref;
+    if (!gs.state || !gs.state.clock) return;
+    if (!this.first) {
+      this.first = this.last = gs;
+      this.length += 1;
+      return;
     }
-    return _results;
+    ref = this.first;
+    idx = 0;
+    while (ref && ref.state.clock > gs.state.clock) {
+      ref = ref.next;
+      idx++;
+    }
+    if (ref === this.first) {
+      gs.prev = null;
+      gs.next = this.first;
+      this.first.prev = gs;
+      this.first = gs;
+    } else if (!ref) {
+      this.last.next = gs;
+      gs.prev = this.last;
+      gs.next = null;
+      this.last = gs;
+    } else {
+      gs.next = ref;
+      gs.prev = ref.prev;
+      if (gs.prev) gs.prev.next = gs;
+      ref.prev = gs;
+    }
+    this.length += 1;
+    return idx;
   };
 
   GameStateBuffer.prototype.pop = function() {
     var old;
+    if (this.length < 1) return null;
     old = this.first;
-    this.first = this.first.next;
-    this.first.prev = null;
+    this.first = this.first ? this.first.next : null;
+    if (this.first) this.first.prev = null;
     this.length -= 1;
+    if (!this.first) this.last = null;
     return old;
   };
 
-  GameStateBuffer.prototype.injectPastInput = function(player, input, time) {};
+  GameStateBuffer.prototype.shift = function() {
+    var old;
+    if (this.length < 1) return null;
+    old = this.last;
+    this.last = this.last.prev;
+    if (this.last) this.last.next = null;
+    if (old) old.prev = null;
+    this.length -= 1;
+    if (!this.last) this.first = null;
+    return old;
+  };
+
+  GameStateBuffer.prototype.cleanSaves = function(currClock) {
+    var i, minClock, ref, _results;
+    ref = this.last;
+    minClock = currClock - Constants.SAVE_LIFETIME;
+    i = 0;
+    _results = [];
+    while (ref && ref.state && ref !== this.head && ref.state.clock < minClock) {
+      ref = ref.prev;
+      this.shift();
+      _results.push(i++);
+    }
+    return _results;
+  };
+
+  GameStateBuffer.prototype.findStateBefore = function(clock) {
+    var ref;
+    ref = this.first;
+    while (ref && ref.state && ref.state.clock >= clock) {
+      ref = ref.next;
+    }
+    return ref;
+  };
 
   return GameStateBuffer;
 
@@ -944,13 +996,15 @@ GameStateBuffer = (function() {
 
 World = (function() {
 
-  function World(width, height) {
+  function World(width, height, input) {
     this.width = width;
     this.height = height;
+    this.input = input;
     this.lastStep = null;
     this.clock = 0;
     this.numFrames = 1;
-    this.buffer = new GameStateBuffer();
+    this.stateSaves = new GameStateBuffer();
+    this.futureFrames = new GameStateBuffer();
     this.ball = new Ball(this.width / 4 - Constants.BALL_RADIUS, this.height - Constants.BALL_START_HEIGHT, Constants.BALL_RADIUS);
     this.p1 = new Slime(this.width / 4 - Constants.SLIME_RADIUS, this.height - Constants.SLIME_START_HEIGHT, this.ball, false);
     this.p2 = new Slime(3 * this.width / 4 - Constants.SLIME_RADIUS, this.height - Constants.SLIME_START_HEIGHT, this.ball, true);
@@ -1024,13 +1078,15 @@ World = (function() {
     };
   };
 
-  World.prototype.step = function(interval) {
-    var a, borderRadius, circle, dist, newInterval, now, tick;
+  World.prototype.step = function(interval, dontIncrementClock) {
+    var a, borderRadius, circle, dist, newInterval, nextRef, now, ref, tick;
     now = new Date().getTime();
     tick = Constants.TICK_DURATION;
-    if (this.lastStep) interval || (interval = now - this.lastStep);
+    if (this.lastStep && !this.deterministic) {
+      interval || (interval = now - this.lastStep);
+    }
     interval || (interval = tick);
-    this.lastStep = now;
+    if (!dontIncrementClock) this.lastStep = now;
     if (interval >= tick * 2) {
       while (interval > 0) {
         if (this.deterministic) {
@@ -1038,7 +1094,7 @@ World = (function() {
         } else {
           newInterval = interval >= 2 * tick ? tick : newInterval;
         }
-        this.step(newInterval);
+        this.step(newInterval, dontIncrementClock);
         interval -= newInterval;
       }
       return;
@@ -1046,7 +1102,19 @@ World = (function() {
       interval = tick;
     }
     this.numFrames = interval / tick;
-    this.clock += interval;
+    if (!dontIncrementClock) {
+      ref = this.futureFrames.first;
+      while (ref && ref.state && ref.state.clock <= this.clock) {
+        this.setFrame(ref);
+        this.futureFrames.pop();
+        nextRef = ref.next;
+        this.stateSaves.push(ref);
+        ref = nextRef;
+      }
+      this.clock += interval;
+      this.stateSaves.cleanSaves(this.clock);
+    }
+    this.handleInput();
     this.ball.incrementPosition(this.numFrames);
     this.p1.incrementPosition(this.numFrames);
     this.p2.incrementPosition(this.numFrames);
@@ -1087,7 +1155,7 @@ World = (function() {
       if (this.ball.y + this.ball.radius >= this.pole.y + borderRadius) {
         this.ball.x = this.ball.velocity.x > 0 ? this.pole.x - this.ball.width : this.pole.x + this.pole.width;
         this.ball.velocity.x *= -1;
-        return this.ball.velocity.y = Helpers.yFromAngle(180 - (this.ball.velocity.x / this.ball.velocity.y)) * this.ball.velocity.y;
+        this.ball.velocity.y = Helpers.yFromAngle(180 - (this.ball.velocity.x / this.ball.velocity.y)) * this.ball.velocity.y;
       } else {
         if (this.ball.x + this.ball.radius < this.pole.x + borderRadius) {
           circle = {
@@ -1100,7 +1168,7 @@ World = (function() {
             this.ball.setPosition(this.resolveCollision(this.ball, circle));
             a = Helpers.rad2Deg(Math.atan(-((this.ball.x + this.ball.radius) - (circle.x + circle.radius)) / ((this.ball.y + this.ball.radius) - (circle.y + circle.radius))));
             this.ball.velocity.x = Helpers.xFromAngle(a) * 6;
-            return this.ball.velocity.y = Helpers.yFromAngle(a) * 6;
+            this.ball.velocity.y = Helpers.yFromAngle(a) * 6;
           }
         } else if (this.ball.x + this.ball.radius > this.pole.x + this.pole.width - borderRadius) {
           circle = {
@@ -1113,24 +1181,31 @@ World = (function() {
             this.ball.setPosition(this.resolveCollision(this.ball, circle));
             a = Helpers.rad2Deg(Math.atan(-((this.ball.x + this.ball.radius) - (circle.x + circle.radius)) / ((this.ball.y + this.ball.radius) - (circle.y + circle.radius))));
             this.ball.velocity.x = Helpers.xFromAngle(a) * 6;
-            return this.ball.velocity.y = Helpers.yFromAngle(a) * 6;
+            this.ball.velocity.y = Helpers.yFromAngle(a) * 6;
           }
         } else {
           this.ball.velocity.y *= -1;
           if (Math.abs(this.ball.velocity.x) < 0.1) this.ball.velocity.x = .5;
-          return this.ball.y = this.pole.y - this.ball.height;
+          this.ball.y = this.pole.y - this.ball.height;
         }
       }
     } else if (this.ball.x < this.pole.x + this.pole.width && this.ball.x > this.pole.x + this.ball.velocity.x && this.ball.y >= this.pole.y && this.ball.y <= this.pole.y + this.pole.height && this.ball.velocity.x < 0) {
       if (this.ball.y + this.ball.height >= this.pole.y + borderRadius) {
         this.ball.x = this.pole.x + this.pole.width;
         this.ball.velocity.x *= -1;
-        return this.ball.velocity.y = Helpers.yFromAngle(180 - (this.ball.velocity.x / this.ball.velocity.y)) * this.ball.velocity.y;
+        this.ball.velocity.y = Helpers.yFromAngle(180 - (this.ball.velocity.x / this.ball.velocity.y)) * this.ball.velocity.y;
       } else {
         this.ball.velocity.y *= -1;
         if (Math.abs(this.ball.velocity.x) < 0.1) this.ball.velocity.x = .5;
-        return this.ball.y = this.pole.y - this.ball.height;
+        this.ball.y = this.pole.y - this.ball.height;
       }
+    }
+    if (now - this.stateSaves.lastPush > Constants.STATE_SAVE) {
+      this.stateSaves.lastPush = now;
+      return this.stateSaves.push({
+        state: this.getState(),
+        input: null
+      });
     }
   };
 
@@ -1144,6 +1219,41 @@ World = (function() {
     }
     if (this.p2.x > this.width - this.p2.width) {
       return this.p2.x = this.width - this.p2.width;
+    }
+  };
+
+  World.prototype.handleInput = function() {
+    this.p1.handleInput(this.input);
+    return this.p2.handleInput(this.input);
+  };
+
+  World.prototype.injectFrame = function(frame) {
+    var currClock, firstIteration, nextClock, _results;
+    if (frame && frame.state.clock < this.clock) {
+      this.stateSaves.push(frame);
+      this.setState(frame.state);
+      firstIteration = true;
+      _results = [];
+      while (frame) {
+        currClock = frame.state.clock;
+        nextClock = this.clock;
+        if (frame.prev) nextClock = frame.prev.state.clock;
+        this.setInput(frame.input);
+        if (!firstIteration) {
+          frame.state = this.getState();
+          frame.state.clock = currClock;
+        }
+        firstIteration = false;
+        this.step(nextClock - currClock, true);
+        if (frame.prev) {
+          _results.push(frame = frame.prev);
+        } else {
+          break;
+        }
+      }
+      return _results;
+    } else {
+      return this.futureFrames.push(frame);
     }
   };
 
@@ -1165,10 +1275,46 @@ World = (function() {
     return this.ball.setState(state.ball);
   };
 
-  /* -- NETWORK CODE --
-  */
+  World.prototype.getInput = function() {
+    return {
+      p1: this.input.getState(0),
+      p2: this.input.getState(1)
+    };
+  };
 
-  World.prototype.injectNetworkInput = function(player, input, inputClock) {};
+  World.prototype.setInput = function(newInput) {
+    var key, _i, _j, _len, _len2, _ref, _ref2, _results;
+    if (!newInput) return;
+    if (newInput.p1) {
+      _ref = ['left', 'right', 'up'];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        key = _ref[_i];
+        this.input.set(key, newInput.p1[key], 0);
+      }
+    }
+    if (newInput.p2) {
+      _ref2 = ['left', 'right', 'up'];
+      _results = [];
+      for (_j = 0, _len2 = _ref2.length; _j < _len2; _j++) {
+        key = _ref2[_j];
+        _results.push(this.input.set(key, newInput.p2[key], 1));
+      }
+      return _results;
+    }
+  };
+
+  World.prototype.setFrame = function(frame) {
+    if (!frame) return;
+    this.setState(frame.state);
+    return this.setInput(frame.input);
+  };
+
+  World.prototype.getFrame = function() {
+    return {
+      state: this.getState(),
+      input: this.getInput()
+    };
+  };
 
   return World;
 
@@ -1321,9 +1467,10 @@ SlimeVolleyball = (function() {
     SlimeVolleyball.__super__.constructor.apply(this, arguments);
   }
 
-  SlimeVolleyball.prototype.init = function() {
+  SlimeVolleyball.prototype.init = function(dontOverrideInput) {
     var gamepad, loader;
-    this.world = new World(this.width, this.height);
+    var _this = this;
+    this.world = new World(this.width, this.height, Globals.Input);
     this.world.deterministic = false;
     loader = Globals.Loader;
     this.world.pole.bg = loader.getAsset('pole');
@@ -1350,6 +1497,12 @@ SlimeVolleyball = (function() {
       right: false,
       up: false
     };
+    if (!dontOverrideInput) {
+      this.world.handleInput = function() {
+        _this.world.p1.handleInput(Globals.Input);
+        return _this.moveCPU.apply(_this.world);
+      };
+    }
     return SlimeVolleyball.__super__.init.call(this);
   };
 
@@ -1436,8 +1589,6 @@ SlimeVolleyball = (function() {
     var winner;
     this.next();
     if (this.freezeGame) return this.draw();
-    this.world.p1.handleInput(Globals.Input);
-    this.moveCPU.apply(this.world);
     this.world.step();
     if (this.world.ball.y + this.world.ball.height >= this.world.height - Constants.BOTTOM) {
       winner = this.world.ball.x + this.world.ball.radius > this.width / 2 ? this.world.p1 : this.world.p2;
@@ -1473,11 +1624,11 @@ NetworkSlimeVolleyball = (function() {
 
   NetworkSlimeVolleyball.prototype.init = function() {
     var _this = this;
-    NetworkSlimeVolleyball.__super__.init.call(this);
+    NetworkSlimeVolleyball.__super__.init.call(this, true);
     this.freezeGame = true;
     this.displayMsg = 'Loading...';
     this.gameFrame = null;
-    this.gameStateBuffer = [];
+    this.framebuffer = [];
     this.networkInterpolationRemainder = 0;
     this.world.deterministic = true;
     if (this.socket) this.socket.disconnect() && (this.socket = null);
@@ -1485,21 +1636,19 @@ NetworkSlimeVolleyball = (function() {
     this.socket.on('connect', function() {
       return _this.displayMsg = 'Connected. Waiting for opponent...';
     });
-    this.socket.on('gameInit', function() {
-      return _this.displayMsg = 'Opponent found! Game begins in 1 second...';
+    this.socket.on('gameInit', function(frame) {
+      _this.displayMsg = 'Opponent found! Game begins in 1 second...';
+      return _this.world.setFrame(frame);
     });
     this.socket.on('gameStart', function() {
-      console.log('here we go.');
       _this.freezeGame = false;
       _this.displayMsg = null;
       return _this.start();
     });
     this.socket.on('gameFrame', function(data) {
-      console.log('gameFrame!');
       return _this.gameFrame = data;
     });
     this.socket.on('roundEnd', function(didWin, frame) {
-      console.log('roundEnd!' + didWin);
       _this.freezeGame = true;
       if (didWin) {
         _this.displayMsg = _this.winMsgs[Helpers.rand(_this.winMsgs.length - 2)];
@@ -1523,15 +1672,15 @@ NetworkSlimeVolleyball = (function() {
     var i, _ref;
     for (i = 0, _ref = Constants.FRAME_DELAY; 0 <= _ref ? i < _ref : i > _ref; 0 <= _ref ? i++ : i--) {
       this.world.step(Constants.TICK_DURATION);
-      this.gameStateBuffer.push(this.world.getState());
+      this.framebuffer.push(this.world.getState());
     }
     return NetworkSlimeVolleyball.__super__.start.call(this);
   };
 
   NetworkSlimeVolleyball.prototype.draw = function() {
     var frame, msgs;
-    if (this.gameStateBuffer) frame = this.gameStateBuffer.shift();
-    if (!frame) return;
+    if (this.framebuffer) frame = this.framebuffer.shift();
+    frame || (frame = this.world.getState());
     this.ctx.clearRect(0, 0, this.width, this.height);
     this.bg.draw(this.ctx);
     this.world.p1.draw(this.ctx, frame.p1.x, frame.p1.y);
@@ -1540,7 +1689,6 @@ NetworkSlimeVolleyball = (function() {
     this.p1Scoreboard.draw(this.ctx);
     this.p2Scoreboard.draw(this.ctx);
     this.world.ball.draw(this.ctx, frame.ball.x, frame.ball.y);
-    console.log(frame.ball.y);
     if (this.displayMsg) {
       this.ctx.font = 'bold 14px ' + Constants.MSG_FONT;
       this.ctx.fillStyle = '#ffffff';
@@ -1555,21 +1703,32 @@ NetworkSlimeVolleyball = (function() {
   };
 
   NetworkSlimeVolleyball.prototype.step = function(timestamp) {
-    var f;
+    var f, frame;
     this.next();
     if (this.gameFrame) {
       f = this.gameFrame;
       this.gameFrame = null;
-      console.log('setting state.');
-      this.world.setState(f.state);
+      this.world.injectFrame(f);
     }
     if (this.freezeGame || !this.socketInitialized) {
       if (this.gameStateBuffer) this.gameStateBuffer.push(this.world.getState());
       this.draw();
       return;
     }
+    if (this.inputChanged()) {
+      frame = {
+        input: {
+          p1: this.keyState
+        },
+        state: {
+          p1: this.world.p1.getState(),
+          clock: this.world.clock
+        }
+      };
+      this.socket.emit('input', frame);
+    }
     this.world.step();
-    this.gameStateBuffer.push(this.world.getState());
+    this.framebuffer.push(this.world.getState());
     return this.draw();
   };
 

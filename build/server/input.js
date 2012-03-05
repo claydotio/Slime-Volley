@@ -4,7 +4,17 @@ var __hasProp = Object.prototype.hasOwnProperty;
 Input = (function() {
 
   function Input() {
-    this.states = [{}, {}];
+    this.states = [
+      {
+        left: false,
+        right: false,
+        up: false
+      }, {
+        left: false,
+        right: false,
+        up: false
+      }
+    ];
   }
 
   Input.prototype.get = function(name, player) {
@@ -24,12 +34,13 @@ Input = (function() {
   };
 
   Input.prototype.set = function(newStates, player) {
-    var key, val, _results;
+    var key, val, _ref, _results;
+    _ref = this.states[player];
     _results = [];
-    for (key in newStates) {
-      if (!__hasProp.call(newStates, key)) continue;
-      val = newStates[key];
-      _results.push(this.states[player][key] = val);
+    for (key in _ref) {
+      if (!__hasProp.call(_ref, key)) continue;
+      val = _ref[key];
+      _results.push(this.states[player][key] = newStates[key]);
     }
     return _results;
   };

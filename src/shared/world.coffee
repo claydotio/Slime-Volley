@@ -5,31 +5,72 @@ if module
 	Slime = require('./slime')
 	Ball = require('./ball')
 
-# some helper classes for internal 
-class GameState 
-
 # implement a doubly linked list for the game state buffer
 # for fast insertion/removal
 class GameStateBuffer
-	constructor: (@maxLength) ->
-		@maxLength ||= 30
+	constructor: ->
 		@first = @last = null
 		@length = 0
-	push: (gs) -> # inserts gs at head
-		return @first = @last = gs if !@first
-		gs.next = @first
-		@first.prev = gs
-		@first = gs
+		@lastPush = 0
+	push: (gs) -> # walks the list until it finds the correct place for gs
+		return if !gs.state || !gs.state.clock  # invalid frame
+		if !@first
+			@first = @last = gs 
+			@length += 1
+			return
+		ref = @first
+		idx = 0	
+		while ref && ref.state.clock > gs.state.clock
+			ref = ref.next
+			idx++
+		if ref == @first
+			gs.prev = null
+			gs.next = @first
+			@first.prev = gs
+			@first = gs
+		else if !ref
+			@last.next = gs
+			gs.prev = @last
+			gs.next = null
+			@last = gs
+		else # insert before ref
+			gs.next = ref
+			gs.prev = ref.prev
+			gs.prev.next = gs if gs.prev
+			ref.prev = gs
 		@length += 1
-		this.pop() while @length > @maxLength
+		idx
 	pop: -> # removes & returns the head
+		return null if @length < 1
 		old = @first
-		@first = @first.next
-		@first.prev = null
+		@first = if @first then @first.next else null
+		@first.prev = null if @first
 		@length -= 1
+		@last = null if !@first
 		old
-	injectPastInput: (player, input, time) ->
-
+	shift: -> # removes & returns the tail
+		return null if @length < 1
+		old = @last
+		@last = @last.prev
+		@last.next = null if @last
+		old.prev = null if old # prevent dangling reference
+		@length -= 1
+		@first = null if !@last
+		old
+	cleanSaves: (currClock) -> # throw away saves that are too old
+		#console.log 'cleanSaves() called, clock='+currClock+', len='+@length
+		ref = @last
+		minClock = currClock - Constants.SAVE_LIFETIME
+		i = 0
+		while ref && ref.state && ref != @head && ref.state.clock < minClock
+			ref = ref.prev
+			this.shift()
+			i++
+	findStateBefore: (clock) ->
+		ref = @first
+		ref = ref.next while ref && ref.state && ref.state.clock >= clock
+		ref
+	
 	
 
 # World implements a (somewhat) deterministic physics simulator for our slime game.
@@ -42,12 +83,13 @@ class GameStateBuffer
 # the game with an "artificial"  lag of ~10 frames that is implemented in the 
 # NetworkSlimeVolleyball class
 class World
-	constructor: (@width, @height) ->
+	constructor: (@width, @height, @input) ->
 		# initialize game state variables
 		@lastStep = null
 		@clock = 0
 		@numFrames = 1
-		@buffer = new GameStateBuffer()
+		@stateSaves = new GameStateBuffer()
+		@futureFrames = new GameStateBuffer()
 		# initialize game objects
 		@ball = new Ball(@width/4-Constants.BALL_RADIUS, @height-Constants.BALL_START_HEIGHT, Constants.BALL_RADIUS)
 		@p1 = new Slime(@width/4-Constants.SLIME_RADIUS, @height-Constants.SLIME_START_HEIGHT, @ball, false)
@@ -100,13 +142,13 @@ class World
 
 
 	# update positions via velocities, resolve collisions
-	step: (interval) ->
+	step: (interval, dontIncrementClock) ->
 		# precalculate the number of frames (of length TICK_DURATION) this step spans
 		now = new Date().getTime()
 		tick = Constants.TICK_DURATION
-		interval ||= now - @lastStep if @lastStep
+		interval ||= now - @lastStep if @lastStep && !@deterministic
 		interval ||= tick # in case no interval is passed
-		@lastStep = now
+		@lastStep = now unless dontIncrementClock
 		
 		# automatically break up longer steps into a series of shorter steps
 		if interval >= tick*2
@@ -115,14 +157,25 @@ class World
 					newInterval = tick
 				else
 					newInterval = if interval >= 2*tick then tick else newInterval
-				this.step(newInterval)
+				this.step(newInterval, dontIncrementClock)
 				interval -= newInterval
 			return # don't continue stepping
 		else interval = tick
 
 		@numFrames = interval / tick
-		@clock += interval
+		unless dontIncrementClock # means this is a "realtime" step, so we incrememnt the clock
+			# look through @future frames to see if we can apply any of them now.
+			ref = @futureFrames.first
+			while ref && ref.state && ref.state.clock <= @clock
+				this.setFrame(ref)
+				@futureFrames.pop()
+				nextRef = ref.next # since push() changes the .next and .prev attributes of ref
+				@stateSaves.push(ref)
+				ref = nextRef
+			@clock += interval
+			@stateSaves.cleanSaves(@clock)
 		
+		this.handleInput()
 		@ball.incrementPosition(@numFrames)
 		@p1.incrementPosition(@numFrames)
 		@p2.incrementPosition(@numFrames)
@@ -198,6 +251,13 @@ class World
 				@ball.velocity.y *= -1
 				@ball.velocity.x = .5 if Math.abs(@ball.velocity.x) < 0.1
 				@ball.y = @pole.y - @ball.height
+		
+		if now - @stateSaves.lastPush > Constants.STATE_SAVE # save current state every STATE_SAVE ms
+			@stateSaves.lastPush = now
+			@stateSaves.push # push a frame structure on to @stateSaves
+				state: this.getState()
+				input: null
+		
 
 	boundsCheck: ->		
 		# world bounds checking
@@ -205,6 +265,34 @@ class World
 		@p1.x = @pole.x - @p1.width if @p1.x + @p1.width > @pole.x
 		@p2.x = @pole.x + @pole.width if @p2.x < @pole.x + @pole.width
 		@p2.x = @width - @p2.width if @p2.x > @width - @p2.width
+
+	handleInput: ->
+		@p1.handleInput(@input)
+		@p2.handleInput(@input)
+
+	injectFrame: (frame) ->
+		# starting from that frame, recalculate input
+		#console.log 'injecting frame@'+frame.state.clock+', current clock@'+@clock
+		if frame && frame.state.clock < @clock
+			@stateSaves.push(frame) # assigns .next and .prev to frame
+			this.setState(frame.state)
+			firstIteration = true
+			while frame
+				currClock = frame.state.clock
+				nextClock = @clock
+				nextClock = frame.prev.state.clock if frame.prev
+				this.setInput(frame.input)
+				unless firstIteration # this frame's state might be different, 
+					frame.state = this.getState() # this resets the clock
+					frame.state.clock = currClock # fixed
+				firstIteration = false
+				this.step(nextClock - currClock, true)
+				if frame.prev then frame = frame.prev else break
+			
+		else # we'll deal with this later
+			@futureFrames.push(frame)
+			
+			
 
 	### -- GAME STATE GETTER + SETTERS -- ###
 	getState: ->
@@ -216,14 +304,22 @@ class World
 		@p1.setState(state.p1)
 		@p2.setState(state.p2)
 		@ball.setState(state.ball)
-
-	### -- NETWORK CODE -- ###
-	# we have received notice of an event that happened in the past,
-	# go back and apply input and recalculate the present state
-	injectNetworkInput: (player, input, inputClock) ->
-		# rewind to the last input frame 
-		#newState = @buffer.injectPastInput(player, input, inputClock)
-		#this.applyState(@buffer.applyPastInput)
+	getInput: ->
+		p1: @input.getState(0)
+		p2: @input.getState(1)
+	setInput: (newInput) ->
+		return unless newInput
+		if newInput.p1
+			@input.set(key, newInput.p1[key], 0) for key in ['left', 'right', 'up']
+		if newInput.p2
+			@input.set(key, newInput.p2[key], 1) for key in ['left', 'right', 'up']
+	setFrame: (frame) ->
+		return unless frame
+		this.setState(frame.state)
+		this.setInput(frame.input)
+	getFrame: -> # returns a frame with no input
+		state: this.getState()
+		input: this.getInput()
 
 
 module.exports = World if module # in case we are using node.js

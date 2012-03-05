@@ -34,6 +34,7 @@ class Sprite
 			y: @velocity.y
 
 	setState: (objState) ->
+		return if !objState
 		@x = objState.x
 		@y = objState.y
 		@width = objState.width

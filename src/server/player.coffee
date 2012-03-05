@@ -1,13 +1,13 @@
 class Player
 	constructor: (@socket) ->
 		@room = null
-		@socket.on 'input', (input) => this.receiveInput(input)
+		@socket.on 'input', (frame) => this.receiveInput(frame)
 		@socket.on 'disconnect', => this.didDisconnect()
 
-	receiveInput: (input) ->
-		@room.game.injectInput(input, this == @room.p2) if @room && @room.gameRunning()
+	receiveInput: (frame) ->
+		@room.game.injectFrame(frame, this == @room.p2) if @room
 
 	didDisconnect: ->
-		@room.stopGame() if @room && @room.gameRunning()
+		@room.stopGame() if @room
 
 module.exports = Player

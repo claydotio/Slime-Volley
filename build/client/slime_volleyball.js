@@ -9,9 +9,10 @@ SlimeVolleyball = (function() {
     SlimeVolleyball.__super__.constructor.apply(this, arguments);
   }
 
-  SlimeVolleyball.prototype.init = function() {
+  SlimeVolleyball.prototype.init = function(dontOverrideInput) {
     var gamepad, loader;
-    this.world = new World(this.width, this.height);
+    var _this = this;
+    this.world = new World(this.width, this.height, Globals.Input);
     this.world.deterministic = false;
     loader = Globals.Loader;
     this.world.pole.bg = loader.getAsset('pole');
@@ -38,6 +39,12 @@ SlimeVolleyball = (function() {
       right: false,
       up: false
     };
+    if (!dontOverrideInput) {
+      this.world.handleInput = function() {
+        _this.world.p1.handleInput(Globals.Input);
+        return _this.moveCPU.apply(_this.world);
+      };
+    }
     return SlimeVolleyball.__super__.init.call(this);
   };
 
@@ -124,8 +131,6 @@ SlimeVolleyball = (function() {
     var winner;
     this.next();
     if (this.freezeGame) return this.draw();
-    this.world.p1.handleInput(Globals.Input);
-    this.moveCPU.apply(this.world);
     this.world.step();
     if (this.world.ball.y + this.world.ball.height >= this.world.height - Constants.BOTTOM) {
       winner = this.world.ball.x + this.world.ball.radius > this.width / 2 ? this.world.p1 : this.world.p2;
