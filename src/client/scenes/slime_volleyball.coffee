@@ -4,6 +4,7 @@ class SlimeVolleyball extends Scene
 	init: ->
 		# create physics simulation
 		@world = new World(@width, @height)
+		@world.deterministic = false # results in a smoother game
 		loader =  Globals.Loader
 		@world.pole.bg = loader.getAsset('pole')
 		@bg = new StretchySprite(0, 0, @width, @height, 200, 1, loader.getAsset('bg'))
@@ -81,16 +82,28 @@ class SlimeVolleyball extends Scene
 
 	# main "loop" iteration
 	step: (timestamp) ->
+		# console.log 'setting world pball and p1'
+		# @world.ball.x = @world.p1.x + @world.p1.width - 20
+		# @world.ball.y = @world.p1.y + 3
+		# @world.ball.velocity = x: -1, y: 2
+		# @world.p1.velocity = x: 8, y: 0
+		# setTimeout(( =>
+		# 	@world.ball.setPosition(@world.resolveCollision(@world.ball, @world.p1))
+		# 	this.draw()
+		# 	), 1000)
+		# return this.draw()
+
+		
 		this.next() # constantly demand ~60fps
 		return this.draw() if @freezeGame # don't change anything!
-		# end game when ball hits ground
-		if @world.ball.y + @world.ball.height >= @world.height-Constants.BOTTOM			
-			winner = if @world.ball.x+@world.ball.radius > @width/2 then @world.p1 else @world.p2
-			this.handleWin(winner)
 		# apply input and then step
 		@world.p1.handleInput(Globals.Input)
 		this.moveCPU.apply(@world)
 		@world.step() # step physics
+		# end game when ball hits ground
+		if @world.ball.y + @world.ball.height >= @world.height-Constants.BOTTOM			
+			winner = if @world.ball.x+@world.ball.radius > @width/2 then @world.p1 else @world.p2
+			this.handleWin(winner)
 		this.draw()
 	
 	buttonPressed: (e) -> # menu pressed, end game and pop

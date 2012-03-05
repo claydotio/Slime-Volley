@@ -72,7 +72,7 @@ Constants = {
   MOVE_ACCEL: 25,
   POLE_WIDTH: 8,
   POLE_HEIGHT: 64,
-  GRAVITY: 3,
+  GRAVITY: .15,
   ARROW_WIDTH: 121,
   SET_DELAY: 800,
   WIN_SCORE: 6,
@@ -82,7 +82,10 @@ Constants = {
   BACK_BTN_HEIGHT: 26,
   BALL_START_HEIGHT: 260,
   SLIME_RADIUS: 32,
+  SLIME_MASS: 3.5,
+  SLIME_JUMP: 10,
   BALL_RADIUS: 10,
+  BALL_MASS: 1.4,
   MOVEMENT_SPEED: 4,
   JUMP_SPEED: 12,
   SLIME_START_HEIGHT: 91,
@@ -509,14 +512,15 @@ Sprite = (function() {
     this.width = width;
     this.height = height;
     this.bg = bg;
-    this.velocity = {
+    this.velocity || (this.velocity = {
       x: 0,
       y: 0
-    };
-    this.acceleration = {
+    });
+    this.acceleration || (this.acceleration = {
       x: 0,
       y: Constants.GRAVITY
-    };
+    });
+    this.mass || (this.mass = 1.0);
   }
 
   Sprite.prototype.setPosition = function(x, y) {
@@ -531,8 +535,8 @@ Sprite = (function() {
   Sprite.prototype.incrementPosition = function(numFrames) {
     this.x += this.velocity.x * numFrames;
     this.y += this.velocity.y * numFrames;
-    this.velocity.x += this.acceleration.x;
-    return this.velocity.y += this.acceleration.y;
+    this.velocity.x += this.acceleration.x * this.mass * numFrames * numFrames;
+    return this.velocity.y += this.acceleration.y * this.mass * numFrames * numFrames;
   };
 
   Sprite.prototype.draw = function(ctx, x, y) {
@@ -749,10 +753,13 @@ StretchySprite = (function() {
 
 })();
 
-var Ball, Sprite;
+var Ball, Constants, Sprite;
 var __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
 
-if (module) Sprite = require('./sprite');
+if (module) {
+  Sprite = require('./sprite');
+  Constants = require('./constants');
+}
 
 Ball = (function() {
 
@@ -764,6 +771,7 @@ Ball = (function() {
     this.radius = Constants.BALL_RADIUS;
     this.falling = true;
     if (Globals) this.bg = Globals.Loader.getAsset('ball');
+    this.mass = Constants.BALL_MASS;
     Ball.__super__.constructor.call(this, this.x, this.y, this.radius * 2, this.radius * 2, this.bg);
   }
 
@@ -792,13 +800,11 @@ Slime = (function() {
     this.isP2 = isP2;
     this.radius = Constants.SLIME_RADIUS;
     this.score = 0;
-    this.gravTime = 0;
-    this.falling = false;
-    this.jumpSpeed = 0;
     if (Globals) {
       this.eyeImg = Globals.Loader.getAsset('eye');
       this.bg = Globals.Loader.getAsset(this.isP2 ? 'p2' : 'p1');
     }
+    this.mass = Constants.SLIME_MASS;
     Slime.__super__.constructor.call(this, this.x, this.y, this.radius * 2, this.radius, this.bg);
   }
 
@@ -812,7 +818,11 @@ Slime = (function() {
     } else {
       this.velocity.x = 0;
     }
-    if (input.up(pNum)) return this.velocity.y = -10;
+    if (input.up(pNum)) {
+      if (this.y >= Constants.BASE_HEIGHT - Constants.BOTTOM - this.height) {
+        return this.velocity.y = -Constants.SLIME_JUMP;
+      }
+    }
   };
 
   Slime.prototype.draw = function(ctx) {
@@ -934,10 +944,11 @@ World = (function() {
     this.clock = 0;
     this.numFrames = 1;
     this.buffer = new GameStateBuffer();
-    this.ball = new Ball(this.width / 4 - Constants.BALL_RADIUS, this.height - Constants.BALL_START_HEIGHT, Constants.BALL_RADIUS);
+    this.ball = new Ball(this.width / 2 - Constants.BALL_RADIUS + 13, this.height - Constants.BALL_START_HEIGHT, Constants.BALL_RADIUS);
     this.p1 = new Slime(this.width / 4 - Constants.SLIME_RADIUS, this.height - Constants.SLIME_START_HEIGHT, this.ball, false);
     this.p2 = new Slime(3 * this.width / 4 - Constants.SLIME_RADIUS, this.height - Constants.SLIME_START_HEIGHT, this.ball, true);
     this.pole = new Sprite(this.width / 2 - Constants.POLE_WIDTH / 2, this.height - Constants.BOTTOM - Constants.POLE_HEIGHT - 1, Constants.POLE_WIDTH, Constants.POLE_HEIGHT);
+    this.deterministic = true;
   }
 
   World.prototype.reset = function(servingPlayer) {
@@ -963,60 +974,71 @@ World = (function() {
     return this.p1.gravTime = this.ball.gravTime = this.p2.gravTime = 0;
   };
 
-  World.prototype.resolveCollision = function(c1, c2) {
-    var a, b, c, c2vx, c2vy, center1, center2, diffVector, finalPoint, outsidePoint, radius, u, u2, velocityLine, velocityMagnitude;
-    console.log('resolveCollision!');
-    radius = c1.radius + c2.radius;
-    center1 = {
-      x: c1.x + c1.radius,
-      y: this.height - (c1.y + c1.radius)
+  World.prototype.resolveCollision = function(b, circle) {
+    var A, B, C, R, ballMomentum, o1, o2, o3, u, u2, v, vel;
+    v = circle.velocity || {
+      x: 0,
+      y: 0
     };
-    center2 = {
-      x: c2.x + c2.radius,
-      y: this.height - (c2.y + c2.radius)
+    ballMomentum = Helpers.mag(b.velocity) * b.mass > Helpers.mag(v) * (circle.mass || 1.0);
+    R = b.radius + circle.radius;
+    o1 = {
+      x: b.x + b.radius,
+      y: b.y + b.radius
     };
-    c2vx = c2.velocity ? c2.velocity.x : 0;
-    c2vy = c2.velocity ? c2.velocity.y : 0;
-    velocityLine = {
-      x: -c1.velocity.x + c2vx,
-      y: -c1.velocity.y + c2vy
+    if (ballMomentum) {
+      o2 = {
+        x: b.x + b.radius + b.velocity.x,
+        y: b.y + b.radius + b.velocity.y
+      };
+    } else {
+      o2 = {
+        x: b.x + b.radius - v.x,
+        y: b.y + b.radius - v.y
+      };
+    }
+    o3 = {
+      x: circle.x + circle.radius,
+      y: circle.y + circle.radius
     };
-    velocityMagnitude = Helpers.mag(velocityLine);
-    outsidePoint = {
-      x: center1.x - (velocityLine.x / velocityMagnitude * c2.radius * 2),
-      y: center1.y + (velocityLine.y / velocityMagnitude * c2.radius * 2)
+    A = Math.pow(o2.x - o1.x, 2) + Math.pow(o2.y - o1.y, 2);
+    B = 2 * ((o2.x - o1.x) * (o1.x - o3.x) + (o2.y - o1.y) * (o1.y - o3.y));
+    C = o3.x * o3.x + o3.y * o3.y + o1.x * o1.x + o1.y * o1.y - 2 * (o3.x * o1.x + o3.y * o1.y) - R * R;
+    u = (-B + Math.sqrt(B * B - 4 * A * C)) / (2 * A);
+    u2 = (-B - Math.sqrt(B * B - 4 * A * C)) / (2 * A);
+    u = Math.min(u, u2);
+    vel = ballMomentum ? b.velocity : {
+      x: -v.x,
+      y: -v.y
     };
-    diffVector = {
-      x: outsidePoint.x - center1.x,
-      y: outsidePoint.y - center1.y
-    };
-    a = Math.pow(outsidePoint.x - center1.x, 2) + Math.pow(outsidePoint.y - center1.y, 2);
-    b = 2 * ((outsidePoint.x - center1.x) * (center1.x - center2.x) + (outsidePoint.y - center1.y) * (center1.y - center2.y));
-    c = Math.pow(center2.x, 2) + Math.pow(center2.y, 2) + Math.pow(center1.x, 2) + Math.pow(center1.y, 2) - 2 * (center2.x * center1.x + center2.y * center1.y) - Math.pow(radius, 2);
-    u = (-b + Math.sqrt(b * b - 4 * a * c)) / (2 * a);
-    u2 = (-b - Math.sqrt(b * b - 4 * a * c)) / (2 * a);
-    u = Math.abs(u2) < Math.abs(u) ? u2 : u;
-    return finalPoint = {
-      x: center1.x - (diffVector.x * u) - c1.radius,
-      y: this.height - (center1.y + (diffVector.y * u)) - c1.radius
+    return {
+      x: b.x + vel.x * u,
+      y: b.y + vel.y * u
     };
   };
 
   World.prototype.step = function(interval) {
-    var a, borderRadius, circle, dist, newInterval, now;
+    var a, borderRadius, circle, dist, newInterval, now, tick;
     now = new Date().getTime();
+    tick = Constants.TICK_DURATION;
     if (this.lastStep) interval || (interval = now - this.lastStep);
-    interval || (interval = Constants.TICK_DURATION);
+    interval || (interval = tick);
     this.lastStep = now;
-    if (interval >= Constants.TICK_DURATION * 2) {
+    if (interval >= tick * 2) {
       while (interval > 0) {
-        newInterval = interval >= Constants.TICK_DURATION * 2 ? Constants.TICK_DURATION : interval;
+        if (this.deterministic) {
+          newInterval = tick;
+        } else {
+          newInterval = interval >= 2 * tick ? tick : newInterval;
+        }
         this.step(newInterval);
         interval -= newInterval;
       }
       return;
+    } else {
+      interval = tick;
     }
-    this.numFrames = interval / Constants.TICK_DURATION;
+    this.numFrames = interval / tick;
     this.clock += interval;
     this.ball.incrementPosition(this.numFrames);
     this.p1.incrementPosition(this.numFrames);
@@ -1295,6 +1317,7 @@ SlimeVolleyball = (function() {
   SlimeVolleyball.prototype.init = function() {
     var gamepad, loader;
     this.world = new World(this.width, this.height);
+    this.world.deterministic = false;
     loader = Globals.Loader;
     this.world.pole.bg = loader.getAsset('pole');
     this.bg = new StretchySprite(0, 0, this.width, this.height, 200, 1, loader.getAsset('bg'));
@@ -1384,13 +1407,13 @@ SlimeVolleyball = (function() {
     var winner;
     this.next();
     if (this.freezeGame) return this.draw();
+    this.world.p1.handleInput(Globals.Input);
+    this.moveCPU.apply(this.world);
+    this.world.step();
     if (this.world.ball.y + this.world.ball.height >= this.world.height - Constants.BOTTOM) {
       winner = this.world.ball.x + this.world.ball.radius > this.width / 2 ? this.world.p1 : this.world.p2;
       this.handleWin(winner);
     }
-    this.world.p1.handleInput(Globals.Input);
-    this.moveCPU.apply(this.world);
-    this.world.step();
     return this.draw();
   };
 

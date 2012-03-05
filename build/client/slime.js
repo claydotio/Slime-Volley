@@ -17,13 +17,11 @@ Slime = (function() {
     this.isP2 = isP2;
     this.radius = Constants.SLIME_RADIUS;
     this.score = 0;
-    this.gravTime = 0;
-    this.falling = false;
-    this.jumpSpeed = 0;
     if (Globals) {
       this.eyeImg = Globals.Loader.getAsset('eye');
       this.bg = Globals.Loader.getAsset(this.isP2 ? 'p2' : 'p1');
     }
+    this.mass = Constants.SLIME_MASS;
     Slime.__super__.constructor.call(this, this.x, this.y, this.radius * 2, this.radius, this.bg);
   }
 
@@ -37,7 +35,11 @@ Slime = (function() {
     } else {
       this.velocity.x = 0;
     }
-    if (input.up(pNum)) return this.velocity.y = -10;
+    if (input.up(pNum)) {
+      if (this.y >= Constants.BASE_HEIGHT - Constants.BOTTOM - this.height) {
+        return this.velocity.y = -Constants.SLIME_JUMP;
+      }
+    }
   };
 
   Slime.prototype.draw = function(ctx) {

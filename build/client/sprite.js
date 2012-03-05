@@ -10,14 +10,15 @@ Sprite = (function() {
     this.width = width;
     this.height = height;
     this.bg = bg;
-    this.velocity = {
+    this.velocity || (this.velocity = {
       x: 0,
       y: 0
-    };
-    this.acceleration = {
+    });
+    this.acceleration || (this.acceleration = {
       x: 0,
       y: Constants.GRAVITY
-    };
+    });
+    this.mass || (this.mass = 1.0);
   }
 
   Sprite.prototype.setPosition = function(x, y) {
@@ -32,8 +33,8 @@ Sprite = (function() {
   Sprite.prototype.incrementPosition = function(numFrames) {
     this.x += this.velocity.x * numFrames;
     this.y += this.velocity.y * numFrames;
-    this.velocity.x += this.acceleration.x;
-    return this.velocity.y += this.acceleration.y;
+    this.velocity.x += this.acceleration.x * this.mass * numFrames * numFrames;
+    return this.velocity.y += this.acceleration.y * this.mass * numFrames * numFrames;
   };
 
   Sprite.prototype.draw = function(ctx, x, y) {

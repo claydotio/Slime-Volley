@@ -12,6 +12,7 @@ SlimeVolleyball = (function() {
   SlimeVolleyball.prototype.init = function() {
     var gamepad, loader;
     this.world = new World(this.width, this.height);
+    this.world.deterministic = false;
     loader = Globals.Loader;
     this.world.pole.bg = loader.getAsset('pole');
     this.bg = new StretchySprite(0, 0, this.width, this.height, 200, 1, loader.getAsset('bg'));
@@ -101,13 +102,13 @@ SlimeVolleyball = (function() {
     var winner;
     this.next();
     if (this.freezeGame) return this.draw();
+    this.world.p1.handleInput(Globals.Input);
+    this.moveCPU.apply(this.world);
+    this.world.step();
     if (this.world.ball.y + this.world.ball.height >= this.world.height - Constants.BOTTOM) {
       winner = this.world.ball.x + this.world.ball.radius > this.width / 2 ? this.world.p1 : this.world.p2;
       this.handleWin(winner);
     }
-    this.world.p1.handleInput(Globals.Input);
-    this.moveCPU.apply(this.world);
-    this.world.step();
     return this.draw();
   };
 
