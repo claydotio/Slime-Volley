@@ -13,8 +13,7 @@ class GameRunner
 		@world = new World(@width, @height)
 		@running = false
 		@loopCount = 0
-		@stepCallback = => # double arrow "saves" `this` reference
-			this.step()
+		@stepCallback = => this.step()
 			
 	next: -> # iterate game "loop"
 		@lastTimeout = setTimeout(@stepCallback, Constants.TICK_DURATION)
@@ -56,7 +55,7 @@ class GameRunner
 
 		this.next() 
 		@world.step()
-		this.sendFrame() if @loopCount % 20 == 0
+		this.sendFrame() if @loopCount % 15 == 0
 		@newInput = null
 
 	stop: ->
@@ -67,13 +66,16 @@ class GameRunner
 		state = @world.getState()
 		frame = {
 			state: state
-			clock: @world.clock
+			input: null
 		}
 		@room.p1.socket.emit(notificationName, frame) if @room.p1
 		# invert x of state to send to client 2
 		for obj in [frame.state.p1, frame.state.p2, frame.state.ball]
 			obj.x = (@width - obj.x - obj.width)
 			obj.velocity.x *= -1 if obj.velocity
+		ref = frame.state.p1
+		frame.state.p1 = frame.state.p2
+		frame.state.p2 = ref
 		@room.p2.socket.emit(notificationName, frame) if @room.p2
 
 module.exports = GameRunner

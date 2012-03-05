@@ -549,6 +549,8 @@ Sprite = (function() {
     return {
       x: this.x,
       y: this.y,
+      width: this.width,
+      height: this.height,
       velocity: {
         x: this.velocity.x,
         y: this.velocity.y
@@ -559,6 +561,8 @@ Sprite = (function() {
   Sprite.prototype.setState = function(objState) {
     this.x = objState.x;
     this.y = objState.y;
+    this.width = objState.width;
+    this.height = objState.height;
     return this.velocity = {
       x: objState.velocity.x,
       y: objState.velocity.y
@@ -1472,9 +1476,10 @@ NetworkSlimeVolleyball = (function() {
     NetworkSlimeVolleyball.__super__.init.call(this);
     this.freezeGame = true;
     this.displayMsg = 'Loading...';
-    this.frame = null;
+    this.gameFrame = null;
     this.gameStateBuffer = [];
     this.networkInterpolationRemainder = 0;
+    this.world.deterministic = true;
     if (this.socket) this.socket.disconnect() && (this.socket = null);
     this.socket = io.connect();
     this.socket.on('connect', function() {
@@ -1491,7 +1496,7 @@ NetworkSlimeVolleyball = (function() {
     });
     this.socket.on('gameFrame', function(data) {
       console.log('gameFrame!');
-      return _this.frame = data;
+      return _this.gameFrame = data;
     });
     this.socket.on('roundEnd', function(didWin, frame) {
       console.log('roundEnd!' + didWin);
@@ -1550,7 +1555,14 @@ NetworkSlimeVolleyball = (function() {
   };
 
   NetworkSlimeVolleyball.prototype.step = function(timestamp) {
+    var f;
     this.next();
+    if (this.gameFrame) {
+      f = this.gameFrame;
+      this.gameFrame = null;
+      console.log('setting state.');
+      this.world.setState(f.state);
+    }
     if (this.freezeGame || !this.socketInitialized) {
       if (this.gameStateBuffer) this.gameStateBuffer.push(this.world.getState());
       this.draw();

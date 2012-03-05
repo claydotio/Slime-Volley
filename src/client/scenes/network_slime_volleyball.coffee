@@ -9,9 +9,10 @@ class NetworkSlimeVolleyball extends SlimeVolleyball
 		super()
 		@freezeGame = true
 		@displayMsg = 'Loading...'
-		@frame = null
+		@gameFrame = null
 		@gameStateBuffer = []
 		@networkInterpolationRemainder = 0
+		@world.deterministic = true # necessary for sync
 		
 		# initialize socket.io connection to server
 		@socket.disconnect() && @socket = null if @socket
@@ -27,7 +28,7 @@ class NetworkSlimeVolleyball extends SlimeVolleyball
 			this.start()
 		@socket.on 'gameFrame', (data) =>
 			console.log 'gameFrame!'
-			@frame = data
+			@gameFrame = data
 		@socket.on 'roundEnd', (didWin, frame) =>
 			console.log 'roundEnd!'+ didWin
 			@freezeGame = true
@@ -77,6 +78,12 @@ class NetworkSlimeVolleyball extends SlimeVolleyball
 
 	step: (timestamp) ->
 		this.next()
+		if @gameFrame
+			f = @gameFrame
+			@gameFrame = null
+			console.log 'setting state.'
+			@world.setState(f.state)
+
 		if @freezeGame || !@socketInitialized # freeze everything!
 			@gameStateBuffer.push(@world.getState()) if @gameStateBuffer
 			this.draw()

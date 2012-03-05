@@ -65,7 +65,7 @@ GameRunner = (function() {
     this.loopCount++;
     this.next();
     this.world.step();
-    if (this.loopCount % 20 === 0) this.sendFrame();
+    if (this.loopCount % 15 === 0) this.sendFrame();
     return this.newInput = null;
   };
 
@@ -74,12 +74,12 @@ GameRunner = (function() {
   };
 
   GameRunner.prototype.sendFrame = function(notificationName) {
-    var frame, obj, state, _i, _len, _ref;
+    var frame, obj, ref, state, _i, _len, _ref;
     notificationName || (notificationName = 'gameFrame');
     state = this.world.getState();
     frame = {
       state: state,
-      clock: this.world.clock
+      input: null
     };
     if (this.room.p1) this.room.p1.socket.emit(notificationName, frame);
     _ref = [frame.state.p1, frame.state.p2, frame.state.ball];
@@ -88,6 +88,9 @@ GameRunner = (function() {
       obj.x = this.width - obj.x - obj.width;
       if (obj.velocity) obj.velocity.x *= -1;
     }
+    ref = frame.state.p1;
+    frame.state.p1 = frame.state.p2;
+    frame.state.p2 = ref;
     if (this.room.p2) return this.room.p2.socket.emit(notificationName, frame);
   };
 

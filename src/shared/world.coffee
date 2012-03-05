@@ -72,7 +72,8 @@ class World
 
 	# resolve collisions between ball and a circle. back ball up along its
 	# negative velocity vector until its center is c1.radius + c2.radius 
-	# units from c2's center
+	# units from c2's center. if circle is moving, see which item has more
+	# momentum, and move b along that velocity line.
 	resolveCollision: (b, circle) -> 
 		# look for collision between the velocity-line:
 		#    y-c.y = m*(x-c.x), where x = b.v.y/b.v.x
@@ -80,7 +81,7 @@ class World
 		#    (x-c.x)^2 + (y-c.y)^2
 		v = circle.velocity || x: 0, y: 0
 		ballMomentum = Helpers.mag(b.velocity)*b.mass > Helpers.mag(v)*(circle.mass || 1.0)
-		R = b.radius + circle.radius# + Helpers.mag(v)
+		R = b.radius + circle.radius
 		o1 = x: b.x + b.radius, y: b.y + b.radius
 		if ballMomentum
 			o2 = x: b.x + b.radius + b.velocity.x, y: b.y + b.radius + b.velocity.y

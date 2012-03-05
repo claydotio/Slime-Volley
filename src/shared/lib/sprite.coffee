@@ -27,6 +27,8 @@ class Sprite
 	getState: ->
 		x: @x
 		y: @y
+		width: @width
+		height: @height
 		velocity:
 			x: @velocity.x
 			y: @velocity.y
@@ -34,6 +36,8 @@ class Sprite
 	setState: (objState) ->
 		@x = objState.x
 		@y = objState.y
+		@width = objState.width
+		@height = objState.height
 		@velocity =
 			x: objState.velocity.x
 			y: objState.velocity.y

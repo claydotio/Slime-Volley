@@ -47,6 +47,8 @@ Sprite = (function() {
     return {
       x: this.x,
       y: this.y,
+      width: this.width,
+      height: this.height,
       velocity: {
         x: this.velocity.x,
         y: this.velocity.y
@@ -57,6 +59,8 @@ Sprite = (function() {
   Sprite.prototype.setState = function(objState) {
     this.x = objState.x;
     this.y = objState.y;
+    this.width = objState.width;
+    this.height = objState.height;
     return this.velocity = {
       x: objState.velocity.x,
       y: objState.velocity.y
