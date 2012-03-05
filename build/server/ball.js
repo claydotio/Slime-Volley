@@ -7,27 +7,14 @@ Ball = (function() {
 
   __extends(Ball, Sprite);
 
-  function Ball(x, y, radius, bg) {
+  function Ball(x, y) {
     this.x = x;
     this.y = y;
-    this.radius = radius;
-    this.bg = bg;
+    this.radius = Constants.BALL_RADIUS;
     this.falling = true;
+    if (Globals) this.bg = Globals.Loader.getAsset('ball');
     Ball.__super__.constructor.call(this, this.x, this.y, this.radius * 2, this.radius * 2, this.bg);
   }
-
-  Ball.prototype.applyGravity = function(numFrames) {
-    if (!this.falling) return;
-    if (this.velocity.y < 10 * numFrames) {
-      this.velocity.y += .2 * numFrames;
-    } else {
-      this.velocity.y = 10 * numFrames;
-    }
-    if (this.velocity.x >= .03 * numFrames) this.velocity.x -= .01 * numFrames;
-    if (this.velocity.x <= -.03 * numFrames) {
-      return this.velocity.x += .01 * numFrames;
-    }
-  };
 
   return Ball;
 

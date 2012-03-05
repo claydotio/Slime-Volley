@@ -5,16 +5,14 @@ Scoreboard = (function() {
 
   __extends(Scoreboard, Sprite);
 
-  function Scoreboard(x, y, width, height, blankImg, pointImg, bgImg, slime) {
+  function Scoreboard(x, y, bgImg, slime) {
     this.x = x;
     this.y = y;
-    this.width = width;
-    this.height = height;
-    this.blankImg = blankImg;
-    this.pointImg = pointImg;
     this.bgImg = bgImg;
     this.slime = slime;
-    Scoreboard.__super__.constructor.call(this, this.x, this.y, this.width, this.height);
+    this.blankImg = Globals.Loader.getAsset('blank_point');
+    this.pointImg = Globals.Loader.getAsset('ball');
+    Scoreboard.__super__.constructor.call(this, this.x, this.y, Constants.POINT_WIDTH * Constants.WIN_SCORE, Constants.POINT_WIDTH);
   }
 
   Scoreboard.prototype.draw = function(ctx) {

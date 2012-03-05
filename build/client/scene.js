@@ -33,9 +33,7 @@ Scene = (function() {
     return this.step(new Date().getTime());
   };
 
-  Scene.prototype.step = function(timestamp) {
-    return console.log('Implement me!!!');
-  };
+  Scene.prototype.step = function(timestamp) {};
 
   Scene.prototype.next = function() {
     if (!this.stopped) {

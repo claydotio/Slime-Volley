@@ -5,6 +5,7 @@ require 'fssm'
 
 CLI_SRC_PATH = './src/client'
 SVR_SRC_PATH = './src/server'
+SHARED_SRC_PATH = './src/shared'
 CLI_BUILD_PATH = './build/client'
 SVR_BUILD_PATH = './build/server'
 CLI_OUT_PATH = './build/client/game'
@@ -74,6 +75,14 @@ task :watch do
       update do |base, relative|
         puts "Server file changed, Recompiling..."
         system "rake server"
+      end
+    end
+    puts "Watching for shared changes in " + SHARED_SRC_PATH
+    path SHARED_SRC_PATH do
+      update do |base, relative| # recompile everything!
+        puts "Server and client dependent file changed, Recompiling..."
+        system "rake server"
+        system "rake client"
       end
     end
   end

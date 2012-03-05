@@ -2,36 +2,19 @@
 class SlimeVolleyball extends Scene
 	# will be called when load complete
 	init: ->
-		@sprites = []
-		# set up sprites
-		loader = Globals.Loader
-		@bg = new StretchySprite(0, 0, @width, @height, 200, 1, loader.getAsset('bg'))
-		@p1 = new Slime(@width/4-Constants.SLIME_RADIUS, @height-Constants.SLIME_START_HEIGHT, '#0f0', loader.getAsset('p1'), loader.getAsset('eye'))
-		@p2 = new Slime(3*@width/4-Constants.SLIME_RADIUS, @height-Constants.SLIME_START_HEIGHT, '#00f', loader.getAsset('p2'), loader.getAsset('eye'))
-		@ball = new Ball(@width/4-Constants.BALL_RADIUS, @height-Constants.BALL_START_HEIGHT, Constants.BALL_RADIUS, loader.getAsset('ball'))
-		@pole = new Sprite(@center.x-4, @height-60-64-1, 8, 64, loader.getAsset('pole'))
-		@p1.ball = @p2.ball = @ball
-		@p2.isP2 = true # face left
-
-		@p1Scoreboard = new Scoreboard(Constants.SCOREBOARD_PADDING, Constants.SCOREBOARD_PADDING, Constants.POINT_WIDTH*Constants.WIN_SCORE, Constants.POINT_WIDTH, loader.getAsset('blank_point'), loader.getAsset('ball'), loader.getAsset('score_a'), @p1)
-		@p2Scoreboard = new Scoreboard(@width-Constants.WIN_SCORE*Constants.POINT_WIDTH-Constants.SCOREBOARD_PADDING, Constants.SCOREBOARD_PADDING, Constants.POINT_WIDTH*Constants.WIN_SCORE, Constants.POINT_WIDTH, loader.getAsset('blank_point'), loader.getAsset('ball'), loader.getAsset('score_b'), @p2)
-
-		@sprites.push(@bg)
-		@sprites.push(@pole)
-		@sprites.push(@p1)
-		@sprites.push(@p2)
-		@sprites.push(@ball)
-		@sprites.push(@p1Scoreboard)
-		@sprites.push(@p2Scoreboard)
-
 		# create physics simulation
-		@world = new World(@width, @height, @p1, @p2, @ball, @pole)
-
-		# create a back button
-		@buttons = {
+		@world = new World(@width, @height)
+		loader =  Globals.Loader
+		@world.pole.bg = loader.getAsset('pole')
+		@bg = new StretchySprite(0, 0, @width, @height, 200, 1, loader.getAsset('bg'))
+		@p1Scoreboard = new Scoreboard(Constants.SCOREBOARD_PADDING, Constants.SCOREBOARD_PADDING, loader.getAsset('score_a'), @world.p1)
+		@p2Scoreboard = new Scoreboard(@width-Constants.WIN_SCORE*Constants.POINT_WIDTH-Constants.SCOREBOARD_PADDING, Constants.SCOREBOARD_PADDING, loader.getAsset('score_b'), @world.p2)
+		@buttons = { # create a back button
 			back: new Button(@width/2-Constants.BACK_BTN_WIDTH/2, Constants.SCOREBOARD_PADDING, Constants.BACK_BTN_WIDTH, Constants.BACK_BTN_HEIGHT, loader.getAsset('return'), loader.getAsset('return'), this)
 		}
-		@sprites.push(btn) for own key, btn of @buttons
+
+		@sprites = []
+		@sprites.push(@bg, @world.pole, @world.p1, @world.p2, @world.ball, @p1Scoreboard, @p2Scoreboard, @buttons.back)
 		
 		# store on-screen button rects
 		gamepad = new GamePad
@@ -46,14 +29,11 @@ class SlimeVolleyball extends Scene
 		@winMsgs = [
 			'nice shot!', 'good job!', 'you\'ve got this!', 'keep it up!',
 			'either you\'re good, or you got lucky!', '*** YOU WON THE GAME ***' ]
-		@displayMsg = null
-		@restartPause = -1
-		@whoWon = 'NONE'
+		@displayMsg = null # displayMsg is drawn in the center of the screen unless null
 		@freezeGame = false
-		@ball.velocity = { x: 0, y: 2 }
 		super()
 	
-	moveCPU: ->
+	moveCPU: -> # implement a basic AI
 		if @ball.x > @pole.x && @ball.y < 200 && @ball.y > 150 && @p2.jumpSpeed == 0
 			@p2.jumpSpeed = 12
 		if @ball.x > @pole.x - @p1.width && @ball.x < @p2.x
@@ -64,40 +44,6 @@ class SlimeVolleyball extends Scene
 			@p2.x -= (Constants.MOVEMENT_SPEED*.75) + (Constants.MOVEMENT_SPEED*Constants.AI_DIFFICULTY)
 		if @ball.x + @ball.radius > @p2.x + 30 && @ball.x + @ball.radius < @p2.x + 34
 			@p2.x += (Constants.MOVEMENT_SPEED*.75) + (Constants.MOVEMENT_SPEED*Constants.AI_DIFFICULTY)
-
-	# handlePause is called by the step() method when the game is paused
-	handlePause: ->
-		@restartPause++
-		if @restartPause == 60
-			@p1.x = @width/4-Constants.SLIME_RADIUS
-			@p1.y = @height-Constants.SLIME_START_HEIGHT
-			@p2.x = 3*@width/4-Constants.SLIME_RADIUS
-			@p2.y = @height-Constants.SLIME_START_HEIGHT
-			@ball.x = (if @whoWon == 'P2' then 3 else 1) * @width/4-@ball.radius
-			@ball.y = @height-Constants.BALL_START_HEIGHT
-			@ball.velocity.x = @ball.velocity.y = @p1.velocity.x = @p1.velocity.y = @p2.velocity.x = @p2.velocity.y = 0
-			@ball.falling = false
-			@p1.falling = @p2.falling = false
-			@p1.gravTime = @ball.gravTime = @p2.gravTime = 0
-			@p1.jumpSpeed = @p2.jumpSpeed = 0
-			if @p1.score >= Constants.WIN_SCORE || @p2.score >= Constants.WIN_SCORE # game ended, hold on!
-				@displayMsg += "\nPress any key to continue."
-				@ball.x = @width/4-@ball.radius
-			else # round ended, it's been 1 second, start next round
-				@restartPause = -1
-				@ball.velocity.y = 2
-				@ball.falling = true
-				@displayMsg = null
-		else if @restartPause > 60
-			if @p1.score >= Constants.WIN_SCORE || @p2.score >= Constants.WIN_SCORE # ensure game is won
-				if Globals.Input.anyInput # restart the game!
-					@displayMsg = null
-					@restartPause = -1
-					@p1.score = @p2.score = 0
-					@ball.velocity.y = 2
-					@ball.falling = true
-					@whoWon = 'NONE'
-					@ulTime = 0
 
 	draw: ->
 		# draw everything!
@@ -115,40 +61,37 @@ class SlimeVolleyball extends Scene
 				@ctx.font = 'bold 11px ' + Constants.MSG_FONT
 				@ctx.fillText(msgs[1], @width/2, 110)
 
+	handleWin: (winner) ->
+		@freezeGame = true
+		winner.score++
+		@world.ball.y = @height-Constants.BOTTOM-@world.ball.height
+		@world.ball.velocity = { x: 0, y: 0 }
+		@world.ball.falling = false
+		msgList   = if winner == @world.p1 then @winMsgs else @failMsgs
+		msgIdx    = if winner.score < Constants.WIN_SCORE then Helpers.rand(msgList.length-2) else msgList.length-1
+		@displayMsg = msgList[msgIdx]
+		if winner.score < Constants.WIN_SCORE
+			@displayMsg += "\nGame restarts in 1 second..."
+			setTimeout(( => # start game in 1 second		
+				@world.reset(winner)
+				@displayMsg = null
+				@freezeGame = false
+			), 1000)
+
+
 	# main "loop" iteration
 	step: (timestamp) ->
-		this.next()
-		return this.draw() if @freezeGame # freeze everything!
+		this.next() # constantly demand ~60fps
+		return this.draw() if @freezeGame # don't change anything!
 		# end game when ball hits ground
-		if @ball.y + @ball.height >= @height-Constants.BOTTOM && @restartPause < 0
-			@restartPause = @world.restartPause = 0
-			@ball.y = @height-Constants.BOTTOM-@ball.height
-			@ball.velocity = { x: 0, y: 0 }
-			@ball.falling = false
-			@whoWon = if @ball.x+@ball.radius < @width/2 then 'P2' else 'P1'
-			if @whoWon == 'P1'
-				@p1.score++
-				if @p1.score < Constants.WIN_SCORE
-					@displayMsg = @winMsgs[Helpers.rand(@winMsgs.length-2)] 
-				else 
-					@displayMsg = @winMsgs[@winMsgs.length - 1]
-			else
-				@p2.score++
-				if @p2.score < Constants.WIN_SCORE
-					@displayMsg = @failMsgs[Helpers.rand(@failMsgs.length-2)] 
-				else 
-					@displayMsg = @failMsgs[@failMsgs.length - 1]
-
-
+		if @world.ball.y + @world.ball.height >= @world.height-Constants.BOTTOM			
+			winner = if @world.ball.x+@world.ball.radius > @width/2 then @world.p1 else @world.p2
+			this.handleWin(winner)
+		# apply input and then step
+		@world.p1.handleInput(Globals.Input)
+		this.moveCPU.apply(@world)
 		@world.step() # step physics
-		this.handlePause() if @restartPause > -1 # draw paused stuff			
-
-		# apply player moves
-		if @restartPause < 0
-			this.moveCPU()
-			@p1.handleInput(Globals.Input)
-		@world.boundsCheck() # resolve illegal positions
 		this.draw()
 	
-	buttonPressed: (e) ->
+	buttonPressed: (e) -> # menu pressed, end game and pop
 		Globals.Manager.popScene()

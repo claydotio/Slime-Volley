@@ -172,7 +172,6 @@ NetworkSlimeVolleyball = (function() {
       this.applyInterpolation(this.ball);
       this.networkInterpolationRemainder -= this.world.numFrames;
     }
-    this.world.boundsCheck();
     this.gameStateBuffer.push(this.getFrame());
     return this.draw();
   };

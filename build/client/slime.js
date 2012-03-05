@@ -10,19 +10,21 @@ Slime = (function() {
 
   __extends(Slime, Sprite);
 
-  function Slime(x, y, color, img, eyeImg) {
+  function Slime(x, y, ball, isP2) {
     this.x = x;
     this.y = y;
-    this.color = color;
-    this.img = img;
-    this.eyeImg = eyeImg;
+    this.ball = ball;
+    this.isP2 = isP2;
     this.radius = Constants.SLIME_RADIUS;
-    this.isP2 = false;
     this.score = 0;
     this.gravTime = 0;
-    this.falling = true;
+    this.falling = false;
     this.jumpSpeed = 0;
-    Slime.__super__.constructor.call(this, this.x, this.y, this.radius * 2, this.radius, this.img);
+    if (Globals) {
+      this.eyeImg = Globals.Loader.getAsset('eye');
+      this.bg = Globals.Loader.getAsset(this.isP2 ? 'p2' : 'p1');
+    }
+    Slime.__super__.constructor.call(this, this.x, this.y, this.radius * 2, this.radius, this.bg);
   }
 
   Slime.prototype.handleInput = function(input) {
@@ -32,21 +34,10 @@ Slime = (function() {
       this.velocity.x = -Constants.MOVEMENT_SPEED;
     } else if (input.right(pNum)) {
       this.velocity.x = Constants.MOVEMENT_SPEED;
-      if (module) console.log('RIGHT PRESSED!');
     } else {
       this.velocity.x = 0;
     }
-    if (input.up(pNum)) {
-      if (this.jumpSpeed < .01) return this.jumpSpeed = Constants.JUMP_SPEED;
-    }
-  };
-
-  Slime.prototype.incrementGravity = function(numFrames) {
-    if (this.gravTime < 10 * 60.0) return this.gravTime += numFrames;
-  };
-
-  Slime.prototype.applyGravity = function(numFrames) {
-    return this.y += 50.0 * (this.gravTime / 60.0) * numFrames;
+    if (input.up(pNum)) return this.velocity.y = -10;
   };
 
   Slime.prototype.draw = function(ctx) {

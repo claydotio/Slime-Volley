@@ -134,7 +134,6 @@ class NetworkSlimeVolleyball extends SlimeVolleyball
 			this.applyInterpolation(@ball)
 			@networkInterpolationRemainder -= @world.numFrames
 
-		@world.boundsCheck() # resolve illegal positions
 		@gameStateBuffer.push(this.getFrame()) # save in buffer
 		this.draw() # we overrode this to draw frame at front of buffer
 

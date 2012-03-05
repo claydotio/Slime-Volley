@@ -25,8 +25,8 @@ Helpers = {
   dist: function(obj1, obj2) {
     return Math.sqrt(Math.pow(obj1.x - obj2.x, 2) + Math.pow(obj1.y - obj2.y, 2));
   },
-  velocityMag: function(obj) {
-    return Math.sqrt(Math.pow(obj.velocity.x, 2) + Math.pow(obj.velocity.y, 2));
+  mag: function(obj) {
+    return Math.sqrt(Math.pow(obj.x, 2) + Math.pow(obj.y, 2));
   }
 };
 

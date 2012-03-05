@@ -2,13 +2,13 @@
 // placed in build/server. There is no need for minification
 // or concatenation, node.js takes care of that with require()
 
-//= require '../client/constants'
-//= require '../client/lib/helpers'
+//= require '../shared/constants'
+//= require '../shared/lib/helpers'
 //= require 'server'
-//= require '../client/lib/sprite'
-//= require '../client/world'
-//= require '../client/ball'
-//= require '../client/slime'
+//= require '../shared/lib/sprite'
+//= require '../shared/world'
+//= require '../shared/ball'
+//= require '../shared/slime'
 //= require 'player'
 //= require 'room'
 //= require 'game_runner'

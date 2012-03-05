@@ -1,6 +1,8 @@
 class Scoreboard extends Sprite
-	constructor: (@x, @y, @width, @height, @blankImg, @pointImg, @bgImg, @slime) ->
-		super(@x, @y, @width, @height)
+	constructor: (@x, @y, @bgImg, @slime) ->
+		@blankImg = Globals.Loader.getAsset('blank_point')
+		@pointImg = Globals.Loader.getAsset('ball')
+		super(@x, @y, Constants.POINT_WIDTH*Constants.WIN_SCORE, Constants.POINT_WIDTH, )
 
 	# draw "pointImg" for each of up to 6 points, and "blankImg" for the rest
 	draw: (ctx) ->
