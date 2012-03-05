@@ -1,6 +1,9 @@
 if module
 	Constants = require('./constants')
 	Helpers = require('./helpers')
+	Sprite = require('./sprite')
+	Slime = require('./slime')
+	Ball = require('./ball')
 
 # some helper classes for internal 
 class GameState 
@@ -46,7 +49,7 @@ class World
 		@numFrames = 1
 		@buffer = new GameStateBuffer()
 		# initialize game objects
-		@ball = new Ball(@width/2-Constants.BALL_RADIUS+13, @height-Constants.BALL_START_HEIGHT, Constants.BALL_RADIUS)
+		@ball = new Ball(@width/4-Constants.BALL_RADIUS, @height-Constants.BALL_START_HEIGHT, Constants.BALL_RADIUS)
 		@p1 = new Slime(@width/4-Constants.SLIME_RADIUS, @height-Constants.SLIME_START_HEIGHT, @ball, false)
 		@p2 = new Slime(3*@width/4-Constants.SLIME_RADIUS, @height-Constants.SLIME_START_HEIGHT, @ball, true)
 		@pole = new Sprite(@width/2-Constants.POLE_WIDTH/2, @height-Constants.BOTTOM-Constants.POLE_HEIGHT-1, Constants.POLE_WIDTH, Constants.POLE_HEIGHT)
@@ -75,7 +78,6 @@ class World
 		#    y-c.y = m*(x-c.x), where x = b.v.y/b.v.x
 		# and a circle at (c2.x, c2.y) of radius c2.radius+c1.radius:
 		#    (x-c.x)^2 + (y-c.y)^2
-		
 		v = circle.velocity || x: 0, y: 0
 		ballMomentum = Helpers.mag(b.velocity)*b.mass > Helpers.mag(v)*(circle.mass || 1.0)
 		R = b.radius + circle.radius# + Helpers.mag(v)
@@ -85,7 +87,7 @@ class World
 		else 
 			o2 = x: b.x + b.radius - v.x, y: b.y + b.radius - v.y
 		o3 = x: circle.x + circle.radius, y: circle.y + circle.radius
-		# solve with the quadratic formula
+		# solve with the quadratic formula, derive this yourself.
 		A = Math.pow(o2.x-o1.x, 2) + Math.pow(o2.y-o1.y, 2)
 		B = 2 * ((o2.x-o1.x)*(o1.x-o3.x) + (o2.y-o1.y)*(o1.y-o3.y))
 		C = o3.x*o3.x + o3.y*o3.y + o1.x*o1.x + o1.y*o1.y - 2*(o3.x*o1.x + o3.y*o1.y) - R*R

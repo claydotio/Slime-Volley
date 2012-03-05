@@ -3,6 +3,7 @@
 // or concatenation, node.js takes care of that with require()
 
 //= require '../shared/constants'
+//= require '../shared/globals'
 //= require '../shared/lib/helpers'
 //= require 'server'
 //= require '../shared/lib/sprite'

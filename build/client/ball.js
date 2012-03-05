@@ -15,7 +15,7 @@ Ball = (function() {
     this.y = y;
     this.radius = Constants.BALL_RADIUS;
     this.falling = true;
-    if (Globals) this.bg = Globals.Loader.getAsset('ball');
+    if (typeof Globals !== 'undefined') this.bg = Globals.Loader.getAsset('ball');
     this.mass = Constants.BALL_MASS;
     Ball.__super__.constructor.call(this, this.x, this.y, this.radius * 2, this.radius * 2, this.bg);
   }

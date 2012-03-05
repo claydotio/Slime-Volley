@@ -1,6 +1,3 @@
-Sprite = require('./sprite')
-Slime = require('./slime')
-Ball = require('./ball')
 World = require('./world')
 input = require('./input')
 Constants = require('./constants')
@@ -30,17 +27,10 @@ class GameRunner
 		this.sendFrame()
 		@lastTimeout = setTimeout(( => 
 			@freezeGame = false
-			@room.emit('gameStart')
+			this.sendFrame('gameStart')
 			this.step()			
 			), 1000) # start game in 1 second
 
-	injectInput: (newInput, isP2, clock) -> # send event 
-		# input will be injected in the next step
-		if isP2 # swap left and right inputs
-			left = newInput.left
-			newInput.left = newInput.right
-			newInput.right = left
-		@newInput = newInput
 
 	step: ->
 		return if @freezeGame
@@ -57,7 +47,7 @@ class GameRunner
 			# start game again in one second
 			@lastTimeout = setTimeout(( =>
 				@freezeGame = false
-				@room.emit('gameStart')
+				this.sendFrame('gameStart')
 				this.step()
 				), 1000)
 			return
@@ -66,35 +56,24 @@ class GameRunner
 
 		this.next() 
 		@world.step()
-		this.sendFrame() if @world.needsUpdate || @newInput
+		this.sendFrame() if @loopCount % 20 == 0
 		@newInput = null
 
 	stop: ->
 		clearTimeout @lastTimeout
-			
-	extractObjData: (obj) ->
-		x: obj.x,
-		y: obj.y, 
-		velocity: { x: obj.velocity.x, y: obj.velocity.y } 
-		falling: obj.falling
 
-	extractInvertedObjData: (obj) -> # so p2 can see himself as p1
-		x: @width - obj.x - obj.width,
-		y: obj.y, 
-		velocity: { x: -obj.velocity.x, y: obj.velocity.y } 
-		falling: obj.falling
-
-	generateFrame: (inverted) -> # return a snapshot of game state
-		[extract, p1, p2] = ['extractObjData', @p1, @p2]
-		[extract, p1, p2] = ['extractInvertedObjData', @p2, @p1] if inverted
-		return {
-			ball: this[extract](@ball, true),
-			p1:   this[extract](p1),
-			p2:   this[extract](p2)
+	sendFrame: (notificationName) -> # take a snapshot of game state and send it to our clients
+		notificationName ||= 'gameFrame'
+		state = @world.getState()
+		frame = {
+			state: state
+			clock: @world.clock
 		}
-
-	sendFrame: -> # take a snapshot of game state and send it to our clients
-		@room.p1.socket.emit('gameFrame', this.generateFrame()) if @room.p1
-		@room.p2.socket.emit('gameFrame', this.generateFrame(true)) if @room.p2
+		@room.p1.socket.emit(notificationName, frame) if @room.p1
+		# invert x of state to send to client 2
+		for obj in [frame.state.p1, frame.state.p2, frame.state.ball]
+			obj.x = (@width - obj.x - obj.width)
+			obj.velocity.x *= -1 if obj.velocity
+		@room.p2.socket.emit(notificationName, frame) if @room.p2
 
 module.exports = GameRunner

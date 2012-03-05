@@ -17,7 +17,7 @@ Slime = (function() {
     this.isP2 = isP2;
     this.radius = Constants.SLIME_RADIUS;
     this.score = 0;
-    if (Globals) {
+    if (typeof Globals !== 'undefined') {
       this.eyeImg = Globals.Loader.getAsset('eye');
       this.bg = Globals.Loader.getAsset(this.isP2 ? 'p2' : 'p1');
     }

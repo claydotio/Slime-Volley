@@ -1,10 +1,4 @@
-var Ball, Constants, GameRunner, Slime, Sprite, World, input;
-
-Sprite = require('./sprite');
-
-Slime = require('./slime');
-
-Ball = require('./ball');
+var Constants, GameRunner, World, input;
 
 World = require('./world');
 
@@ -40,19 +34,9 @@ GameRunner = (function() {
     this.sendFrame();
     return this.lastTimeout = setTimeout((function() {
       _this.freezeGame = false;
-      _this.room.emit('gameStart');
+      _this.sendFrame('gameStart');
       return _this.step();
     }), 1000);
-  };
-
-  GameRunner.prototype.injectInput = function(newInput, isP2, clock) {
-    var left;
-    if (isP2) {
-      left = newInput.left;
-      newInput.left = newInput.right;
-      newInput.right = left;
-    }
-    return this.newInput = newInput;
   };
 
   GameRunner.prototype.step = function() {
@@ -73,7 +57,7 @@ GameRunner = (function() {
       this.room.p2.socket.emit('roundEnd', !p1Won, this.generateFrame(true));
       this.lastTimeout = setTimeout((function() {
         _this.freezeGame = false;
-        _this.room.emit('gameStart');
+        _this.sendFrame('gameStart');
         return _this.step();
       }), 1000);
       return;
@@ -81,7 +65,7 @@ GameRunner = (function() {
     this.loopCount++;
     this.next();
     this.world.step();
-    if (this.world.needsUpdate || this.newInput) this.sendFrame();
+    if (this.loopCount % 20 === 0) this.sendFrame();
     return this.newInput = null;
   };
 
@@ -89,48 +73,22 @@ GameRunner = (function() {
     return clearTimeout(this.lastTimeout);
   };
 
-  GameRunner.prototype.extractObjData = function(obj) {
-    return {
-      x: obj.x,
-      y: obj.y,
-      velocity: {
-        x: obj.velocity.x,
-        y: obj.velocity.y
-      },
-      falling: obj.falling
+  GameRunner.prototype.sendFrame = function(notificationName) {
+    var frame, obj, state, _i, _len, _ref;
+    notificationName || (notificationName = 'gameFrame');
+    state = this.world.getState();
+    frame = {
+      state: state,
+      clock: this.world.clock
     };
-  };
-
-  GameRunner.prototype.extractInvertedObjData = function(obj) {
-    return {
-      x: this.width - obj.x - obj.width,
-      y: obj.y,
-      velocity: {
-        x: -obj.velocity.x,
-        y: obj.velocity.y
-      },
-      falling: obj.falling
-    };
-  };
-
-  GameRunner.prototype.generateFrame = function(inverted) {
-    var extract, p1, p2, _ref, _ref2;
-    _ref = ['extractObjData', this.p1, this.p2], extract = _ref[0], p1 = _ref[1], p2 = _ref[2];
-    if (inverted) {
-      _ref2 = ['extractInvertedObjData', this.p2, this.p1], extract = _ref2[0], p1 = _ref2[1], p2 = _ref2[2];
+    if (this.room.p1) this.room.p1.socket.emit(notificationName, frame);
+    _ref = [frame.state.p1, frame.state.p2, frame.state.ball];
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      obj = _ref[_i];
+      obj.x = this.width - obj.x - obj.width;
+      if (obj.velocity) obj.velocity.x *= -1;
     }
-    return {
-      ball: this[extract](this.ball, true),
-      p1: this[extract](p1),
-      p2: this[extract](p2)
-    };
-  };
-
-  GameRunner.prototype.sendFrame = function() {
-    if (this.room.p1) this.room.p1.socket.emit('gameFrame', this.generateFrame());
-    if (this.room.p2) {
-      return this.room.p2.socket.emit('gameFrame', this.generateFrame(true));
-    }
+    if (this.room.p2) return this.room.p2.socket.emit(notificationName, frame);
   };
 
   return GameRunner;

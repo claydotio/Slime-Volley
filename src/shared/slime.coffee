@@ -6,7 +6,7 @@ class Slime extends Sprite
 	constructor: (@x, @y, @ball, @isP2) ->
 		@radius = Constants.SLIME_RADIUS
 		@score = 0
-		if Globals
+		if typeof Globals != 'undefined'
 			@eyeImg = Globals.Loader.getAsset('eye')
 			@bg = Globals.Loader.getAsset(if @isP2 then 'p2' else 'p1')
 		@mass = Constants.SLIME_MASS

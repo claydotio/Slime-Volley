@@ -32,7 +32,22 @@ class SlimeVolleyball extends Scene
 			'either you\'re good, or you got lucky!', '*** YOU WON THE GAME ***' ]
 		@displayMsg = null # displayMsg is drawn in the center of the screen unless null
 		@freezeGame = false
+		@keyState = {
+			left: false
+			right: false
+			up: false
+		}
 		super()
+
+	inputChanged: -> # returns whether input has been received since last check
+		input = Globals.Input
+		changed = false
+		for own key, val of @keyState
+			currState = input[key](0) # pass 0 to signify 'p1'
+			if val != currState
+				changed = true
+				@keyState[key] = currState # save change to keyState
+		changed
 	
 	moveCPU: -> # implement a basic AI
 		if @ball.x > @pole.x && @ball.y < 200 && @ball.y > 150 && @p2.jumpSpeed == 0
@@ -92,8 +107,6 @@ class SlimeVolleyball extends Scene
 		# 	this.draw()
 		# 	), 1000)
 		# return this.draw()
-
-		
 		this.next() # constantly demand ~60fps
 		return this.draw() if @freezeGame # don't change anything!
 		# apply input and then step

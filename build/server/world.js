@@ -1,8 +1,11 @@
-var Constants, GameState, GameStateBuffer, Helpers, World;
+var Ball, Constants, GameState, GameStateBuffer, Helpers, Slime, Sprite, World;
 
 if (module) {
   Constants = require('./constants');
   Helpers = require('./helpers');
+  Sprite = require('./sprite');
+  Slime = require('./slime');
+  Ball = require('./ball');
 }
 
 GameState = (function() {
@@ -60,7 +63,7 @@ World = (function() {
     this.clock = 0;
     this.numFrames = 1;
     this.buffer = new GameStateBuffer();
-    this.ball = new Ball(this.width / 2 - Constants.BALL_RADIUS + 13, this.height - Constants.BALL_START_HEIGHT, Constants.BALL_RADIUS);
+    this.ball = new Ball(this.width / 4 - Constants.BALL_RADIUS, this.height - Constants.BALL_START_HEIGHT, Constants.BALL_RADIUS);
     this.p1 = new Slime(this.width / 4 - Constants.SLIME_RADIUS, this.height - Constants.SLIME_START_HEIGHT, this.ball, false);
     this.p2 = new Slime(3 * this.width / 4 - Constants.SLIME_RADIUS, this.height - Constants.SLIME_START_HEIGHT, this.ball, true);
     this.pole = new Sprite(this.width / 2 - Constants.POLE_WIDTH / 2, this.height - Constants.BOTTOM - Constants.POLE_HEIGHT - 1, Constants.POLE_WIDTH, Constants.POLE_HEIGHT);
