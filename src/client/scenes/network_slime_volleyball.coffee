@@ -15,6 +15,7 @@ class NetworkSlimeVolleyball extends SlimeVolleyball
 		@networkInterpolationRemainder = 0
 		@world.deterministic = true # necessary for sync
 		@msAhead = Constants.TARGET_LATENCY
+		@sentWin = false
 		@loopCount = 0
 		
 		# initialize socket.io connection to server
@@ -29,6 +30,7 @@ class NetworkSlimeVolleyball extends SlimeVolleyball
 			@freezeGame = false
 			@displayMsg = null
 			@world.reset(@lastWinner) if @lastWinner
+			@sentWin = false
 			this.start()
 		@socket.on 'gameFrame', (data) =>
 			# use this to calculate latency
@@ -50,11 +52,17 @@ class NetworkSlimeVolleyball extends SlimeVolleyball
 				@displayMsg = 'You WIN!!!'
 				@freezeGame = true
 				@socket = null
+				setTimeout ( =>
+					Globals.Manager.popScene()
+				), 1000
 			else if @world.p2.score >= Constants.WIN_SCORE
 				#@socket.disconnect()
 				@displayMsg = 'You LOSE.'
 				@freezeGame = true 
 				@socket = null
+				setTimeout ( =>
+					Globals.Manager.popScene()
+				), 1000
 		@socket.on 'gameDestroy', (winner) =>
 			@freezeGame = true
 			@socket = null
@@ -72,6 +80,7 @@ class NetworkSlimeVolleyball extends SlimeVolleyball
 		super()
 
 	draw: ->
+		return unless @ctx
 		frame = @framebuffer.shift() if @framebuffer # shift the front frame out of buf
 		frame ||= @world.getState()
 		# draw everything!
@@ -115,7 +124,9 @@ class NetworkSlimeVolleyball extends SlimeVolleyball
 			@world.injectFrame(frame)
 
 	handleWin: (winner) ->
-		@socket.emit('gameEnd', winner)
+		unless @sentWin
+			@socket.emit('gameEnd', winner)
+			@sentWin = true
 		
 
 	step: (timestamp) ->
@@ -141,4 +152,4 @@ class NetworkSlimeVolleyball extends SlimeVolleyball
 
 
 	destroy: ->
-		@socket.disconnect()
+		@socket.disconnect() if @socket

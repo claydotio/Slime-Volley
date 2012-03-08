@@ -87,9 +87,9 @@ Constants = {
   MSG_FONT: 'Courier, monospace, sans-serif',
   TICK_DURATION: 16,
   FRAME_DELAY: 5,
-  STATE_SAVE: 500,
-  SAVE_LIFETIME: 2000,
-  TARGET_LATENCY: 100,
+  STATE_SAVE: 200,
+  SAVE_LIFETIME: 5000,
+  TARGET_LATENCY: 50,
   ASSETS: {
     p1: 'assets/images/s_0.png',
     p2: 'assets/images/s_1.png',
@@ -1673,6 +1673,7 @@ NetworkSlimeVolleyball = (function() {
     this.networkInterpolationRemainder = 0;
     this.world.deterministic = true;
     this.msAhead = Constants.TARGET_LATENCY;
+    this.sentWin = false;
     this.loopCount = 0;
     if (this.socket) this.socket.disconnect() && (this.socket = null);
     this.socket = io.connect();
@@ -1687,6 +1688,7 @@ NetworkSlimeVolleyball = (function() {
       _this.freezeGame = false;
       _this.displayMsg = null;
       if (_this.lastWinner) _this.world.reset(_this.lastWinner);
+      _this.sentWin = false;
       return _this.start();
     });
     this.socket.on('gameFrame', function(data) {
@@ -1709,11 +1711,17 @@ NetworkSlimeVolleyball = (function() {
       if (_this.world.p1.score >= Constants.WIN_SCORE) {
         _this.displayMsg = 'You WIN!!!';
         _this.freezeGame = true;
-        return _this.socket = null;
+        _this.socket = null;
+        return setTimeout((function() {
+          return Globals.Manager.popScene();
+        }), 1000);
       } else if (_this.world.p2.score >= Constants.WIN_SCORE) {
         _this.displayMsg = 'You LOSE.';
         _this.freezeGame = true;
-        return _this.socket = null;
+        _this.socket = null;
+        return setTimeout((function() {
+          return Globals.Manager.popScene();
+        }), 1000);
       }
     });
     this.socket.on('gameDestroy', function(winner) {
@@ -1740,6 +1748,7 @@ NetworkSlimeVolleyball = (function() {
 
   NetworkSlimeVolleyball.prototype.draw = function() {
     var frame, msgs;
+    if (!this.ctx) return;
     if (this.framebuffer) frame = this.framebuffer.shift();
     frame || (frame = this.world.getState());
     this.ctx.clearRect(0, 0, this.width, this.height);
@@ -1790,7 +1799,10 @@ NetworkSlimeVolleyball = (function() {
   };
 
   NetworkSlimeVolleyball.prototype.handleWin = function(winner) {
-    return this.socket.emit('gameEnd', winner);
+    if (!this.sentWin) {
+      this.socket.emit('gameEnd', winner);
+      return this.sentWin = true;
+    }
   };
 
   NetworkSlimeVolleyball.prototype.step = function(timestamp) {
@@ -1821,7 +1833,7 @@ NetworkSlimeVolleyball = (function() {
   };
 
   NetworkSlimeVolleyball.prototype.destroy = function() {
-    return this.socket.disconnect();
+    if (this.socket) return this.socket.disconnect();
   };
 
   return NetworkSlimeVolleyball;
@@ -1947,7 +1959,7 @@ OptionsScene = (function() {
 })();
 
 
-window.addEventListener('load', function() {
+window.addEventListener('DOMContentLoaded', function() {
   var canvas, pixelRatio, updateBounds;
   var _this = this;
   pixelRatio = window.devicePixelRatio || 1;
@@ -1990,9 +2002,6 @@ window.addEventListener('load', function() {
   };
   return setTimeout((function() {
     var loadingScene;
-    updateBounds();
-    window.addEventListener('resize', updateBounds);
-    document.body.addEventListener('orientationchange', updateBounds);
     Globals.Manager.canvas = canvas;
     Globals.Manager.ctx = Globals.Manager.canvas.getContext('2d');
     Globals.Input = new Input();

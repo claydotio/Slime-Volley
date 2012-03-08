@@ -1,5 +1,5 @@
 
-window.addEventListener('load', function() {
+window.addEventListener('DOMContentLoaded', function() {
   var canvas, pixelRatio, updateBounds;
   var _this = this;
   pixelRatio = window.devicePixelRatio || 1;
@@ -42,9 +42,6 @@ window.addEventListener('load', function() {
   };
   return setTimeout((function() {
     var loadingScene;
-    updateBounds();
-    window.addEventListener('resize', updateBounds);
-    document.body.addEventListener('orientationchange', updateBounds);
     Globals.Manager.canvas = canvas;
     Globals.Manager.ctx = Globals.Manager.canvas.getContext('2d');
     Globals.Input = new Input();

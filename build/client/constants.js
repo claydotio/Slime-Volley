@@ -31,9 +31,9 @@ Constants = {
   MSG_FONT: 'Courier, monospace, sans-serif',
   TICK_DURATION: 16,
   FRAME_DELAY: 5,
-  STATE_SAVE: 500,
-  SAVE_LIFETIME: 2000,
-  TARGET_LATENCY: 100,
+  STATE_SAVE: 200,
+  SAVE_LIFETIME: 5000,
+  TARGET_LATENCY: 50,
   ASSETS: {
     p1: 'assets/images/s_0.png',
     p2: 'assets/images/s_1.png',

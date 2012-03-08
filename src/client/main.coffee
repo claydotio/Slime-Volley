@@ -1,5 +1,5 @@
 # FIXME run the game when the dom loads
-window.addEventListener 'load', ->
+window.addEventListener 'DOMContentLoaded', ->
 	pixelRatio = window.devicePixelRatio || 1
 	canvas = document.getElementById('canvas')
 	# we set an initial aspect ratio that we must respect on resizing
@@ -41,9 +41,9 @@ window.addEventListener 'load', ->
 
 
 	setTimeout ( =>
-		updateBounds()
-		window.addEventListener 'resize', updateBounds
-		document.body.addEventListener 'orientationchange', updateBounds
+		# updateBounds()
+		# window.addEventListener 'resize', updateBounds
+		# document.body.addEventListener 'orientationchange', updateBounds
 		Globals.Manager.canvas = canvas
 		Globals.Manager.ctx = Globals.Manager.canvas.getContext('2d')
 		Globals.Input = new Input()

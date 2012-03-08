@@ -83,7 +83,7 @@ class GameRunner
 
 	#game.injectFrame(input, this == @room.p2) 
 	injectFrame: (frame, isP2) ->
-		frame.state.p2 = null # don't accept opponent state
+		frame.state.p2 = frame.state.ball = null # don't accept opponent state
 		this.invertFrameX(frame) if isP2
 		#@world.injectFrame(frame)
 		outgoingFrame = {

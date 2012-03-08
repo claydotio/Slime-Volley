@@ -108,7 +108,7 @@ GameRunner = (function() {
 
   GameRunner.prototype.injectFrame = function(frame, isP2) {
     var outgoingFrame;
-    frame.state.p2 = null;
+    frame.state.p2 = frame.state.ball = null;
     if (isP2) this.invertFrameX(frame);
     outgoingFrame = {
       state: frame.state,
