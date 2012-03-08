@@ -89,7 +89,7 @@ Constants = {
   FRAME_DELAY: 5,
   STATE_SAVE: 500,
   SAVE_LIFETIME: 2000,
-  TARGET_LATENCY: 300,
+  TARGET_LATENCY: 100,
   ASSETS: {
     p1: 'assets/images/s_0.png',
     p2: 'assets/images/s_1.png',
@@ -428,6 +428,7 @@ Input = (function() {
       return (function(cb) {
         return function(e) {
           var t, _i, _len, _ref;
+          e.preventDefault();
           _ref = e.changedTouches;
           for (_i = 0, _len = _ref.length; _i < _len; _i++) {
             t = _ref[_i];
@@ -1091,7 +1092,6 @@ World = (function() {
     if (!dontIncrementClock) {
       ref = this.futureFrames.last;
       while (ref && ref.state && ref.state.clock <= this.clock) {
-        console.log('applying future frame..');
         this.setFrame(ref);
         this.futureFrames.shift();
         prevRef = ref.prev;
@@ -1216,17 +1216,15 @@ World = (function() {
   };
 
   World.prototype.injectFrame = function(frame) {
-    var currClock, firstFrame, firstIteration, nextClock;
+    var currClock, firstFrame, firstIteration, nextClock, _results;
     if (frame && frame.state.clock < this.clock) {
-      console.log('=============================');
-      console.log('applying frame...');
       firstFrame = this.stateSaves.findStateBefore(frame.state.clock);
       this.setFrame(firstFrame);
       this.step(frame.state.clock - firstFrame.state.clock, true);
-      console.log('stepped ' + (frame.state.clock - firstFrame.state.clock) + 'ms');
       this.stateSaves.push(frame);
       this.setState(frame.state);
       firstIteration = true;
+      _results = [];
       while (frame) {
         currClock = frame.state.clock;
         nextClock = frame.prev ? frame.prev.state.clock : this.clock;
@@ -1237,16 +1235,14 @@ World = (function() {
         }
         firstIteration = false;
         this.step(nextClock - currClock, true);
-        console.log('stepped ' + (nextClock - currClock) + 'ms');
         if (frame.prev) {
-          frame = frame.prev;
+          _results.push(frame = frame.prev);
         } else {
           break;
         }
       }
-      return console.log('=============================');
+      return _results;
     } else {
-      console.log('adding frame to future stack');
       return this.futureFrames.push(frame);
     }
   };
@@ -1427,7 +1423,7 @@ MenuScene = (function() {
     } else if (btn === this.buttons['options']) {
       return Globals.Manager.pushScene(new OptionsScene());
     } else if (btn === this.buttons['wifi']) {
-      return Globals.Manager.pushScene(new SlimeVolleyball());
+      return Globals.Manager.pushScene(new NetworkSlimeVolleyball());
     }
   };
 
@@ -1495,7 +1491,8 @@ SlimeVolleyball = (function() {
       val = _ref[key];
       currState = input[key](0);
       if (val !== currState) {
-        changed = true;
+        if (!changed) changed = {};
+        changed[key] = currState;
         this.keyState[key] = currState;
       }
     }
@@ -1620,12 +1617,11 @@ InputSnapshot = (function() {
   };
 
   InputSnapshot.prototype.setState = function(newStates, player) {
-    var key, val, _ref, _results;
-    _ref = this.states[player];
+    var key, val, _results;
     _results = [];
-    for (key in _ref) {
-      if (!__hasProp.call(_ref, key)) continue;
-      val = _ref[key];
+    for (key in newStates) {
+      if (!__hasProp.call(newStates, key)) continue;
+      val = newStates[key];
       _results.push(this.states[player][key] = newStates[key]);
     }
     return _results;
@@ -1649,8 +1645,14 @@ InputSnapshot = (function() {
 
 if (module) module.exports = InputSnapshot;
 
-var NetworkSlimeVolleyball;
+var NetworkSlimeVolleyball, s;
 var __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
+
+if (!window.io) {
+  s = document.createElement('script');
+  s.setAttribute('src', '/socket.io/socket.io.js');
+  document.head.appendChild(s);
+}
 
 NetworkSlimeVolleyball = (function() {
 
@@ -1681,26 +1683,37 @@ NetworkSlimeVolleyball = (function() {
       _this.displayMsg = 'Opponent found! Game begins in 1 second...';
       return _this.world.setFrame(frame);
     });
-    this.socket.on('gameStart', function() {
+    this.socket.on('gameStart', function(lastWinner, frame) {
       _this.freezeGame = false;
       _this.displayMsg = null;
+      if (_this.lastWinner) _this.world.reset(_this.lastWinner);
       return _this.start();
     });
     this.socket.on('gameFrame', function(data) {
       var msAhead;
       msAhead = _this.world.clock - data.state.clock;
-      console.log('msAhead=' + msAhead);
       _this.msAhead = 0.8 * _this.msAhead + 0.2 * msAhead;
       return _this.receivedFrames.push(data);
     });
-    this.socket.on('roundEnd', function(didWin, frame) {
+    this.socket.on('roundEnd', function(didWin) {
       _this.freezeGame = true;
+      _this.world.ball.y = _this.height - Constants.BOTTOM - 2 * _this.world.ball.radius;
+      _this.lastWinner = didWin ? _this.world.p1 : _this.world.p2;
       if (didWin) {
         _this.displayMsg = _this.winMsgs[Helpers.rand(_this.winMsgs.length - 2)];
-        return _this.p1.score += 1;
+        _this.world.p1.score += 1;
       } else {
         _this.displayMsg = _this.failMsgs[Helpers.rand(_this.winMsgs.length - 2)];
-        return _this.p2.score += 1;
+        _this.world.p2.score += 1;
+      }
+      if (_this.world.p1.score >= Constants.WIN_SCORE) {
+        _this.displayMsg = 'You WIN!!!';
+        _this.freezeGame = true;
+        return _this.socket = null;
+      } else if (_this.world.p2.score >= Constants.WIN_SCORE) {
+        _this.displayMsg = 'You LOSE.';
+        _this.freezeGame = true;
+        return _this.socket = null;
       }
     });
     this.socket.on('gameDestroy', function(winner) {
@@ -1737,6 +1750,7 @@ NetworkSlimeVolleyball = (function() {
     this.p1Scoreboard.draw(this.ctx);
     this.p2Scoreboard.draw(this.ctx);
     this.world.ball.draw(this.ctx, frame.ball.x, frame.ball.y);
+    this.buttons['back'].draw(this.ctx);
     if (this.displayMsg) {
       this.ctx.font = 'bold 14px ' + Constants.MSG_FONT;
       this.ctx.fillStyle = '#ffffff';
@@ -1750,8 +1764,37 @@ NetworkSlimeVolleyball = (function() {
     }
   };
 
+  NetworkSlimeVolleyball.prototype.throttleFPS = function() {
+    if (this.msAhead > Constants.TARGET_LATENCY) {
+      if (this.loopCount % 10 === 0) this.stepLen = Constants.TICK_DURATION;
+    }
+  };
+
+  NetworkSlimeVolleyball.prototype.handleInput = function() {
+    var changed, frame;
+    changed = this.inputChanged();
+    if (changed) {
+      frame = {
+        input: {
+          p1: changed
+        },
+        state: {
+          p1: this.world.p1.getState(),
+          ball: this.world.ball.getState(),
+          clock: this.world.clock
+        }
+      };
+      this.socket.emit('input', frame);
+      return this.world.injectFrame(frame);
+    }
+  };
+
+  NetworkSlimeVolleyball.prototype.handleWin = function(winner) {
+    return this.socket.emit('gameEnd', winner);
+  };
+
   NetworkSlimeVolleyball.prototype.step = function(timestamp) {
-    var f, frame;
+    var f, winner;
     this.next();
     this.loopCount++;
     if (this.receivedFrames) {
@@ -1765,24 +1808,11 @@ NetworkSlimeVolleyball = (function() {
       this.draw();
       return;
     }
-    if (this.inputChanged()) {
-      frame = {
-        input: {
-          p1: this.keyState
-        },
-        state: {
-          p1: this.world.p1.getState(),
-          clock: this.world.clock
-        }
-      };
-      this.socket.emit('input', frame);
-      this.world.injectFrame(frame);
-    }
-    if (this.msAhead > Constants.TARGET_LATENCY) {
-      if (this.loopCount % 10 === 0) {
-        this.stepLen = Constants.TICK_DURATION;
-        return;
-      }
+    this.handleInput();
+    this.throttleFPS();
+    if (this.world.ball.y + this.world.ball.height >= this.world.height - Constants.BOTTOM) {
+      winner = this.world.ball.x + this.world.ball.radius > this.width / 2 ? 'p1' : 'p2';
+      this.handleWin(winner);
     }
     this.world.step(this.stepLen);
     this.stepLen = null;
@@ -1944,20 +1974,20 @@ window.addEventListener('load', function() {
         w = longSide;
         h = shortSide;
       }
+      alert(w + ',' + h);
     } else {
       w = Constants.BASE_WIDTH;
       h = Constants.BASE_HEIGHT;
       canvas.setAttribute('style', '-webkit-transform: none;\
 					transform: none;');
     }
-    canvas.height = h * pixelRatio;
-    canvas.width = w * pixelRatio;
-    canvas.style.width = w + 'px';
-    canvas.style.height = h + 'px';
+    canvas.height = h;
+    canvas.width = w;
+    canvas.style.width = w * pixelRatio + 'px';
+    canvas.style.height = h * pixelRatio + 'px';
     Constants.BASE_WIDTH = w;
     return Constants.BASE_HEIGHT = h;
   };
-  setTimeout(scrollTo, 0, 0, 1);
   return setTimeout((function() {
     var loadingScene;
     updateBounds();

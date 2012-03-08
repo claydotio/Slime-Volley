@@ -63,7 +63,7 @@ MenuScene = (function() {
     } else if (btn === this.buttons['options']) {
       return Globals.Manager.pushScene(new OptionsScene());
     } else if (btn === this.buttons['wifi']) {
-      return Globals.Manager.pushScene(new SlimeVolleyball());
+      return Globals.Manager.pushScene(new NetworkSlimeVolleyball());
     }
   };
 

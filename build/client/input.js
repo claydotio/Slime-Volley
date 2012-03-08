@@ -66,6 +66,7 @@ Input = (function() {
       return (function(cb) {
         return function(e) {
           var t, _i, _len, _ref;
+          e.preventDefault();
           _ref = e.changedTouches;
           for (_i = 0, _len = _ref.length; _i < _len; _i++) {
             t = _ref[_i];

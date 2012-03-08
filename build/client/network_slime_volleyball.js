@@ -1,5 +1,11 @@
-var NetworkSlimeVolleyball;
+var NetworkSlimeVolleyball, s;
 var __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
+
+if (!window.io) {
+  s = document.createElement('script');
+  s.setAttribute('src', '/socket.io/socket.io.js');
+  document.head.appendChild(s);
+}
 
 NetworkSlimeVolleyball = (function() {
 
@@ -30,26 +36,37 @@ NetworkSlimeVolleyball = (function() {
       _this.displayMsg = 'Opponent found! Game begins in 1 second...';
       return _this.world.setFrame(frame);
     });
-    this.socket.on('gameStart', function() {
+    this.socket.on('gameStart', function(lastWinner, frame) {
       _this.freezeGame = false;
       _this.displayMsg = null;
+      if (_this.lastWinner) _this.world.reset(_this.lastWinner);
       return _this.start();
     });
     this.socket.on('gameFrame', function(data) {
       var msAhead;
       msAhead = _this.world.clock - data.state.clock;
-      console.log('msAhead=' + msAhead);
       _this.msAhead = 0.8 * _this.msAhead + 0.2 * msAhead;
       return _this.receivedFrames.push(data);
     });
-    this.socket.on('roundEnd', function(didWin, frame) {
+    this.socket.on('roundEnd', function(didWin) {
       _this.freezeGame = true;
+      _this.world.ball.y = _this.height - Constants.BOTTOM - 2 * _this.world.ball.radius;
+      _this.lastWinner = didWin ? _this.world.p1 : _this.world.p2;
       if (didWin) {
         _this.displayMsg = _this.winMsgs[Helpers.rand(_this.winMsgs.length - 2)];
-        return _this.p1.score += 1;
+        _this.world.p1.score += 1;
       } else {
         _this.displayMsg = _this.failMsgs[Helpers.rand(_this.winMsgs.length - 2)];
-        return _this.p2.score += 1;
+        _this.world.p2.score += 1;
+      }
+      if (_this.world.p1.score >= Constants.WIN_SCORE) {
+        _this.displayMsg = 'You WIN!!!';
+        _this.freezeGame = true;
+        return _this.socket = null;
+      } else if (_this.world.p2.score >= Constants.WIN_SCORE) {
+        _this.displayMsg = 'You LOSE.';
+        _this.freezeGame = true;
+        return _this.socket = null;
       }
     });
     this.socket.on('gameDestroy', function(winner) {
@@ -86,6 +103,7 @@ NetworkSlimeVolleyball = (function() {
     this.p1Scoreboard.draw(this.ctx);
     this.p2Scoreboard.draw(this.ctx);
     this.world.ball.draw(this.ctx, frame.ball.x, frame.ball.y);
+    this.buttons['back'].draw(this.ctx);
     if (this.displayMsg) {
       this.ctx.font = 'bold 14px ' + Constants.MSG_FONT;
       this.ctx.fillStyle = '#ffffff';
@@ -99,8 +117,37 @@ NetworkSlimeVolleyball = (function() {
     }
   };
 
+  NetworkSlimeVolleyball.prototype.throttleFPS = function() {
+    if (this.msAhead > Constants.TARGET_LATENCY) {
+      if (this.loopCount % 10 === 0) this.stepLen = Constants.TICK_DURATION;
+    }
+  };
+
+  NetworkSlimeVolleyball.prototype.handleInput = function() {
+    var changed, frame;
+    changed = this.inputChanged();
+    if (changed) {
+      frame = {
+        input: {
+          p1: changed
+        },
+        state: {
+          p1: this.world.p1.getState(),
+          ball: this.world.ball.getState(),
+          clock: this.world.clock
+        }
+      };
+      this.socket.emit('input', frame);
+      return this.world.injectFrame(frame);
+    }
+  };
+
+  NetworkSlimeVolleyball.prototype.handleWin = function(winner) {
+    return this.socket.emit('gameEnd', winner);
+  };
+
   NetworkSlimeVolleyball.prototype.step = function(timestamp) {
-    var f, frame;
+    var f, winner;
     this.next();
     this.loopCount++;
     if (this.receivedFrames) {
@@ -114,24 +161,11 @@ NetworkSlimeVolleyball = (function() {
       this.draw();
       return;
     }
-    if (this.inputChanged()) {
-      frame = {
-        input: {
-          p1: this.keyState
-        },
-        state: {
-          p1: this.world.p1.getState(),
-          clock: this.world.clock
-        }
-      };
-      this.socket.emit('input', frame);
-      this.world.injectFrame(frame);
-    }
-    if (this.msAhead > Constants.TARGET_LATENCY) {
-      if (this.loopCount % 10 === 0) {
-        this.stepLen = Constants.TICK_DURATION;
-        return;
-      }
+    this.handleInput();
+    this.throttleFPS();
+    if (this.world.ball.y + this.world.ball.height >= this.world.height - Constants.BOTTOM) {
+      winner = this.world.ball.x + this.world.ball.radius > this.width / 2 ? 'p1' : 'p2';
+      this.handleWin(winner);
     }
     this.world.step(this.stepLen);
     this.stepLen = null;

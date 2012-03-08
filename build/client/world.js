@@ -194,7 +194,6 @@ World = (function() {
     if (!dontIncrementClock) {
       ref = this.futureFrames.last;
       while (ref && ref.state && ref.state.clock <= this.clock) {
-        console.log('applying future frame..');
         this.setFrame(ref);
         this.futureFrames.shift();
         prevRef = ref.prev;
@@ -319,17 +318,15 @@ World = (function() {
   };
 
   World.prototype.injectFrame = function(frame) {
-    var currClock, firstFrame, firstIteration, nextClock;
+    var currClock, firstFrame, firstIteration, nextClock, _results;
     if (frame && frame.state.clock < this.clock) {
-      console.log('=============================');
-      console.log('applying frame...');
       firstFrame = this.stateSaves.findStateBefore(frame.state.clock);
       this.setFrame(firstFrame);
       this.step(frame.state.clock - firstFrame.state.clock, true);
-      console.log('stepped ' + (frame.state.clock - firstFrame.state.clock) + 'ms');
       this.stateSaves.push(frame);
       this.setState(frame.state);
       firstIteration = true;
+      _results = [];
       while (frame) {
         currClock = frame.state.clock;
         nextClock = frame.prev ? frame.prev.state.clock : this.clock;
@@ -340,16 +337,14 @@ World = (function() {
         }
         firstIteration = false;
         this.step(nextClock - currClock, true);
-        console.log('stepped ' + (nextClock - currClock) + 'ms');
         if (frame.prev) {
-          frame = frame.prev;
+          _results.push(frame = frame.prev);
         } else {
           break;
         }
       }
-      return console.log('=============================');
+      return _results;
     } else {
-      console.log('adding frame to future stack');
       return this.futureFrames.push(frame);
     }
   };

@@ -9,6 +9,9 @@ Player = (function() {
     this.socket.on('input', function(frame) {
       return _this.receiveInput(frame);
     });
+    this.socket.on('gameEnd', function(frame) {
+      return _this.receiveGameEnd(frame);
+    });
     this.socket.on('disconnect', function() {
       return _this.didDisconnect();
     });
@@ -16,6 +19,12 @@ Player = (function() {
 
   Player.prototype.receiveInput = function(frame) {
     if (this.room) return this.room.game.injectFrame(frame, this === this.room.p2);
+  };
+
+  Player.prototype.receiveGameEnd = function(winner) {
+    if (this.room && this === this.room.p1) {
+      return this.room.game.handleWin(winner);
+    }
   };
 
   Player.prototype.didDisconnect = function() {

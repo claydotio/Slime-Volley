@@ -26,20 +26,20 @@ window.addEventListener('load', function() {
         w = longSide;
         h = shortSide;
       }
+      alert(w + ',' + h);
     } else {
       w = Constants.BASE_WIDTH;
       h = Constants.BASE_HEIGHT;
       canvas.setAttribute('style', '-webkit-transform: none;\
 					transform: none;');
     }
-    canvas.height = h * pixelRatio;
-    canvas.width = w * pixelRatio;
-    canvas.style.width = w + 'px';
-    canvas.style.height = h + 'px';
+    canvas.height = h;
+    canvas.width = w;
+    canvas.style.width = w * pixelRatio + 'px';
+    canvas.style.height = h * pixelRatio + 'px';
     Constants.BASE_WIDTH = w;
     return Constants.BASE_HEIGHT = h;
   };
-  setTimeout(scrollTo, 0, 0, 1);
   return setTimeout((function() {
     var loadingScene;
     updateBounds();

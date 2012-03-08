@@ -160,7 +160,6 @@ class World
 			# look through @future frames to see if we can apply any of them now.
 			ref = @futureFrames.last
 			while ref && ref.state && ref.state.clock <= @clock
-				console.log 'applying future frame..'
 				this.setFrame(ref)
 				@futureFrames.shift()
 				prevRef = ref.prev # since push() changes the .next and .prev attributes of ref
@@ -267,14 +266,13 @@ class World
 
 	injectFrame: (frame) ->
 		# starting from that frame, recalculate input
-		#console.log 'injecting frame@'+frame.state.clock+', current clock@'+@clock
 		if frame && frame.state.clock < @clock
-			console.log '============================='
-			console.log 'applying frame...'
+			#console.log '============================='
+			#console.log 'applying frame...'
 			firstFrame = @stateSaves.findStateBefore(frame.state.clock)
 			this.setFrame(firstFrame)
 			this.step(frame.state.clock - firstFrame.state.clock, true)
-			console.log 'stepped '+(frame.state.clock - firstFrame.state.clock)+'ms'
+			#console.log 'stepped '+(frame.state.clock - firstFrame.state.clock)+'ms'
 			@stateSaves.push(frame) # assigns .next and .prev to frame
 			this.setState(frame.state)
 			firstIteration = true
@@ -287,11 +285,10 @@ class World
 					frame.state.clock = currClock # fixed
 				firstIteration = false
 				this.step(nextClock - currClock, true)
-				console.log 'stepped '+(nextClock - currClock)+'ms'
-				if frame.prev then frame = frame.prev else break
-			console.log '============================='
+				#console.log 'stepped '+(nextClock - currClock)+'ms'
+				if frame.prev then frame = frame.prev else break	
+
 		else # we'll deal with this later
-			console.log 'adding frame to future stack'
 			@futureFrames.push(frame)
 			
 			

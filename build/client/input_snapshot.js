@@ -34,12 +34,11 @@ InputSnapshot = (function() {
   };
 
   InputSnapshot.prototype.setState = function(newStates, player) {
-    var key, val, _ref, _results;
-    _ref = this.states[player];
+    var key, val, _results;
     _results = [];
-    for (key in _ref) {
-      if (!__hasProp.call(_ref, key)) continue;
-      val = _ref[key];
+    for (key in newStates) {
+      if (!__hasProp.call(newStates, key)) continue;
+      val = newStates[key];
       _results.push(this.states[player][key] = newStates[key]);
     }
     return _results;

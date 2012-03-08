@@ -26,21 +26,20 @@ window.addEventListener 'load', ->
 					transform: none;'
 				w = longSide
 				h = shortSide
-			#alert w+','+h
+			alert w+','+h
 		else
 			w = Constants.BASE_WIDTH  # show at the default size
 			h = Constants.BASE_HEIGHT
 			canvas.setAttribute 'style', '-webkit-transform: none;
 					transform: none;'
-		canvas.height = h*pixelRatio
-		canvas.width = w*pixelRatio
-		canvas.style.width = w+'px'  # "double" scale on retina display
-		canvas.style.height = h+'px'
+		canvas.height = h
+		canvas.width = w
+		canvas.style.width = w*pixelRatio+'px'  # "double" scale on retina display
+		canvas.style.height = h*pixelRatio+'px'
 		Constants.BASE_WIDTH = w
 		Constants.BASE_HEIGHT = h
 
 
-	setTimeout(scrollTo, 0, 0, 1)
 	setTimeout ( =>
 		updateBounds()
 		window.addEventListener 'resize', updateBounds

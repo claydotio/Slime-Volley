@@ -58,7 +58,8 @@ SlimeVolleyball = (function() {
       val = _ref[key];
       currState = input[key](0);
       if (val !== currState) {
-        changed = true;
+        if (!changed) changed = {};
+        changed[key] = currState;
         this.keyState[key] = currState;
       }
     }

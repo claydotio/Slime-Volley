@@ -6,7 +6,7 @@ class InputSnapshot
 		state = {}
 		state[key] = val for own key, val of @states[player]
 		state
-	setState: (newStates, player) -> @states[player][key] = newStates[key] for own key, val of @states[player]
+	setState: (newStates, player) -> @states[player][key] = newStates[key] for own key, val of newStates
 	left: (player) -> @states[player]['left']
 	right: (player) -> @states[player]['right']
 	up: (player) -> @states[player]['up']

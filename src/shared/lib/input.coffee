@@ -54,7 +54,7 @@ class Input
 		multitouchShim = (callback) ->
 			return ((cb) ->  # create a scope to protect the callback param
 				return (e) ->
-					#e.preventDefault()
+					e.preventDefault()
 					cb( x: t.clientX, y: t.clientY, identifier: t.identifier ) for t in e.changedTouches
 					return
 			).call(this, callback)

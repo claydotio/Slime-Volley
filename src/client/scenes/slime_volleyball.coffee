@@ -49,7 +49,8 @@ class SlimeVolleyball extends Scene
 		for own key, val of @keyState
 			currState = input[key](0) # pass 0 to signify 'p1'
 			if val != currState
-				changed = true
+				changed = {} unless changed
+				changed[key] = currState
 				@keyState[key] = currState # save change to keyState
 		changed
 	
@@ -101,22 +102,12 @@ class SlimeVolleyball extends Scene
 
 	# main "loop" iteration
 	step: (timestamp) ->
-		# console.log 'setting world pball and p1'
-		# @world.ball.x = @world.p1.x + @world.p1.width - 20
-		# @world.ball.y = @world.p1.y + 3
-		# @world.ball.velocity = x: -1, y: 2
-		# @world.p1.velocity = x: 8, y: 0
-		# setTimeout(( =>
-		# 	@world.ball.setPosition(@world.resolveCollision(@world.ball, @world.p1))
-		# 	this.draw()
-		# 	), 1000)
-		# return this.draw()
 		this.next() # constantly demand ~60fps
 		return this.draw() if @freezeGame # don't change anything!
 		# apply input and then step
 		@world.step() # step physics
 		# end game when ball hits ground
-		if @world.ball.y + @world.ball.height >= @world.height-Constants.BOTTOM			
+		if @world.ball.y + @world.ball.height >= @world.height-Constants.BOTTOM
 			winner = if @world.ball.x+@world.ball.radius > @width/2 then @world.p1 else @world.p2
 			this.handleWin(winner)
 		this.draw()
