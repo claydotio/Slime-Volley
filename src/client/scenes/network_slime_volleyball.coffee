@@ -1,9 +1,4 @@
 # asynchronously load socket.io if necessary
-unless window.io
-	s = document.createElement('script')
-	s.setAttribute('src', '/socket.io/socket.io.js')
-	document.head.appendChild(s)
-
 class NetworkSlimeVolleyball extends SlimeVolleyball
 	init: -> # load socket.io asynchronously
 		@world = new World(@width, @height, new InputSnapshot())
@@ -20,9 +15,10 @@ class NetworkSlimeVolleyball extends SlimeVolleyball
 		
 		# initialize socket.io connection to server
 		@socket.disconnect() && @socket = null if @socket
-		@socket = io.connect()
+		@socket = io.connect('/')
 		@socket.on 'connect', =>
 			@displayMsg = 'Connected. Waiting for opponent...'
+			this.joinRoom()
 		@socket.on 'gameInit', (frame) =>
 			@displayMsg = 'Opponent found! Game begins in 1 second...'
 			@world.setFrame(frame)
@@ -30,6 +26,7 @@ class NetworkSlimeVolleyball extends SlimeVolleyball
 			@freezeGame = false
 			@displayMsg = null
 			@world.reset(@lastWinner) if @lastWinner
+			@lastWinner = null
 			@sentWin = false
 			this.start()
 		@socket.on 'gameFrame', (data) =>
@@ -72,6 +69,9 @@ class NetworkSlimeVolleyball extends SlimeVolleyball
 			@socket = null
 			@displayMsg = 'Lost connection to opponent.'
 		@socketInitialized = true
+
+	joinRoom: ->
+		@socket.emit('joinRoom', @roomID) if @roomID
 
 	start: -> # prebuffer the first Constants.FRAME_DELAY frames
 		for i in [0...Constants.FRAME_DELAY]

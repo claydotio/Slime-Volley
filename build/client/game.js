@@ -1416,6 +1416,7 @@ MenuScene = (function() {
   };
 
   MenuScene.prototype.buttonPressed = function(btn) {
+    var r;
     if (btn === this.buttons['leaderboards']) {
       return new Clay.Leaderboard(1).show();
     } else if (btn === this.buttons['onePlayer']) {
@@ -1423,7 +1424,13 @@ MenuScene = (function() {
     } else if (btn === this.buttons['options']) {
       return Globals.Manager.pushScene(new OptionsScene());
     } else if (btn === this.buttons['wifi']) {
-      return Globals.Manager.pushScene(new NetworkSlimeVolleyball());
+      r = new Clay.Rooms(function(roomInfo) {
+        var networkGame;
+        networkGame = new NetworkSlimeVolleyball();
+        networkGame.roomID = roomInfo.id;
+        return Globals.Manager.pushScene(networkGame);
+      });
+      return r.show();
     }
   };
 
@@ -1645,14 +1652,8 @@ InputSnapshot = (function() {
 
 if (module) module.exports = InputSnapshot;
 
-var NetworkSlimeVolleyball, s;
+var NetworkSlimeVolleyball;
 var __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
-
-if (!window.io) {
-  s = document.createElement('script');
-  s.setAttribute('src', '/socket.io/socket.io.js');
-  document.head.appendChild(s);
-}
 
 NetworkSlimeVolleyball = (function() {
 
@@ -1676,9 +1677,10 @@ NetworkSlimeVolleyball = (function() {
     this.sentWin = false;
     this.loopCount = 0;
     if (this.socket) this.socket.disconnect() && (this.socket = null);
-    this.socket = io.connect();
+    this.socket = io.connect('/');
     this.socket.on('connect', function() {
-      return _this.displayMsg = 'Connected. Waiting for opponent...';
+      _this.displayMsg = 'Connected. Waiting for opponent...';
+      return _this.joinRoom();
     });
     this.socket.on('gameInit', function(frame) {
       _this.displayMsg = 'Opponent found! Game begins in 1 second...';
@@ -1688,6 +1690,7 @@ NetworkSlimeVolleyball = (function() {
       _this.freezeGame = false;
       _this.displayMsg = null;
       if (_this.lastWinner) _this.world.reset(_this.lastWinner);
+      _this.lastWinner = null;
       _this.sentWin = false;
       return _this.start();
     });
@@ -1735,6 +1738,10 @@ NetworkSlimeVolleyball = (function() {
       return _this.displayMsg = 'Lost connection to opponent.';
     });
     return this.socketInitialized = true;
+  };
+
+  NetworkSlimeVolleyball.prototype.joinRoom = function() {
+    if (this.roomID) return this.socket.emit('joinRoom', this.roomID);
   };
 
   NetworkSlimeVolleyball.prototype.start = function() {
@@ -1959,54 +1966,14 @@ OptionsScene = (function() {
 })();
 
 
-window.addEventListener('DOMContentLoaded', function() {
-  var canvas, pixelRatio, updateBounds;
-  var _this = this;
+window.addEventListener('load', function() {
+  var canvas, loadingScene, pixelRatio;
   pixelRatio = window.devicePixelRatio || 1;
   canvas = document.getElementById('canvas');
-  updateBounds = function() {
-    var aspect, h, longSide, shortSide, t, w;
-    w = Math.floor(window.innerWidth);
-    if (w < 510) {
-      h = Math.floor(window.innerHeight);
-      longSide = Math.max(w, h);
-      shortSide = Math.min(w, h);
-      aspect = Math.max(Math.min(longSide / shortSide, 2), 1.7);
-      if (h > w) {
-        t = shortSide;
-        canvas.setAttribute('style', '-webkit-transform: rotate(90deg) translate(0, -' + t + 'px);\
-					transform: rotate(90deg) translate(0, -' + t + 'px);\
-					-webkit-transform-origin: 0 0;\
-					-transform-origin: 0 0;');
-        w = longSide;
-        h = shortSide;
-      } else {
-        canvas.setAttribute('style', '-webkit-transform: none;\
-					transform: none;');
-        w = longSide;
-        h = shortSide;
-      }
-      alert(w + ',' + h);
-    } else {
-      w = Constants.BASE_WIDTH;
-      h = Constants.BASE_HEIGHT;
-      canvas.setAttribute('style', '-webkit-transform: none;\
-					transform: none;');
-    }
-    canvas.height = h;
-    canvas.width = w;
-    canvas.style.width = w * pixelRatio + 'px';
-    canvas.style.height = h * pixelRatio + 'px';
-    Constants.BASE_WIDTH = w;
-    return Constants.BASE_HEIGHT = h;
-  };
-  return setTimeout((function() {
-    var loadingScene;
-    Globals.Manager.canvas = canvas;
-    Globals.Manager.ctx = Globals.Manager.canvas.getContext('2d');
-    Globals.Input = new Input();
-    loadingScene = new LoadingScene();
-    Globals.Manager.pushScene(loadingScene);
-    return loadingScene.start();
-  }), 400);
+  Globals.Manager.canvas = canvas;
+  Globals.Manager.ctx = Globals.Manager.canvas.getContext('2d');
+  Globals.Input = new Input();
+  loadingScene = new LoadingScene();
+  Globals.Manager.pushScene(loadingScene);
+  return loadingScene.start();
 });

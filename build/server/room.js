@@ -82,4 +82,6 @@ Room = (function() {
 
 })();
 
+Room.AllRooms = {};
+
 module.exports = Room;

@@ -1,11 +1,5 @@
-var NetworkSlimeVolleyball, s;
+var NetworkSlimeVolleyball;
 var __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
-
-if (!window.io) {
-  s = document.createElement('script');
-  s.setAttribute('src', '/socket.io/socket.io.js');
-  document.head.appendChild(s);
-}
 
 NetworkSlimeVolleyball = (function() {
 
@@ -29,9 +23,10 @@ NetworkSlimeVolleyball = (function() {
     this.sentWin = false;
     this.loopCount = 0;
     if (this.socket) this.socket.disconnect() && (this.socket = null);
-    this.socket = io.connect();
+    this.socket = io.connect('/');
     this.socket.on('connect', function() {
-      return _this.displayMsg = 'Connected. Waiting for opponent...';
+      _this.displayMsg = 'Connected. Waiting for opponent...';
+      return _this.joinRoom();
     });
     this.socket.on('gameInit', function(frame) {
       _this.displayMsg = 'Opponent found! Game begins in 1 second...';
@@ -41,6 +36,7 @@ NetworkSlimeVolleyball = (function() {
       _this.freezeGame = false;
       _this.displayMsg = null;
       if (_this.lastWinner) _this.world.reset(_this.lastWinner);
+      _this.lastWinner = null;
       _this.sentWin = false;
       return _this.start();
     });
@@ -88,6 +84,10 @@ NetworkSlimeVolleyball = (function() {
       return _this.displayMsg = 'Lost connection to opponent.';
     });
     return this.socketInitialized = true;
+  };
+
+  NetworkSlimeVolleyball.prototype.joinRoom = function() {
+    if (this.roomID) return this.socket.emit('joinRoom', this.roomID);
   };
 
   NetworkSlimeVolleyball.prototype.start = function() {

@@ -46,4 +46,5 @@ class Room
 	emit: (msg, data) ->
 		p.socket.emit(msg, data) for p in @players
 
+Room.AllRooms = {} # static property
 module.exports = Room

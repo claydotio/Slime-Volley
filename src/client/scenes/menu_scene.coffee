@@ -51,4 +51,8 @@ class MenuScene extends Scene
 		else if btn == @buttons['options']
 			Globals.Manager.pushScene new OptionsScene()
 		else if btn == @buttons['wifi']
-			Globals.Manager.pushScene new NetworkSlimeVolleyball()
+			r = new Clay.Rooms (roomInfo) ->
+				networkGame = new NetworkSlimeVolleyball()
+				networkGame.roomID = roomInfo.id
+				Globals.Manager.pushScene networkGame
+			r.show()

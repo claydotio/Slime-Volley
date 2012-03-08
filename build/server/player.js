@@ -1,4 +1,6 @@
-var Player;
+var Player, Room;
+
+Room = require('./room');
 
 Player = (function() {
 
@@ -6,6 +8,9 @@ Player = (function() {
     var _this = this;
     this.socket = socket;
     this.room = null;
+    this.socket.on('joinRoom', function(roomID) {
+      return _this.joinRoom(roomID);
+    });
     this.socket.on('input', function(frame) {
       return _this.receiveInput(frame);
     });
@@ -25,6 +30,13 @@ Player = (function() {
     if (this.room && this === this.room.p1) {
       return this.room.game.handleWin(winner);
     }
+  };
+
+  Player.prototype.joinRoom = function(roomID) {
+    if (this.room) this.room.stopGame;
+    this.room = Room.AllRooms[roomID] || new Room(2);
+    this.room.addPlayer(this);
+    return Room.AllRooms[roomID] = this.room;
   };
 
   Player.prototype.didDisconnect = function() {

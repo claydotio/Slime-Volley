@@ -56,6 +56,7 @@ MenuScene = (function() {
   };
 
   MenuScene.prototype.buttonPressed = function(btn) {
+    var r;
     if (btn === this.buttons['leaderboards']) {
       return new Clay.Leaderboard(1).show();
     } else if (btn === this.buttons['onePlayer']) {
@@ -63,7 +64,13 @@ MenuScene = (function() {
     } else if (btn === this.buttons['options']) {
       return Globals.Manager.pushScene(new OptionsScene());
     } else if (btn === this.buttons['wifi']) {
-      return Globals.Manager.pushScene(new NetworkSlimeVolleyball());
+      r = new Clay.Rooms(function(roomInfo) {
+        var networkGame;
+        networkGame = new NetworkSlimeVolleyball();
+        networkGame.roomID = roomInfo.id;
+        return Globals.Manager.pushScene(networkGame);
+      });
+      return r.show();
     }
   };
 
