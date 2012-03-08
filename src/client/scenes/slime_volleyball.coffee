@@ -3,7 +3,7 @@ class SlimeVolleyball extends Scene
 	# will be called when load complete
 	init: (dontOverrideInput) ->
 		# create physics simulation
-		@world = new World(@width, @height, Globals.Input)
+		@world ||= new World(@width, @height, Globals.Input)
 		@world.deterministic = false # results in a smoother game
 		loader =  Globals.Loader
 		@world.pole.bg = loader.getAsset('pole')

@@ -1,5 +1,5 @@
 World = require('./world')
-input = require('./input')
+input = require('./input_snapshot')
 Constants = require('./constants')
 
 # GameRunner: runs a phsyics simulation between two players
@@ -41,8 +41,8 @@ class GameRunner
 			@world.ball.falling = false
 			p1Won = @ball.x+@ball.radius > @width/2
 			@world.reset(if p1Won then @world.p1 else @world.p2)
-			@room.p1.socket.emit('roundEnd', p1Won, this.generateFrame())
-			@room.p2.socket.emit('roundEnd', !p1Won, this.generateFrame(true))
+			@room.p1.socket.emit('roundEnd', p1Won, this.generateFrame()) if @room.p1
+			@room.p2.socket.emit('roundEnd', !p1Won, this.generateFrame(true)) if @room.p2
 			# start game again in one second
 			@lastTimeout = setTimeout(( =>
 				@freezeGame = false
@@ -89,11 +89,13 @@ class GameRunner
 		outgoingFrame = {
 			state: frame.state,
 			input: frame.input
-		}
+		} # prevent 'prev' and next refs from sneaking into our json
+		console.log 'INJECTING INPUT: framesAhead = '+(frame.state.clock-@world.clock)+':'
+		console.log frame.input
 		@room.p1.socket.emit('gameFrame', outgoingFrame) if isP2 && @room.p1
 		@room.p2.socket.emit('gameFrame', this.invertFrameX(outgoingFrame)) if !isP2 && @room.p2
 		
-	sendFrame: (notificationName, input) -> # take a snapshot of game state and send it to our clients
+	sendFrame: (notificationName) -> # take a snapshot of game state and send it to our clients
 		notificationName ||= 'gameFrame'
 		frame = @world.getFrame()
 		@room.p1.socket.emit(notificationName, frame) if @room.p1

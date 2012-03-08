@@ -6,7 +6,8 @@ if module
 	Ball = require('./ball')
 
 # implement a doubly linked list for the game state buffer
-# for fast insertion/removal
+# for fast insertion/removal. it is sorted by clock from latest
+# (current) to earliest (old)
 class GameStateBuffer
 	constructor: ->
 		@first = @last = null
@@ -117,28 +118,20 @@ class World
 	# units from c2's center. if circle is moving, see which item has more
 	# momentum, and move b along that velocity line.
 	resolveCollision: (b, circle) -> 
-		# look for collision between the velocity-line:
-		#    y-c.y = m*(x-c.x), where x = b.v.y/b.v.x
-		# and a circle at (c2.x, c2.y) of radius c2.radius+c1.radius:
-		#    (x-c.x)^2 + (y-c.y)^2
-		v = circle.velocity || x: 0, y: 0
-		ballMomentum = Helpers.mag(b.velocity)*b.mass > Helpers.mag(v)*(circle.mass || 1.0)
-		R = b.radius + circle.radius
+		# resolve collision : move b along radius to outside of circle
+		r = b.radius + circle.radius
 		o1 = x: b.x + b.radius, y: b.y + b.radius
-		if ballMomentum
-			o2 = x: b.x + b.radius + b.velocity.x, y: b.y + b.radius + b.velocity.y
-		else 
-			o2 = x: b.x + b.radius - v.x, y: b.y + b.radius - v.y
-		o3 = x: circle.x + circle.radius, y: circle.y + circle.radius
-		# solve with the quadratic formula, derive this yourself.
-		A = Math.pow(o2.x-o1.x, 2) + Math.pow(o2.y-o1.y, 2)
-		B = 2 * ((o2.x-o1.x)*(o1.x-o3.x) + (o2.y-o1.y)*(o1.y-o3.y))
-		C = o3.x*o3.x + o3.y*o3.y + o1.x*o1.x + o1.y*o1.y - 2*(o3.x*o1.x + o3.y*o1.y) - R*R
-		u = (-B + Math.sqrt(B*B - 4*A*C))/(2*A)
-		u2 = (-B - Math.sqrt(B*B - 4*A*C))/(2*A)
-		u = Math.min(u, u2)
-		vel = if ballMomentum then b.velocity else x: -v.x, y: -v.y
-		x: b.x + vel.x*u,  y: b.y + vel.y*u
+		o2 = x: circle.x + circle.radius, y: circle.y + circle.radius
+		v = x: o1.x-o2.x, y: o1.y-o2.y # points from o2 to o1
+		vMag = Helpers.mag(v)
+		v.x /= vMag
+		v.y /= vMag
+		v.x *= r
+		v.y *= r
+		return {
+			x: v.x + o2.x - b.radius
+			y: v.y + o2.y - b.radius
+		}
 
 
 	# update positions via velocities, resolve collisions
@@ -165,13 +158,15 @@ class World
 		@numFrames = interval / tick
 		unless dontIncrementClock # means this is a "realtime" step, so we incrememnt the clock
 			# look through @future frames to see if we can apply any of them now.
-			ref = @futureFrames.first
+			ref = @futureFrames.last
 			while ref && ref.state && ref.state.clock <= @clock
+				console.log 'applying future frame..'
 				this.setFrame(ref)
-				@futureFrames.pop()
-				nextRef = ref.next # since push() changes the .next and .prev attributes of ref
+				@futureFrames.shift()
+				prevRef = ref.prev # since push() changes the .next and .prev attributes of ref
+				ref.next = ref.prev = null 
 				@stateSaves.push(ref)
-				ref = nextRef
+				ref = prevRef
 			@clock += interval
 			@stateSaves.cleanSaves(@clock)
 		
@@ -274,22 +269,29 @@ class World
 		# starting from that frame, recalculate input
 		#console.log 'injecting frame@'+frame.state.clock+', current clock@'+@clock
 		if frame && frame.state.clock < @clock
+			console.log '============================='
+			console.log 'applying frame...'
+			firstFrame = @stateSaves.findStateBefore(frame.state.clock)
+			this.setFrame(firstFrame)
+			this.step(frame.state.clock - firstFrame.state.clock, true)
+			console.log 'stepped '+(frame.state.clock - firstFrame.state.clock)+'ms'
 			@stateSaves.push(frame) # assigns .next and .prev to frame
 			this.setState(frame.state)
 			firstIteration = true
 			while frame
 				currClock = frame.state.clock
-				nextClock = @clock
-				nextClock = frame.prev.state.clock if frame.prev
+				nextClock = if frame.prev then frame.prev.state.clock else @clock
 				this.setInput(frame.input)
 				unless firstIteration # this frame's state might be different, 
 					frame.state = this.getState() # this resets the clock
 					frame.state.clock = currClock # fixed
 				firstIteration = false
 				this.step(nextClock - currClock, true)
+				console.log 'stepped '+(nextClock - currClock)+'ms'
 				if frame.prev then frame = frame.prev else break
-			
+			console.log '============================='
 		else # we'll deal with this later
+			console.log 'adding frame to future stack'
 			@futureFrames.push(frame)
 			
 			
@@ -309,10 +311,8 @@ class World
 		p2: @input.getState(1)
 	setInput: (newInput) ->
 		return unless newInput
-		if newInput.p1
-			@input.set(key, newInput.p1[key], 0) for key in ['left', 'right', 'up']
-		if newInput.p2
-			@input.set(key, newInput.p2[key], 1) for key in ['left', 'right', 'up']
+		@input.setState(newInput.p1, 0) if newInput.p1	
+		@input.setState(newInput.p2, 1) if newInput.p2
 	setFrame: (frame) ->
 		return unless frame
 		this.setState(frame.state)

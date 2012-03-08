@@ -142,50 +142,33 @@ World = (function() {
   };
 
   World.prototype.resolveCollision = function(b, circle) {
-    var A, B, C, R, ballMomentum, o1, o2, o3, u, u2, v, vel;
-    v = circle.velocity || {
-      x: 0,
-      y: 0
-    };
-    ballMomentum = Helpers.mag(b.velocity) * b.mass > Helpers.mag(v) * (circle.mass || 1.0);
-    R = b.radius + circle.radius;
+    var o1, o2, r, v, vMag;
+    r = b.radius + circle.radius;
     o1 = {
       x: b.x + b.radius,
       y: b.y + b.radius
     };
-    if (ballMomentum) {
-      o2 = {
-        x: b.x + b.radius + b.velocity.x,
-        y: b.y + b.radius + b.velocity.y
-      };
-    } else {
-      o2 = {
-        x: b.x + b.radius - v.x,
-        y: b.y + b.radius - v.y
-      };
-    }
-    o3 = {
+    o2 = {
       x: circle.x + circle.radius,
       y: circle.y + circle.radius
     };
-    A = Math.pow(o2.x - o1.x, 2) + Math.pow(o2.y - o1.y, 2);
-    B = 2 * ((o2.x - o1.x) * (o1.x - o3.x) + (o2.y - o1.y) * (o1.y - o3.y));
-    C = o3.x * o3.x + o3.y * o3.y + o1.x * o1.x + o1.y * o1.y - 2 * (o3.x * o1.x + o3.y * o1.y) - R * R;
-    u = (-B + Math.sqrt(B * B - 4 * A * C)) / (2 * A);
-    u2 = (-B - Math.sqrt(B * B - 4 * A * C)) / (2 * A);
-    u = Math.min(u, u2);
-    vel = ballMomentum ? b.velocity : {
-      x: -v.x,
-      y: -v.y
+    v = {
+      x: o1.x - o2.x,
+      y: o1.y - o2.y
     };
+    vMag = Helpers.mag(v);
+    v.x /= vMag;
+    v.y /= vMag;
+    v.x *= r;
+    v.y *= r;
     return {
-      x: b.x + vel.x * u,
-      y: b.y + vel.y * u
+      x: v.x + o2.x - b.radius,
+      y: v.y + o2.y - b.radius
     };
   };
 
   World.prototype.step = function(interval, dontIncrementClock) {
-    var a, borderRadius, circle, dist, newInterval, nextRef, now, ref, tick;
+    var a, borderRadius, circle, dist, newInterval, now, prevRef, ref, tick;
     now = new Date().getTime();
     tick = Constants.TICK_DURATION;
     if (this.lastStep && !this.deterministic) {
@@ -209,13 +192,15 @@ World = (function() {
     }
     this.numFrames = interval / tick;
     if (!dontIncrementClock) {
-      ref = this.futureFrames.first;
+      ref = this.futureFrames.last;
       while (ref && ref.state && ref.state.clock <= this.clock) {
+        console.log('applying future frame..');
         this.setFrame(ref);
-        this.futureFrames.pop();
-        nextRef = ref.next;
+        this.futureFrames.shift();
+        prevRef = ref.prev;
+        ref.next = ref.prev = null;
         this.stateSaves.push(ref);
-        ref = nextRef;
+        ref = prevRef;
       }
       this.clock += interval;
       this.stateSaves.cleanSaves(this.clock);
@@ -334,16 +319,20 @@ World = (function() {
   };
 
   World.prototype.injectFrame = function(frame) {
-    var currClock, firstIteration, nextClock, _results;
+    var currClock, firstFrame, firstIteration, nextClock;
     if (frame && frame.state.clock < this.clock) {
+      console.log('=============================');
+      console.log('applying frame...');
+      firstFrame = this.stateSaves.findStateBefore(frame.state.clock);
+      this.setFrame(firstFrame);
+      this.step(frame.state.clock - firstFrame.state.clock, true);
+      console.log('stepped ' + (frame.state.clock - firstFrame.state.clock) + 'ms');
       this.stateSaves.push(frame);
       this.setState(frame.state);
       firstIteration = true;
-      _results = [];
       while (frame) {
         currClock = frame.state.clock;
-        nextClock = this.clock;
-        if (frame.prev) nextClock = frame.prev.state.clock;
+        nextClock = frame.prev ? frame.prev.state.clock : this.clock;
         this.setInput(frame.input);
         if (!firstIteration) {
           frame.state = this.getState();
@@ -351,14 +340,16 @@ World = (function() {
         }
         firstIteration = false;
         this.step(nextClock - currClock, true);
+        console.log('stepped ' + (nextClock - currClock) + 'ms');
         if (frame.prev) {
-          _results.push(frame = frame.prev);
+          frame = frame.prev;
         } else {
           break;
         }
       }
-      return _results;
+      return console.log('=============================');
     } else {
+      console.log('adding frame to future stack');
       return this.futureFrames.push(frame);
     }
   };
@@ -389,24 +380,9 @@ World = (function() {
   };
 
   World.prototype.setInput = function(newInput) {
-    var key, _i, _j, _len, _len2, _ref, _ref2, _results;
     if (!newInput) return;
-    if (newInput.p1) {
-      _ref = ['left', 'right', 'up'];
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        key = _ref[_i];
-        this.input.set(key, newInput.p1[key], 0);
-      }
-    }
-    if (newInput.p2) {
-      _ref2 = ['left', 'right', 'up'];
-      _results = [];
-      for (_j = 0, _len2 = _ref2.length; _j < _len2; _j++) {
-        key = _ref2[_j];
-        _results.push(this.input.set(key, newInput.p2[key], 1));
-      }
-      return _results;
-    }
+    if (newInput.p1) this.input.setState(newInput.p1, 0);
+    if (newInput.p2) return this.input.setState(newInput.p2, 1);
   };
 
   World.prototype.setFrame = function(frame) {

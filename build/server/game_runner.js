@@ -2,7 +2,7 @@ var Constants, GameRunner, World, input;
 
 World = require('./world');
 
-input = require('./input');
+input = require('./input_snapshot');
 
 Constants = require('./constants');
 
@@ -53,8 +53,12 @@ GameRunner = (function() {
       this.world.ball.falling = false;
       p1Won = this.ball.x + this.ball.radius > this.width / 2;
       this.world.reset(p1Won ? this.world.p1 : this.world.p2);
-      this.room.p1.socket.emit('roundEnd', p1Won, this.generateFrame());
-      this.room.p2.socket.emit('roundEnd', !p1Won, this.generateFrame(true));
+      if (this.room.p1) {
+        this.room.p1.socket.emit('roundEnd', p1Won, this.generateFrame());
+      }
+      if (this.room.p2) {
+        this.room.p2.socket.emit('roundEnd', !p1Won, this.generateFrame(true));
+      }
       this.lastTimeout = setTimeout((function() {
         _this.freezeGame = false;
         _this.sendFrame('gameStart');
@@ -114,13 +118,15 @@ GameRunner = (function() {
       state: frame.state,
       input: frame.input
     };
+    console.log('INJECTING INPUT: framesAhead = ' + (frame.state.clock - this.world.clock) + ':');
+    console.log(frame.input);
     if (isP2 && this.room.p1) this.room.p1.socket.emit('gameFrame', outgoingFrame);
     if (!isP2 && this.room.p2) {
       return this.room.p2.socket.emit('gameFrame', this.invertFrameX(outgoingFrame));
     }
   };
 
-  GameRunner.prototype.sendFrame = function(notificationName, input) {
+  GameRunner.prototype.sendFrame = function(notificationName) {
     var frame;
     notificationName || (notificationName = 'gameFrame');
     frame = this.world.getFrame();

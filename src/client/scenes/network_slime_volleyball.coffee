@@ -1,18 +1,21 @@
 # asynchronously load socket.io if necessary
-unless window.io
-	s = document.createElement('script')
-	s.setAttribute('src', '/socket.io/socket.io.js')
-	document.head.appendChild(s)
+# unless window.io
+# 	s = document.createElement('script')
+# 	s.setAttribute('src', '/socket.io/socket.io.js')
+# 	document.head.appendChild(s)
 
 class NetworkSlimeVolleyball extends SlimeVolleyball
 	init: -> # load socket.io asynchronously
+		@world = new World(@width, @height, new InputSnapshot())
 		super(true)
 		@freezeGame = true
 		@displayMsg = 'Loading...'
-		@gameFrame = null
+		@receivedFrames = []
 		@framebuffer = []
 		@networkInterpolationRemainder = 0
 		@world.deterministic = true # necessary for sync
+		@msAhead = Constants.TARGET_LATENCY
+		@loopCount = 0
 		
 		# initialize socket.io connection to server
 		@socket.disconnect() && @socket = null if @socket
@@ -27,7 +30,11 @@ class NetworkSlimeVolleyball extends SlimeVolleyball
 			@displayMsg = null
 			this.start()
 		@socket.on 'gameFrame', (data) =>
-			@gameFrame = data
+			# use this to calculate latency
+			msAhead = @world.clock - data.state.clock
+			console.log 'msAhead='+msAhead
+			@msAhead = 0.8*@msAhead + 0.2*msAhead
+			@receivedFrames.push(data)
 		@socket.on 'roundEnd', (didWin, frame) =>
 			@freezeGame = true
 			if didWin
@@ -36,16 +43,19 @@ class NetworkSlimeVolleyball extends SlimeVolleyball
 			else
 				@displayMsg = @failMsgs[Helpers.rand(@winMsgs.length-2)] 
 				@p2.score += 1
-		@socket.on 'gameEnd', (winner) =>
+		@socket.on 'gameDestroy', (winner) =>
 			@freezeGame = true
-		@socket.on 'opponentLost', =>
+			@socket = null
+			@displayMsg = 'Lost connection to opponent.'
+		@socket.on 'disconnect', =>
 			@freezeGame = true
-			@displayMsg = 'Lost connection to opponent. Looking for new match...'
+			@socket = null
+			@displayMsg = 'Lost connection to opponent.'
 		@socketInitialized = true
 
 	start: -> # prebuffer the first Constants.FRAME_DELAY frames
 		for i in [0...Constants.FRAME_DELAY]
-			@world.step(Constants.TICK_DURATION)
+			@world.step(Constants.TICK_DURATION, true)
 			@framebuffer.push(@world.getState())
 		super()
 
@@ -75,11 +85,11 @@ class NetworkSlimeVolleyball extends SlimeVolleyball
 
 	step: (timestamp) ->
 		this.next()
-		if @gameFrame
-			f = @gameFrame
-			@gameFrame = null
-			@world.injectFrame(f)
-
+		@loopCount++
+		if @receivedFrames
+			while @receivedFrames.length > 0
+				f = @receivedFrames.shift()
+				@world.injectFrame(f)
 		if @freezeGame || !@socketInitialized # freeze everything!
 			@gameStateBuffer.push(@world.getState()) if @gameStateBuffer
 			this.draw()
@@ -93,8 +103,13 @@ class NetworkSlimeVolleyball extends SlimeVolleyball
 					clock: @world.clock
 			#eval('debugger')
 			@socket.emit('input', frame)
-			#@world.injectFrame(frame)
-		@world.step() # step physics
+			@world.injectFrame(frame)
+		if @msAhead > Constants.TARGET_LATENCY # throttle fps to sync with the server's clock
+			if @loopCount % 10 == 0 # drop every tenth frame
+				@stepLen = Constants.TICK_DURATION # we have to explicitly set step size, otherwise the physics engine will just compensate by calculating a larger step
+				return
+		@world.step(@stepLen) # step physics
+		@stepLen = null  # only drop ONE frame
 		@framebuffer.push(@world.getState()) # save in buffer
 		this.draw() # we overrode this to draw frame at front of buffer
 

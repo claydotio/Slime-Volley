@@ -24,8 +24,8 @@ class Button extends Sprite
 
 	handleClick: (e) ->
 		@down = false
-		if Helpers.inRect(e.x, e.y, @x, @y, @width, @height)
-			@scene.buttonPressed(this) if @scene # pass event back to delegate
+		# if Helpers.inRect(e.x, e.y, @x, @y, @width, @height)
+		# 	@scene.buttonPressed(this) if @scene # pass event back to delegate
 	
 	draw: (ctx) ->
 		return unless @img

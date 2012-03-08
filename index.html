@@ -1,41 +1,29 @@
 <html>
   <head>
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name = "viewport" content = "width=device-width; initial-scale:1.0; user-scalable=no; ">
+    <meta name = "viewport" content = "initial-scale:1.0; user-scalable=no;minimum-scale:1.0;maximum-scale:1.0; ">
+    <link rel="apple-touch-icon" href="/assets/images/icon.png" />
+    <link rel='shortcut icon' href='/assets/images/favicon.ico' />
+
     <script type="text/javascript" src="build/client/game.js"></script>
+    <script type='text/javascript'>
+      Clay = {};
+      Clay.gameKey = 'clay'
+      Clay.ready = function( fn ) {
+          Clay.readyFunction = fn;
+      };
+      ( function() {
+          var clay = document.createElement("script");
+          clay.src = "http://clay.io/api/api.js"; 
+          var tag = document.getElementsByTagName("script")[0]; 
+          tag.parentNode.insertBefore(clay, tag);
+      } )();
+    </script>
     <style>
-      body, html, * {margin:0;padding:0;}
-      canvas {}
+      body, html {margin:0;padding:0;}
     </style>
   </head>
   <body style="margin:0px;">
     <canvas id="canvas" width="480px" height="268px"></canvas>
-    <script type="text/javascript">
-    c = document.getElementById('canvas');
-    // aspect = Math.max(Math.min(window.innerWidth/window.innerHeight, 1.5), 1.2);
-    // h = (1.0/aspect)*parseInt(c.width);
-    // c.height = h;
-    // c.style.marginTop = ((window.innerHeight-Math.floor(h))/2.0)+'px'
-    Constants.BASE_WIDTH = parseInt(c.width);
-    Constants.BASE_HEIGHT = parseInt(c.height);
-    // window.onresize = function() {
-    //   a = window.innerWidth/window.innerHeight
-    //   if (a < aspect) {
-    //     h = (1.0/aspect) * window.innerWidth
-    //     c.style.width = window.innerWidth+'px'
-    //     c.style.height = h+'px'
-    //     c.style.margin = 0
-    //     c.style.marginTop = ((window.innerHeight-Math.floor(h))/2.0)+'px'
-    //   } else {
-    //     // show area along the sides
-    //     w = aspect * window.innerHeight
-    //     c.style.width = Math.floor(w)+'px'
-    //     c.style.height = window.innerHeight + 'px'
-    //     c.style.margin = 0
-    //     c.style.marginLeft = ((window.innerWidth-Math.floor(w))/2.0) + 'px'
-    //   }
-    // }
-    // window.onresize();
-    </script>
   </body>
 </html>

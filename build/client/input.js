@@ -1,4 +1,5 @@
 var Input;
+var __hasProp = Object.prototype.hasOwnProperty;
 
 Input = (function() {
 
@@ -65,7 +66,6 @@ Input = (function() {
       return (function(cb) {
         return function(e) {
           var t, _i, _len, _ref;
-          e.preventDefault();
           _ref = e.changedTouches;
           for (_i = 0, _len = _ref.length; _i < _len; _i++) {
             t = _ref[_i];
@@ -131,6 +131,18 @@ Input = (function() {
   Input.prototype.set = function(shortcut, val, p2) {
     if (p2 == null) p2 = 0;
     return this.keys[this.shortcuts[shortcut][p2]] = val;
+  };
+
+  Input.prototype.setState = function(state, p2) {
+    var shortcut, val, _results;
+    if (p2 == null) p2 = 0;
+    _results = [];
+    for (shortcut in state) {
+      if (!__hasProp.call(state, shortcut)) continue;
+      val = state[shortcut];
+      _results.push(this.keys[this.shortcuts[shortcut][p2]] = val);
+    }
+    return _results;
   };
 
   return Input;

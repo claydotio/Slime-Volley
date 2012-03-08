@@ -12,7 +12,7 @@ SlimeVolleyball = (function() {
   SlimeVolleyball.prototype.init = function(dontOverrideInput) {
     var gamepad, loader;
     var _this = this;
-    this.world = new World(this.width, this.height, Globals.Input);
+    this.world || (this.world = new World(this.width, this.height, Globals.Input));
     this.world.deterministic = false;
     loader = Globals.Loader;
     this.world.pole.bg = loader.getAsset('pole');

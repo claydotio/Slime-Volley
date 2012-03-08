@@ -13,4 +13,4 @@
 //= require 'player'
 //= require 'room'
 //= require 'game_runner'
-//= require 'input'
+//= require '../shared/input_snapshot'

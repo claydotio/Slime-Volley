@@ -52,12 +52,6 @@ if (!window.addEventListener) {
   };
 }
 
-window.addEventListener("load", function() {
-  return setTimeout((function() {
-    return window.scrollTo(0, 1);
-  }), 0);
-});
-
 window.module || (window.module = false);
 
 var Constants;
@@ -95,6 +89,7 @@ Constants = {
   FRAME_DELAY: 5,
   STATE_SAVE: 500,
   SAVE_LIFETIME: 2000,
+  TARGET_LATENCY: 300,
   ASSETS: {
     p1: 'assets/images/s_0.png',
     p2: 'assets/images/s_1.png',
@@ -103,7 +98,6 @@ Constants = {
     eye: 'assets/images/eye.png',
     menu_bg: 'assets/images/menu_bg.png',
     logo: 'assets/images/logo.png',
-    btn_instructions: 'assets/images/btn_instructions.png',
     btn_one: 'assets/images/btn_one.png',
     btn_options: 'assets/images/btn_options.png',
     btn_wifi: 'assets/images/btn_wifi.png',
@@ -114,9 +108,9 @@ Constants = {
     "return": 'assets/images/return.png',
     score_a: 'assets/images/score_a.png',
     score_b: 'assets/images/score_b.png',
-    instructions: 'assets/images/instructions.png',
     back_arrow: 'assets/images/back_arrow.png',
-    options: 'assets/images/options.png'
+    options: 'assets/images/options.png',
+    btn_leaderboards: 'assets/images/btn_leaderboards.png'
   }
 };
 
@@ -367,6 +361,7 @@ Loader = (function() {
 })();
 
 var Input;
+var __hasProp = Object.prototype.hasOwnProperty;
 
 Input = (function() {
 
@@ -433,7 +428,6 @@ Input = (function() {
       return (function(cb) {
         return function(e) {
           var t, _i, _len, _ref;
-          e.preventDefault();
           _ref = e.changedTouches;
           for (_i = 0, _len = _ref.length; _i < _len; _i++) {
             t = _ref[_i];
@@ -499,6 +493,18 @@ Input = (function() {
   Input.prototype.set = function(shortcut, val, p2) {
     if (p2 == null) p2 = 0;
     return this.keys[this.shortcuts[shortcut][p2]] = val;
+  };
+
+  Input.prototype.setState = function(state, p2) {
+    var shortcut, val, _results;
+    if (p2 == null) p2 = 0;
+    _results = [];
+    for (shortcut in state) {
+      if (!__hasProp.call(state, shortcut)) continue;
+      val = state[shortcut];
+      _results.push(this.keys[this.shortcuts[shortcut][p2]] = val);
+    }
+    return _results;
   };
 
   return Input;
@@ -618,10 +624,7 @@ Button = (function() {
   };
 
   Button.prototype.handleClick = function(e) {
-    this.down = false;
-    if (Helpers.inRect(e.x, e.y, this.x, this.y, this.width, this.height)) {
-      if (this.scene) return this.scene.buttonPressed(this);
-    }
+    return this.down = false;
   };
 
   Button.prototype.draw = function(ctx) {
@@ -1036,50 +1039,33 @@ World = (function() {
   };
 
   World.prototype.resolveCollision = function(b, circle) {
-    var A, B, C, R, ballMomentum, o1, o2, o3, u, u2, v, vel;
-    v = circle.velocity || {
-      x: 0,
-      y: 0
-    };
-    ballMomentum = Helpers.mag(b.velocity) * b.mass > Helpers.mag(v) * (circle.mass || 1.0);
-    R = b.radius + circle.radius;
+    var o1, o2, r, v, vMag;
+    r = b.radius + circle.radius;
     o1 = {
       x: b.x + b.radius,
       y: b.y + b.radius
     };
-    if (ballMomentum) {
-      o2 = {
-        x: b.x + b.radius + b.velocity.x,
-        y: b.y + b.radius + b.velocity.y
-      };
-    } else {
-      o2 = {
-        x: b.x + b.radius - v.x,
-        y: b.y + b.radius - v.y
-      };
-    }
-    o3 = {
+    o2 = {
       x: circle.x + circle.radius,
       y: circle.y + circle.radius
     };
-    A = Math.pow(o2.x - o1.x, 2) + Math.pow(o2.y - o1.y, 2);
-    B = 2 * ((o2.x - o1.x) * (o1.x - o3.x) + (o2.y - o1.y) * (o1.y - o3.y));
-    C = o3.x * o3.x + o3.y * o3.y + o1.x * o1.x + o1.y * o1.y - 2 * (o3.x * o1.x + o3.y * o1.y) - R * R;
-    u = (-B + Math.sqrt(B * B - 4 * A * C)) / (2 * A);
-    u2 = (-B - Math.sqrt(B * B - 4 * A * C)) / (2 * A);
-    u = Math.min(u, u2);
-    vel = ballMomentum ? b.velocity : {
-      x: -v.x,
-      y: -v.y
+    v = {
+      x: o1.x - o2.x,
+      y: o1.y - o2.y
     };
+    vMag = Helpers.mag(v);
+    v.x /= vMag;
+    v.y /= vMag;
+    v.x *= r;
+    v.y *= r;
     return {
-      x: b.x + vel.x * u,
-      y: b.y + vel.y * u
+      x: v.x + o2.x - b.radius,
+      y: v.y + o2.y - b.radius
     };
   };
 
   World.prototype.step = function(interval, dontIncrementClock) {
-    var a, borderRadius, circle, dist, newInterval, nextRef, now, ref, tick;
+    var a, borderRadius, circle, dist, newInterval, now, prevRef, ref, tick;
     now = new Date().getTime();
     tick = Constants.TICK_DURATION;
     if (this.lastStep && !this.deterministic) {
@@ -1103,13 +1089,15 @@ World = (function() {
     }
     this.numFrames = interval / tick;
     if (!dontIncrementClock) {
-      ref = this.futureFrames.first;
+      ref = this.futureFrames.last;
       while (ref && ref.state && ref.state.clock <= this.clock) {
+        console.log('applying future frame..');
         this.setFrame(ref);
-        this.futureFrames.pop();
-        nextRef = ref.next;
+        this.futureFrames.shift();
+        prevRef = ref.prev;
+        ref.next = ref.prev = null;
         this.stateSaves.push(ref);
-        ref = nextRef;
+        ref = prevRef;
       }
       this.clock += interval;
       this.stateSaves.cleanSaves(this.clock);
@@ -1228,16 +1216,20 @@ World = (function() {
   };
 
   World.prototype.injectFrame = function(frame) {
-    var currClock, firstIteration, nextClock, _results;
+    var currClock, firstFrame, firstIteration, nextClock;
     if (frame && frame.state.clock < this.clock) {
+      console.log('=============================');
+      console.log('applying frame...');
+      firstFrame = this.stateSaves.findStateBefore(frame.state.clock);
+      this.setFrame(firstFrame);
+      this.step(frame.state.clock - firstFrame.state.clock, true);
+      console.log('stepped ' + (frame.state.clock - firstFrame.state.clock) + 'ms');
       this.stateSaves.push(frame);
       this.setState(frame.state);
       firstIteration = true;
-      _results = [];
       while (frame) {
         currClock = frame.state.clock;
-        nextClock = this.clock;
-        if (frame.prev) nextClock = frame.prev.state.clock;
+        nextClock = frame.prev ? frame.prev.state.clock : this.clock;
         this.setInput(frame.input);
         if (!firstIteration) {
           frame.state = this.getState();
@@ -1245,14 +1237,16 @@ World = (function() {
         }
         firstIteration = false;
         this.step(nextClock - currClock, true);
+        console.log('stepped ' + (nextClock - currClock) + 'ms');
         if (frame.prev) {
-          _results.push(frame = frame.prev);
+          frame = frame.prev;
         } else {
           break;
         }
       }
-      return _results;
+      return console.log('=============================');
     } else {
+      console.log('adding frame to future stack');
       return this.futureFrames.push(frame);
     }
   };
@@ -1283,24 +1277,9 @@ World = (function() {
   };
 
   World.prototype.setInput = function(newInput) {
-    var key, _i, _j, _len, _len2, _ref, _ref2, _results;
     if (!newInput) return;
-    if (newInput.p1) {
-      _ref = ['left', 'right', 'up'];
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        key = _ref[_i];
-        this.input.set(key, newInput.p1[key], 0);
-      }
-    }
-    if (newInput.p2) {
-      _ref2 = ['left', 'right', 'up'];
-      _results = [];
-      for (_j = 0, _len2 = _ref2.length; _j < _len2; _j++) {
-        key = _ref2[_j];
-        _results.push(this.input.set(key, newInput.p2[key], 1));
-      }
-      return _results;
-    }
+    if (newInput.p1) this.input.setState(newInput.p1, 0);
+    if (newInput.p2) return this.input.setState(newInput.p2, 1);
   };
 
   World.prototype.setFrame = function(frame) {
@@ -1402,14 +1381,14 @@ MenuScene = (function() {
     btnHeight = 44;
     yOffset = 58;
     this.buttons = {
-      instructions: new Button((this.center.x - btnWidth) / 2, dy + yOffset, btnWidth, btnHeight, loader.getAsset('btn_a'), loader.getAsset('btn_b'), this),
+      leaderboards: new Button((this.center.x - btnWidth) / 2, dy + yOffset, btnWidth, btnHeight, loader.getAsset('btn_a'), loader.getAsset('btn_b'), this),
       onePlayer: new Button((this.center.x - btnWidth) / 2, dy, btnWidth, btnHeight, loader.getAsset('btn_a'), loader.getAsset('btn_b'), this),
       options: new Button(this.center.x + (this.center.x - btnWidth) / 2, dy + yOffset, btnWidth, btnHeight, loader.getAsset('btn_a'), loader.getAsset('btn_b'), this),
       wifi: new Button(this.center.x + (this.center.x - btnWidth) / 2, dy, btnWidth, btnHeight, loader.getAsset('btn_a'), loader.getAsset('btn_b'), this)
     };
     this.labels = [];
-    labelImgs = ['btn_wifi', 'btn_options', 'btn_one', 'btn_instructions'];
-    _ref = ['instructions', 'onePlayer', 'options', 'wifi'];
+    labelImgs = ['btn_wifi', 'btn_options', 'btn_one', 'btn_leaderboards'];
+    _ref = ['leaderboards', 'onePlayer', 'options', 'wifi'];
     _fn = function(btn) {
       return this.labels.push(new Sprite(btn.x, btn.y, btn.width, btn.height, loader.getAsset(labelImgs.pop())));
     };
@@ -1441,14 +1420,14 @@ MenuScene = (function() {
   };
 
   MenuScene.prototype.buttonPressed = function(btn) {
-    if (btn === this.buttons['instructions']) {
-      return Globals.Manager.pushScene(new InstructionsScene());
+    if (btn === this.buttons['leaderboards']) {
+      return new Clay.Leaderboard(1).show();
     } else if (btn === this.buttons['onePlayer']) {
       return Globals.Manager.pushScene(new SlimeVolleyball());
     } else if (btn === this.buttons['options']) {
       return Globals.Manager.pushScene(new OptionsScene());
     } else if (btn === this.buttons['wifi']) {
-      return Globals.Manager.pushScene(new NetworkSlimeVolleyball());
+      return Globals.Manager.pushScene(new SlimeVolleyball());
     }
   };
 
@@ -1470,7 +1449,7 @@ SlimeVolleyball = (function() {
   SlimeVolleyball.prototype.init = function(dontOverrideInput) {
     var gamepad, loader;
     var _this = this;
-    this.world = new World(this.width, this.height, Globals.Input);
+    this.world || (this.world = new World(this.width, this.height, Globals.Input));
     this.world.deterministic = false;
     loader = Globals.Loader;
     this.world.pole.bg = loader.getAsset('pole');
@@ -1605,14 +1584,73 @@ SlimeVolleyball = (function() {
 
 })();
 
-var NetworkSlimeVolleyball, s;
-var __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
+var InputSnapshot;
+var __hasProp = Object.prototype.hasOwnProperty;
 
-if (!window.io) {
-  s = document.createElement('script');
-  s.setAttribute('src', '/socket.io/socket.io.js');
-  document.head.appendChild(s);
-}
+InputSnapshot = (function() {
+
+  function InputSnapshot() {
+    this.states = [
+      {
+        left: false,
+        right: false,
+        up: false
+      }, {
+        left: false,
+        right: false,
+        up: false
+      }
+    ];
+  }
+
+  InputSnapshot.prototype.get = function(name, player) {
+    return this.states[player][name];
+  };
+
+  InputSnapshot.prototype.getState = function(player) {
+    var key, state, val, _ref;
+    state = {};
+    _ref = this.states[player];
+    for (key in _ref) {
+      if (!__hasProp.call(_ref, key)) continue;
+      val = _ref[key];
+      state[key] = val;
+    }
+    return state;
+  };
+
+  InputSnapshot.prototype.setState = function(newStates, player) {
+    var key, val, _ref, _results;
+    _ref = this.states[player];
+    _results = [];
+    for (key in _ref) {
+      if (!__hasProp.call(_ref, key)) continue;
+      val = _ref[key];
+      _results.push(this.states[player][key] = newStates[key]);
+    }
+    return _results;
+  };
+
+  InputSnapshot.prototype.left = function(player) {
+    return this.states[player]['left'];
+  };
+
+  InputSnapshot.prototype.right = function(player) {
+    return this.states[player]['right'];
+  };
+
+  InputSnapshot.prototype.up = function(player) {
+    return this.states[player]['up'];
+  };
+
+  return InputSnapshot;
+
+})();
+
+if (module) module.exports = InputSnapshot;
+
+var NetworkSlimeVolleyball;
+var __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
 
 NetworkSlimeVolleyball = (function() {
 
@@ -1624,13 +1662,16 @@ NetworkSlimeVolleyball = (function() {
 
   NetworkSlimeVolleyball.prototype.init = function() {
     var _this = this;
+    this.world = new World(this.width, this.height, new InputSnapshot());
     NetworkSlimeVolleyball.__super__.init.call(this, true);
     this.freezeGame = true;
     this.displayMsg = 'Loading...';
-    this.gameFrame = null;
+    this.receivedFrames = [];
     this.framebuffer = [];
     this.networkInterpolationRemainder = 0;
     this.world.deterministic = true;
+    this.msAhead = Constants.TARGET_LATENCY;
+    this.loopCount = 0;
     if (this.socket) this.socket.disconnect() && (this.socket = null);
     this.socket = io.connect();
     this.socket.on('connect', function() {
@@ -1646,7 +1687,11 @@ NetworkSlimeVolleyball = (function() {
       return _this.start();
     });
     this.socket.on('gameFrame', function(data) {
-      return _this.gameFrame = data;
+      var msAhead;
+      msAhead = _this.world.clock - data.state.clock;
+      console.log('msAhead=' + msAhead);
+      _this.msAhead = 0.8 * _this.msAhead + 0.2 * msAhead;
+      return _this.receivedFrames.push(data);
     });
     this.socket.on('roundEnd', function(didWin, frame) {
       _this.freezeGame = true;
@@ -1658,12 +1703,15 @@ NetworkSlimeVolleyball = (function() {
         return _this.p2.score += 1;
       }
     });
-    this.socket.on('gameEnd', function(winner) {
-      return _this.freezeGame = true;
-    });
-    this.socket.on('opponentLost', function() {
+    this.socket.on('gameDestroy', function(winner) {
       _this.freezeGame = true;
-      return _this.displayMsg = 'Lost connection to opponent. Looking for new match...';
+      _this.socket = null;
+      return _this.displayMsg = 'Lost connection to opponent.';
+    });
+    this.socket.on('disconnect', function() {
+      _this.freezeGame = true;
+      _this.socket = null;
+      return _this.displayMsg = 'Lost connection to opponent.';
     });
     return this.socketInitialized = true;
   };
@@ -1671,7 +1719,7 @@ NetworkSlimeVolleyball = (function() {
   NetworkSlimeVolleyball.prototype.start = function() {
     var i, _ref;
     for (i = 0, _ref = Constants.FRAME_DELAY; 0 <= _ref ? i < _ref : i > _ref; 0 <= _ref ? i++ : i--) {
-      this.world.step(Constants.TICK_DURATION);
+      this.world.step(Constants.TICK_DURATION, true);
       this.framebuffer.push(this.world.getState());
     }
     return NetworkSlimeVolleyball.__super__.start.call(this);
@@ -1705,10 +1753,12 @@ NetworkSlimeVolleyball = (function() {
   NetworkSlimeVolleyball.prototype.step = function(timestamp) {
     var f, frame;
     this.next();
-    if (this.gameFrame) {
-      f = this.gameFrame;
-      this.gameFrame = null;
-      this.world.injectFrame(f);
+    this.loopCount++;
+    if (this.receivedFrames) {
+      while (this.receivedFrames.length > 0) {
+        f = this.receivedFrames.shift();
+        this.world.injectFrame(f);
+      }
     }
     if (this.freezeGame || !this.socketInitialized) {
       if (this.gameStateBuffer) this.gameStateBuffer.push(this.world.getState());
@@ -1726,8 +1776,16 @@ NetworkSlimeVolleyball = (function() {
         }
       };
       this.socket.emit('input', frame);
+      this.world.injectFrame(frame);
     }
-    this.world.step();
+    if (this.msAhead > Constants.TARGET_LATENCY) {
+      if (this.loopCount % 10 === 0) {
+        this.stepLen = Constants.TICK_DURATION;
+        return;
+      }
+    }
+    this.world.step(this.stepLen);
+    this.stepLen = null;
     this.framebuffer.push(this.world.getState());
     return this.draw();
   };
@@ -1859,12 +1917,57 @@ OptionsScene = (function() {
 })();
 
 
-window.onload = function() {
-  var loadingScene;
-  Globals.Manager.canvas = document.getElementById('canvas');
-  Globals.Manager.ctx = Globals.Manager.canvas.getContext('2d');
-  Globals.Input = new Input();
-  loadingScene = new LoadingScene();
-  Globals.Manager.pushScene(loadingScene);
-  return loadingScene.start();
-};
+window.addEventListener('load', function() {
+  var canvas, pixelRatio, updateBounds;
+  var _this = this;
+  pixelRatio = window.devicePixelRatio || 1;
+  canvas = document.getElementById('canvas');
+  updateBounds = function() {
+    var aspect, h, longSide, shortSide, t, w;
+    w = Math.floor(window.innerWidth);
+    if (w < 510) {
+      h = Math.floor(window.innerHeight);
+      longSide = Math.max(w, h);
+      shortSide = Math.min(w, h);
+      aspect = Math.max(Math.min(longSide / shortSide, 2), 1.7);
+      if (h > w) {
+        t = shortSide;
+        canvas.setAttribute('style', '-webkit-transform: rotate(90deg) translate(0, -' + t + 'px);\
+					transform: rotate(90deg) translate(0, -' + t + 'px);\
+					-webkit-transform-origin: 0 0;\
+					-transform-origin: 0 0;');
+        w = longSide;
+        h = shortSide;
+      } else {
+        canvas.setAttribute('style', '-webkit-transform: none;\
+					transform: none;');
+        w = longSide;
+        h = shortSide;
+      }
+    } else {
+      w = Constants.BASE_WIDTH;
+      h = Constants.BASE_HEIGHT;
+      canvas.setAttribute('style', '-webkit-transform: none;\
+					transform: none;');
+    }
+    canvas.height = h * pixelRatio;
+    canvas.width = w * pixelRatio;
+    canvas.style.width = w + 'px';
+    canvas.style.height = h + 'px';
+    Constants.BASE_WIDTH = w;
+    return Constants.BASE_HEIGHT = h;
+  };
+  setTimeout(scrollTo, 0, 0, 1);
+  return setTimeout((function() {
+    var loadingScene;
+    updateBounds();
+    window.addEventListener('resize', updateBounds);
+    document.body.addEventListener('orientationchange', updateBounds);
+    Globals.Manager.canvas = canvas;
+    Globals.Manager.ctx = Globals.Manager.canvas.getContext('2d');
+    Globals.Input = new Input();
+    loadingScene = new LoadingScene();
+    Globals.Manager.pushScene(loadingScene);
+    return loadingScene.start();
+  }), 400);
+});

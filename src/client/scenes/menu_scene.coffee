@@ -15,7 +15,7 @@ class MenuScene extends Scene
 		btnHeight = 44
 		yOffset = 58
 		@buttons = 
-			instructions: new Button((@center.x - btnWidth)/2, dy + yOffset, btnWidth, btnHeight, loader.getAsset('btn_a'), loader.getAsset('btn_b'), this),
+			leaderboards: new Button((@center.x - btnWidth)/2, dy + yOffset, btnWidth, btnHeight, loader.getAsset('btn_a'), loader.getAsset('btn_b'), this),
 			onePlayer: new Button((@center.x - btnWidth)/2, dy, btnWidth, btnHeight, loader.getAsset('btn_a'), 
 				loader.getAsset('btn_b'), this),
 			options: new Button(@center.x+(@center.x - btnWidth)/2, dy + yOffset, btnWidth, btnHeight, loader.getAsset('btn_a'), 
@@ -23,10 +23,10 @@ class MenuScene extends Scene
 			wifi: new Button(@center.x+(@center.x - btnWidth)/2, dy, btnWidth, btnHeight, loader.getAsset('btn_a'), loader.getAsset('btn_b'), this)
 		@labels = []
 		#@labelImgs = ['btn_instructions', 'btn_one', 'btn_options', 'btn_wifi']
-		labelImgs = ['btn_wifi', 'btn_options', 'btn_one', 'btn_instructions']
+		labelImgs = ['btn_wifi', 'btn_options', 'btn_one', 'btn_leaderboards']
 		( (btn) ->
 			@labels.push new Sprite(btn.x, btn.y, btn.width, btn.height, loader.getAsset(labelImgs.pop()))
-		).call(this, @buttons[key]) for key in ['instructions', 'onePlayer', 'options', 'wifi']
+		).call(this, @buttons[key]) for key in ['leaderboards', 'onePlayer', 'options', 'wifi']
 
 	step: (timestamp) ->
 		return unless @ctx
@@ -43,12 +43,13 @@ class MenuScene extends Scene
 
 	# delegate callback when a button is pressed
 	buttonPressed: (btn) ->
-		if btn == @buttons['instructions']
-			Globals.Manager.pushScene new InstructionsScene()
+		if btn == @buttons['leaderboards']
+			new Clay.Leaderboard(1).show();
 		else if btn == @buttons['onePlayer']
 			# new volleyball game
 			Globals.Manager.pushScene new SlimeVolleyball()
 		else if btn == @buttons['options']
 			Globals.Manager.pushScene new OptionsScene()
 		else if btn == @buttons['wifi']
-			Globals.Manager.pushScene new NetworkSlimeVolleyball()
+			Globals.Manager.pushScene new SlimeVolleyball()
+			#Globals.Manager.pushScene new NetworkSlimeVolleyball()

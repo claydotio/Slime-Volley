@@ -14,6 +14,10 @@ socketServer = io.listen(app);
 
 currRoom = new Room(2);
 
+socketServer.configure(function() {
+  return socketServer.set("log level", -1);
+});
+
 socketServer.sockets.on('connection', function(socket) {
   var p;
   console.log('-- NEW CONNECTION --');

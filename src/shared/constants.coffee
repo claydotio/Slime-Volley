@@ -32,6 +32,7 @@ Constants =
 	FRAME_DELAY: 5
 	STATE_SAVE: 500
 	SAVE_LIFETIME: 2000 # save for 2s
+	TARGET_LATENCY: 300
 	ASSETS: # images and sounds
 		p1:      'assets/images/s_0.png',
 		p2:      'assets/images/s_1.png'
@@ -40,7 +41,7 @@ Constants =
 		eye:     'assets/images/eye.png',
 		menu_bg: 'assets/images/menu_bg.png',
 		logo:    'assets/images/logo.png',
-		btn_instructions: 'assets/images/btn_instructions.png',
+		#btn_instructions: 'assets/images/btn_instructions.png',
 		btn_one:          'assets/images/btn_one.png',
 		btn_options:      'assets/images/btn_options.png',
 		btn_wifi:         'assets/images/btn_wifi.png',
@@ -51,8 +52,8 @@ Constants =
 		return:      'assets/images/return.png',
 		score_a:     'assets/images/score_a.png',
 		score_b:     'assets/images/score_b.png',
-		instructions: 'assets/images/instructions.png',
+		#instructions: 'assets/images/instructions.png',
 		back_arrow:   'assets/images/back_arrow.png',
-		options:      'assets/images/options.png'
-
+		options:      'assets/images/options.png',
+		btn_leaderboards: 'assets/images/btn_leaderboards.png'
 module.exports = Constants if module

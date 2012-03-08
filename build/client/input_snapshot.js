@@ -1,4 +1,4 @@
-var InputSnapshot, globalInput;
+var InputSnapshot;
 var __hasProp = Object.prototype.hasOwnProperty;
 
 InputSnapshot = (function() {
@@ -61,6 +61,4 @@ InputSnapshot = (function() {
 
 })();
 
-globalInput = new Input();
-
-module.exports = globalInput;
+if (module) module.exports = InputSnapshot;

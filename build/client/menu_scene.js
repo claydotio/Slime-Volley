@@ -17,14 +17,14 @@ MenuScene = (function() {
     btnHeight = 44;
     yOffset = 58;
     this.buttons = {
-      instructions: new Button((this.center.x - btnWidth) / 2, dy + yOffset, btnWidth, btnHeight, loader.getAsset('btn_a'), loader.getAsset('btn_b'), this),
+      leaderboards: new Button((this.center.x - btnWidth) / 2, dy + yOffset, btnWidth, btnHeight, loader.getAsset('btn_a'), loader.getAsset('btn_b'), this),
       onePlayer: new Button((this.center.x - btnWidth) / 2, dy, btnWidth, btnHeight, loader.getAsset('btn_a'), loader.getAsset('btn_b'), this),
       options: new Button(this.center.x + (this.center.x - btnWidth) / 2, dy + yOffset, btnWidth, btnHeight, loader.getAsset('btn_a'), loader.getAsset('btn_b'), this),
       wifi: new Button(this.center.x + (this.center.x - btnWidth) / 2, dy, btnWidth, btnHeight, loader.getAsset('btn_a'), loader.getAsset('btn_b'), this)
     };
     this.labels = [];
-    labelImgs = ['btn_wifi', 'btn_options', 'btn_one', 'btn_instructions'];
-    _ref = ['instructions', 'onePlayer', 'options', 'wifi'];
+    labelImgs = ['btn_wifi', 'btn_options', 'btn_one', 'btn_leaderboards'];
+    _ref = ['leaderboards', 'onePlayer', 'options', 'wifi'];
     _fn = function(btn) {
       return this.labels.push(new Sprite(btn.x, btn.y, btn.width, btn.height, loader.getAsset(labelImgs.pop())));
     };
@@ -56,14 +56,14 @@ MenuScene = (function() {
   };
 
   MenuScene.prototype.buttonPressed = function(btn) {
-    if (btn === this.buttons['instructions']) {
-      return Globals.Manager.pushScene(new InstructionsScene());
+    if (btn === this.buttons['leaderboards']) {
+      return new Clay.Leaderboard(1).show();
     } else if (btn === this.buttons['onePlayer']) {
       return Globals.Manager.pushScene(new SlimeVolleyball());
     } else if (btn === this.buttons['options']) {
       return Globals.Manager.pushScene(new OptionsScene());
     } else if (btn === this.buttons['wifi']) {
-      return Globals.Manager.pushScene(new NetworkSlimeVolleyball());
+      return Globals.Manager.pushScene(new SlimeVolleyball());
     }
   };
 

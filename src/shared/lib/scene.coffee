@@ -13,7 +13,6 @@ class Scene
 		@buttons ||= {}
 		@stepCallback = (timestamp) => # double arrow "saves" `this` reference
 			this.step(timestamp)
-
 	init: ->
 		@stopped = false
 		@initialized = true

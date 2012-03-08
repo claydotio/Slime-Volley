@@ -35,10 +35,7 @@ Button = (function() {
   };
 
   Button.prototype.handleClick = function(e) {
-    this.down = false;
-    if (Helpers.inRect(e.x, e.y, this.x, this.y, this.width, this.height)) {
-      if (this.scene) return this.scene.buttonPressed(this);
-    }
+    return this.down = false;
   };
 
   Button.prototype.draw = function(ctx) {
