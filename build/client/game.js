@@ -52,6 +52,12 @@ if (!window.addEventListener) {
   };
 }
 
+window.addEventListener("load", function() {
+  return setTimeout((function() {
+    return window.scrollTo(0, 1);
+  }), 0);
+});
+
 window.module || (window.module = false);
 
 var Constants;
@@ -449,10 +455,10 @@ Input = (function() {
     canvas.addEventListener('mousemove', handleMouseMove, true);
     canvas.addEventListener('mouseout', handleMouseOut, true);
     canvas.addEventListener('click', handleClick, true);
-    document.documentElement.addEventListener('touchstart', multitouchShim(handleMouseDown), true);
-    document.documentElement.addEventListener('touchend', multitouchShim(handleMouseUp), true);
-    window.addEventListener('touchmove', multitouchShim(handleMouseMove), true);
-    window.addEventListener('touchcancel', multitouchShim(handleMouseUp), true);
+    canvas.addEventListener('touchstart', multitouchShim(handleMouseDown), true);
+    canvas.addEventListener('touchend', multitouchShim(handleMouseUp), true);
+    canvas.addEventListener('touchmove', multitouchShim(handleMouseMove), true);
+    canvas.addEventListener('touchcancel', multitouchShim(handleMouseUp), true);
     this.shortcuts = {
       left: ['key37', 'key65'],
       right: ['key39', 'key68'],
