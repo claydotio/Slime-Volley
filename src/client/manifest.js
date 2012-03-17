@@ -15,6 +15,7 @@
 //= require '../shared/ball'
 //= require '../shared/slime'
 //= require 'scoreboard'
+//= require 'social'
 //= require '../shared/world'
 
 //= require 'scenes/loading_scene'

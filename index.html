@@ -1,30 +1,118 @@
 <html>
   <head>
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0; ">
-    <link rel="apple-touch-icon" href="/assets/images/icon.png" />
-    <link rel='shortcut icon' href='/assets/images/favicon.ico' />
+	<meta name="apple-mobile-web-app-capable" content="yes" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="chrome=1, IE=edge">
+	<link rel="apple-touch-icon" href="/assets/images/icon.png" />
+	<link rel='shortcut icon' href='/assets/images/favicon.ico' />
 
-    <script type="text/javascript" src="build/client/game.js"></script>
-    <script type='text/javascript'>
-      Clay = {};
-      Clay.gameKey = 'slime'
-      Clay.ready = function( fn ) {
-          Clay.readyFunction = fn;
-      };
-      ( function() {
-          var clay = document.createElement("script");
-          clay.src = "http://clay.io/api/api.js"; 
-          var tag = document.getElementsByTagName("script")[0]; 
-          tag.parentNode.insertBefore(clay, tag);
-      } )();
-    </script>
-    <style>
-      body, html, * {margin:0;padding:0;font-size:8px;}
-
-    </style>
+	<script type="text/javascript" src="build/client/game.js"></script>
+	<script type='text/javascript'>
+	  Clay = {};
+	  Clay.gameKey = 'slime'
+	  Clay.ready = function( fn ) {
+		  Clay.readyFunction = fn;
+	  };
+	  ( function() {
+		  var clay = document.createElement("script");
+		  clay.src = "http://clay.io/api/api.js"; 
+		  var tag = document.getElementsByTagName("script")[0]; 
+		  tag.parentNode.insertBefore(clay, tag);
+	  } )();
+	</script>
+	<style>
+		body, html {
+			margin:0;
+			padding:0;
+		}
+		body {
+			background: #9FFF23; 
+			font: 12px "Helvetica Neue", "HelveticaNeue", Helvetica, Arial, "Lucida Grande", sans-serif;
+		}
+		#center {
+			margin: 0 auto;
+			text-align: center;
+			width: 480px;
+		}
+		#please-rotate {
+			width: 100%;
+			height: 100%;
+			position: fixed;
+			z-index: 5;
+			background: #fff;
+			display: none;
+			text-align: center;
+			font-size: 16px;
+		}
+		.info {
+			display: none;
+		}
+		@media only screen and (min-width: 800px) {
+			#center {
+				padding-top: 15px;
+			}
+			.info {
+				display: block;
+				text-align: left;
+				margin-top: 5px;
+				border: 1px solid rgba( 0, 0, 0, 0.3 );
+			}
+			.info .social {
+				background: rgba( 0, 0, 0, 0.3 );
+				color: #fff;
+			}
+			.info .social a {
+				display: block;
+				float: left;
+				padding: 5px;
+				background: rgba( 255, 255, 255, 0.1 );
+				color: #fff;
+				text-decoration: none;
+				text-align: center;
+				margin-right: 8px;
+				width: 103px;
+			}
+			.info .social a:hover {
+				background: rgba( 255, 255, 255, 0.3 );
+			}
+			.info .social a.last {
+				margin-right: 0;
+			}
+			.info .instructions {
+				padding: 5px;
+			}
+			.clear {
+				clear: both;
+			}
+		}
+	</style>
   </head>
   <body style="margin:0px;">
-    <canvas id="canvas" width="480px" height="268px"></canvas>
+  	<div id='please-rotate'>
+  		Please rotate your device to landscape mode.
+  	</div>
+  	<div id='center'>
+		<canvas id="canvas" width="480px" height="268px"></canvas>
+		<div class='info'>
+			<div class='social'>
+				<a href='javascript: void( 0 );' onclick='Social.facebook();'>
+					Post to Facebook
+				</a>
+				<a href='javascript: void( 0 );' onclick='Social.tweet();'>
+					Post to Twitter
+				</a>
+				<a href='javascript: void( 0 );' onclick='new Clay.Screenshot();'>
+					Take a screenshot
+				</a>
+				<a href='javascript: void( 0 );' onclick='Clay.Ratings();' class='last'>
+					Rate this game
+				</a>
+				<div class='clear'></div>
+			</div>
+			<div class='instructions'>Instructions: <br />
+				Use the arrow keys to move (or WASD), hit the ball over the net.
+			</div>
+		</div>
+	</div>
   </body>
 </html>

@@ -1,8 +1,9 @@
 connect = require('connect')
-io = require('socket.io')
-Player = require('./player')
+io      = require('socket.io')
+Player  = require('./player')
+Clay    = require('./encryption')
 
-app = connect().use(connect.static(__dirname+'/../../')).listen(8000)
+app = connect().use(connect.static(__dirname+'/../../')).listen(845)
 socketServer = io.listen(app)
 
 socketServer.configure ->

@@ -88,7 +88,14 @@ class SlimeVolleyball extends Scene
 		@world.ball.y = @height-Constants.BOTTOM-@world.ball.height
 		@world.ball.velocity = { x: 0, y: 0 }
 		@world.ball.falling = false
-		msgList   = if winner == @world.p1 then @winMsgs else @failMsgs
+		if winner == @world.p1
+			msgList = @winMsgs
+			if winner.score >= Constants.WIN_SCORE # p1 won the game
+				# Clay Leaderboard - TODO: JWT encryption
+				lb = new Clay.Leaderboard( 5 )
+				lb.post 1 # increment win total by 1
+		else
+			msgList = @failMsgs
 		msgIdx    = if winner.score < Constants.WIN_SCORE then Helpers.rand(msgList.length-2) else msgList.length-1
 		@displayMsg = msgList[msgIdx]
 		if winner.score < Constants.WIN_SCORE
@@ -100,7 +107,7 @@ class SlimeVolleyball extends Scene
 			), 1000)
 
 
-	# main "loop" iteration
+	# main "loop" iteration 
 	step: (timestamp) ->
 		this.next() # constantly demand ~60fps
 		return this.draw() if @freezeGame # don't change anything!

@@ -8,6 +8,7 @@ class Room
 		@players.push(@p1) if @p1
 		@players.push(@p2) if @p2
 		@open = this.startGame() # will fail if not enough players
+		@id = 0 # roomID
 
 	addPlayer: (p) ->
 		console.log '-- ADDING PLAYER TO ROOM --'
@@ -17,6 +18,9 @@ class Room
 		p.room = this
 		p.socket.on 'disconnect', => # notify room of leaving
 			this.stopGame()
+			# Destroy the room
+			console.log '-- DELETING ROOM ' + @id
+			delete Room.AllRooms[@id]
 		console.log '-- NUM PLAYERS IN ROOM = '+@players.length+' --'
 		this.startGame()
 		true

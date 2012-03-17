@@ -69,7 +69,7 @@ class GameStateBuffer
 			i++
 	findStateBefore: (clock) ->
 		ref = @first
-		ref = ref.next while ref && ref.state && ref.state.clock >= clock
+		ref = ref.next while ref && ref.next && ref.next.state && ref.state.clock >= clock
 		ref
 	
 	
@@ -89,8 +89,8 @@ class World
 		@lastStep = null
 		@clock = 0
 		@numFrames = 1
-		@stateSaves = new GameStateBuffer()
-		@futureFrames = new GameStateBuffer()
+		#@stateSaves = new GameStateBuffer()
+		#@futureFrames = new GameStateBuffer()
 		# initialize game objects
 		@ball = new Ball(@width/4-Constants.BALL_RADIUS, @height-Constants.BALL_START_HEIGHT, Constants.BALL_RADIUS)
 		@p1 = new Slime(@width/4-Constants.SLIME_RADIUS, @height-Constants.SLIME_START_HEIGHT, @ball, false)
@@ -99,8 +99,12 @@ class World
 		@deterministic = true
 
 	reset: (servingPlayer) -> # reset positions / velocities. servingPlayer is p1 by default.
+		#@stateSaves = new GameStateBuffer()
+		#@futureFrames = new GameStateBuffer()
 		@p1.setPosition(@width/4-Constants.SLIME_RADIUS, @height-Constants.SLIME_START_HEIGHT)
+		@input.setState( { left: false, right: false, up: false }, 0 )
 		@p2.setPosition(3*@width/4-Constants.SLIME_RADIUS, @height-Constants.SLIME_START_HEIGHT)
+		@input.setState( { left: false, right: false, up: false }, 1 )
 		@ball.setPosition((if @p2 == servingPlayer then 3 else 1)*@width/4-Constants.BALL_RADIUS, @height-Constants.BALL_START_HEIGHT)
 		@pole.setPosition(@width/2-4, @height-60-64-1, 8, 64)
 		@p1.velocity =   { x: 0, y: 0 }
@@ -139,10 +143,12 @@ class World
 		# precalculate the number of frames (of length TICK_DURATION) this step spans
 		now = new Date().getTime()
 		tick = Constants.TICK_DURATION
-		interval ||= now - @lastStep if @lastStep && !@deterministic
+		interval ||= now - @lastStep if @lastStep # && !@deterministic
 		interval ||= tick # in case no interval is passed
 		@lastStep = now unless dontIncrementClock
+ 
 		
+		###
 		# automatically break up longer steps into a series of shorter steps
 		if interval >= tick*2
 			while interval > 0
@@ -154,9 +160,12 @@ class World
 				interval -= newInterval
 			return # don't continue stepping
 		else interval = tick
-
+		###
+		
 		@numFrames = interval / tick
-		unless dontIncrementClock # means this is a "realtime" step, so we incrememnt the clock
+		
+		###
+		unless dontIncrementClock # means this is a "realtime" step, so we increment the clock
 			# look through @future frames to see if we can apply any of them now.
 			ref = @futureFrames.last
 			while ref && ref.state && ref.state.clock <= @clock
@@ -168,7 +177,9 @@ class World
 				ref = prevRef
 			@clock += interval
 			@stateSaves.cleanSaves(@clock)
-		
+		###
+		@clock += interval
+
 		this.handleInput()
 		@ball.incrementPosition(@numFrames)
 		@p1.incrementPosition(@numFrames)
@@ -181,6 +192,9 @@ class World
 		if @p2.y + @p2.height > @height - Constants.BOTTOM
 			@p2.y = @height - Constants.BOTTOM - @p2.height
 			@p2.velocity.y = Math.min(@p2.velocity.y, 0)
+		if @ball.y + @ball.height >= @height - Constants.BOTTOM # ball on ground
+			@ball.y = @height - Constants.BOTTOM - @ball.height
+			@ball.velocity.y = 0 
 		
 		# apply collisions against slimes
 		if @ball.y + @ball.height < @p1.y + @p1.height && Math.sqrt(Math.pow((@ball.x + @ball.radius) - (@p1.x + @p1.radius), 2) + Math.pow((@ball.y + @ball.radius) - (@p1.y + @p1.radius), 2)) < @ball.radius + @p1.radius
@@ -246,11 +260,11 @@ class World
 				@ball.velocity.x = .5 if Math.abs(@ball.velocity.x) < 0.1
 				@ball.y = @pole.y - @ball.height
 		
-		if now - @stateSaves.lastPush > Constants.STATE_SAVE # save current state every STATE_SAVE ms
-			@stateSaves.lastPush = now
-			@stateSaves.push # push a frame structure on to @stateSaves
-				state: this.getState()
-				input: null
+		#if now - @stateSaves.lastPush > Constants.STATE_SAVE # save current state every STATE_SAVE ms
+		#	@stateSaves.lastPush = now
+		#	@stateSaves.push # push a frame structure on to @stateSaves
+		#		state: this.getState()
+		#		input: null
 		
 
 	boundsCheck: ->		
@@ -263,34 +277,43 @@ class World
 	handleInput: ->
 		@p1.handleInput(@input)
 		@p2.handleInput(@input)
-
+		
 	injectFrame: (frame) ->
+		# I took out this whole inserting in the past an recalculating
+		# Might be good to reimplement, it's just lagged for me
+		@setFrame frame
+		return 
+		###
 		# starting from that frame, recalculate input
 		if frame && frame.state.clock < @clock
-			#console.log '============================='
-			#console.log 'applying frame...'
+			console.log '============================='
+			console.log 'applying frame...'
 			firstFrame = @stateSaves.findStateBefore(frame.state.clock)
 			this.setFrame(firstFrame)
 			this.step(frame.state.clock - firstFrame.state.clock, true)
-			#console.log 'stepped '+(frame.state.clock - firstFrame.state.clock)+'ms'
+			console.log 'c1: ' + frame.state.clock + ' c2: ' + firstFrame.state.clock
+			console.log 'stepped1 '+(frame.state.clock - firstFrame.state.clock)+'ms'
 			@stateSaves.push(frame) # assigns .next and .prev to frame
 			this.setState(frame.state)
 			firstIteration = true
 			while frame
 				currClock = frame.state.clock
+				console.log @clock
 				nextClock = if frame.prev then frame.prev.state.clock else @clock
+				console.log nextClock
 				this.setInput(frame.input)
 				unless firstIteration # this frame's state might be different, 
 					frame.state = this.getState() # this resets the clock
 					frame.state.clock = currClock # fixed
 				firstIteration = false
 				this.step(nextClock - currClock, true)
-				#console.log 'stepped '+(nextClock - currClock)+'ms'
+				console.log 'stepped2 '+(nextClock - currClock)+'ms'
 				if frame.prev then frame = frame.prev else break	
 
 		else # we'll deal with this later
+			console.log 'future frame'
 			@futureFrames.push(frame)
-			
+		###
 			
 
 	### -- GAME STATE GETTER + SETTERS -- ###

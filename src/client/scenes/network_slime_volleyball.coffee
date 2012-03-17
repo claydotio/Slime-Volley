@@ -2,6 +2,7 @@
 class NetworkSlimeVolleyball extends SlimeVolleyball
 	init: -> # load socket.io asynchronously
 		@world = new World(@width, @height, new InputSnapshot())
+
 		super(true)
 		@freezeGame = true
 		@displayMsg = 'Loading...'
@@ -11,11 +12,13 @@ class NetworkSlimeVolleyball extends SlimeVolleyball
 		@world.deterministic = true # necessary for sync
 		@msAhead = Constants.TARGET_LATENCY
 		@sentWin = false
-		@loopCount = 0
+		@stepCallback = => this.step()
 		
+		# @loopCount = 0
+
 		# initialize socket.io connection to server
 		@socket.disconnect() && @socket = null if @socket
-		@socket = io.connect('/')
+		@socket = io.connect('http://clay.io:845', { 'force new connection':true, 'reconnect':false } )
 		@socket.on 'connect', =>
 			@displayMsg = 'Connected. Waiting for opponent...'
 			this.joinRoom()
@@ -30,54 +33,78 @@ class NetworkSlimeVolleyball extends SlimeVolleyball
 			@sentWin = false
 			this.start()
 		@socket.on 'gameFrame', (data) =>
-			# use this to calculate latency
+			# To make FPS the same as server
 			msAhead = @world.clock - data.state.clock
-			@msAhead = 0.8*@msAhead + 0.2*msAhead
-			@receivedFrames.push(data)
+			@msAhead = msAhead
+			# Update positions and inputs of all game objects to match the server
+			@receivedFrames.push( data )
+		# Called if they won the game (not just round)
+		@socket.on 'gameWin', (jwt) =>
+			# Clay Leaderboard 
+			console.log jwt
+			lb = new Clay.Leaderboard( { id: 1 } )
+			lb.post jwt # increment win total by 1 (encrypted on server-side)
 		@socket.on 'roundEnd', (didWin) =>
-			@freezeGame = true
-			@world.ball.y = @height - Constants.BOTTOM - 2*@world.ball.radius
-			@lastWinner = if didWin then @world.p1 else @world.p2
-			if didWin
-				@displayMsg = @winMsgs[Helpers.rand(@winMsgs.length-2)] 
-				@world.p1.score += 1
-			else
-				@displayMsg = @failMsgs[Helpers.rand(@winMsgs.length-2)] 
-				@world.p2.score += 1
-			if @world.p1.score >= Constants.WIN_SCORE
-				#@socket.disconnect()
-				@displayMsg = 'You WIN!!!'
+			endRound = =>
+				@freezeGame = true
+				@world.ball.y = @height - Constants.BOTTOM - 2*@world.ball.radius
+				@lastWinner = if didWin then @world.p1 else @world.p2
+				# Clear the game interval
+				if didWin
+					@displayMsg = @winMsgs[Helpers.rand(@winMsgs.length-2)] 
+					@world.p1.score += 1
+				else
+					@displayMsg = @failMsgs[Helpers.rand(@winMsgs.length-2)] 
+					@world.p2.score += 1
+				if @world.p1.score >= Constants.WIN_SCORE || @world.p2.score >= Constants.WIN_SCORE
+					if @world.p1.score >= Constants.WIN_SCORE
+						@displayMsg = 'You WIN!!!' 
+					else
+						@displayMsg = 'You LOSE.'
+					@displayMsg += 'New game starting in 3 seconds'
+					
+	
+					# reset the game scores to 0
+					@world.p1.score = 0
+					@world.p2.score = 0
+					# New game initiated by server, starts in 3 seconds	
+			
+				@stop()
+			setTimeout endRound, Constants.TARGET_LATENCY #give a little time so it doesn't look like the ball just drops
+		@socket.on 'gameDestroy', (winner) =>
+			if @socket
 				@freezeGame = true
 				@socket = null
+				@displayMsg = 'Lost connection to opponent.'
+				@stop()
 				setTimeout ( =>
-					Globals.Manager.popScene()
-				), 1000
-			else if @world.p2.score >= Constants.WIN_SCORE
-				#@socket.disconnect()
-				@displayMsg = 'You LOSE.'
-				@freezeGame = true 
-				@socket = null
-				setTimeout ( =>
-					Globals.Manager.popScene()
-				), 1000
-		@socket.on 'gameDestroy', (winner) =>
-			@freezeGame = true
-			@socket = null
-			@displayMsg = 'Lost connection to opponent.'
+					Globals.Manager.popScene() if Globals.Manager.sceneStack[Globals.Manager.sceneStack.length-2]
+					# Leave the clay.io room
+					@rooms.leaveRoom()				
+				), 2000
 		@socket.on 'disconnect', =>
-			@freezeGame = true
-			@socket = null
-			@displayMsg = 'Lost connection to opponent.'
+			if @socket
+				@freezeGame = true
+				@socket = null
+				@displayMsg = 'Lost connection to opponent.'
+				@stop()
+				setTimeout ( =>
+					Globals.Manager.popScene() if Globals.Manager.sceneStack[Globals.Manager.sceneStack.length-2]
+					# Leave the clay.io room
+					@rooms.leaveRoom()
+				), 2000
 		@socketInitialized = true
 
 	joinRoom: ->
-		@socket.emit('joinRoom', @roomID) if @roomID
+		obj = { roomID: @roomID, playerID: Clay.player.identifier }
+		@socket.emit('joinRoom', obj) if @roomID
 
 	start: -> # prebuffer the first Constants.FRAME_DELAY frames
 		for i in [0...Constants.FRAME_DELAY]
 			@world.step(Constants.TICK_DURATION, true)
-			@framebuffer.push(@world.getState())
-		super()
+			# @framebuffer.push(@world.getState())
+		this.step()
+		@gameInterval = setInterval(@stepCallback, Constants.TICK_DURATION)
 
 	draw: ->
 		return unless @ctx
@@ -88,10 +115,10 @@ class NetworkSlimeVolleyball extends SlimeVolleyball
 		@bg.draw(@ctx)
 		@world.p1.draw(@ctx, frame.p1.x, frame.p1.y)
 		@world.p2.draw(@ctx, frame.p2.x, frame.p2.y)
+		@world.ball.draw(@ctx, frame.ball.x, frame.ball.y)
 		@world.pole.draw(@ctx)
 		@p1Scoreboard.draw(@ctx)
 		@p2Scoreboard.draw(@ctx)
-		@world.ball.draw(@ctx, frame.ball.x, frame.ball.y)
 		@buttons['back'].draw(@ctx)
 		# draw displayMsg, if any
 		if @displayMsg
@@ -104,50 +131,45 @@ class NetworkSlimeVolleyball extends SlimeVolleyball
 				@ctx.font = 'bold 11px ' + Constants.MSG_FONT
 				@ctx.fillText(msgs[1], @width/2, 110)
 
+	###
 	throttleFPS: ->
 		if @msAhead > Constants.TARGET_LATENCY # throttle fps to sync with the server's clock
 			if @loopCount % 10 == 0 # drop every tenth frame
 				@stepLen = Constants.TICK_DURATION # we have to explicitly set step size, otherwise the physics engine will just compensate by calculating a larger step
 				return
-	
-	handleInput: ->
-		changed = this.inputChanged() # send update to server that input has changed
-		if changed
-			frame = 
-				input: 
-					p1: changed
-				state: 
-					p1: @world.p1.getState()
-					ball: @world.ball.getState()
-					clock: @world.clock
-			@socket.emit('input', frame)
-			@world.injectFrame(frame)
+	###
 
-	handleWin: (winner) ->
-		unless @sentWin
-			@socket.emit('gameEnd', winner)
-			@sentWin = true
-		
+	handleInput: ->
+		if !@freezeGame
+			changed = this.inputChanged() # send update to server that input has changed
+			if changed
+				frame = 
+					input: 
+						p1: changed
+				@socket.emit('input', frame) # don't need to set now, we'll take what the server gives us
+	
+	stop: ->
+		this.draw()
+		clearInterval @gameInterval
 
 	step: (timestamp) ->
-		this.next()
-		@loopCount++
+		# this.next() setInterval so we have a somewhat unified fps
+		# @loopCount++
 		if @receivedFrames
 			while @receivedFrames.length > 0
 				f = @receivedFrames.shift()
 				@world.injectFrame(f)
+		this.handleInput()
 		if @freezeGame || !@socketInitialized # freeze everything!
-			@gameStateBuffer.push(@world.getState()) if @gameStateBuffer
+			# @gameStateBuffer.push(@world.getState()) if @gameStateBuffer
 			this.draw()
 			return
-		this.handleInput()
-		this.throttleFPS()
-		if @world.ball.y + @world.ball.height >= @world.height-Constants.BOTTOM  # 
-			winner = if @world.ball.x+@world.ball.radius > @width/2 then 'p1' else 'p2'
-			this.handleWin(winner)
-		@world.step(@stepLen) # step physics
-		@stepLen = null  # only drop ONE frame
-		@framebuffer.push(@world.getState()) # save in buffer
+		
+		# this.throttleFPS()
+
+		@world.step() #@stepLen) # step physics 
+		# @stepLen = null  # only drop ONE frame
+		# @framebuffer.push(@world.getState()) # save in buffer
 		this.draw() # we overrode this to draw frame at front of buffer
 
 

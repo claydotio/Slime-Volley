@@ -10,6 +10,12 @@ class MenuScene extends Scene
 		@bg = new StretchySprite(0, 0, @width, @height, 1, 1, loader.getAsset('menu_bg'))
 		@logo = new Sprite(@center.x-128, @center.y-155, 256, 256, loader.getAsset('logo'))
 		@logo.velocity = 0
+		Clay.ready =>
+			@clayRooms = new Clay.Rooms (roomInfo) =>
+				networkGame = new NetworkSlimeVolleyball()
+				networkGame.roomID = roomInfo.id
+				networkGame.rooms = roomInfo.instance
+				Globals.Manager.pushScene networkGame
 		dy = @center.y + 30
 		btnWidth = 234
 		btnHeight = 44
@@ -44,15 +50,12 @@ class MenuScene extends Scene
 	# delegate callback when a button is pressed
 	buttonPressed: (btn) ->
 		if btn == @buttons['leaderboards']
-			new Clay.Leaderboard(1).show();
+			new Clay.Leaderboard( { id: 6 } ).show();
+			# TODO: multiplayer LB
 		else if btn == @buttons['onePlayer']
 			# new volleyball game
 			Globals.Manager.pushScene new SlimeVolleyball()
 		else if btn == @buttons['options']
 			Globals.Manager.pushScene new OptionsScene()
 		else if btn == @buttons['wifi']
-			r = new Clay.Rooms (roomInfo) ->
-				networkGame = new NetworkSlimeVolleyball()
-				networkGame.roomID = roomInfo.id
-				Globals.Manager.pushScene networkGame
-			r.show()
+			@clayRooms.show()

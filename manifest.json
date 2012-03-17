@@ -1,0 +1,17 @@
+{
+  "name": "Slime Volley",
+  "description": "Volleyball...between two slimes.",
+  "version": "0.1.8",
+  "app": {
+    "launch": {
+      "local_path": "index.html"
+    }
+  },
+  "icons": {
+    "128": "icon_128.png"
+  },
+  "permissions": [
+    "unlimitedStorage",
+    "notifications"
+  ]
+}
