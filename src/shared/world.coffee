@@ -117,10 +117,7 @@ class World
 
 	## -- PHYSICS CODE -- ## 
 
-	# resolve collisions between ball and a circle. back ball up along its
-	# negative velocity vector until its center is c1.radius + c2.radius 
-	# units from c2's center. if circle is moving, see which item has more
-	# momentum, and move b along that velocity line.
+	# resolve collisions between ball and a circle. move to closest exterior point.
 	resolveCollision: (b, circle) -> 
 		# resolve collision : move b along radius to outside of circle
 		r = b.radius + circle.radius

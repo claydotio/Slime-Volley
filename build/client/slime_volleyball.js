@@ -67,8 +67,8 @@ SlimeVolleyball = (function() {
   };
 
   SlimeVolleyball.prototype.moveCPU = function() {
-    if (this.ball.x > this.pole.x && this.ball.y < 200 && this.ball.y > 150 && this.p2.jumpSpeed === 0) {
-      this.p2.jumpSpeed = 12;
+    if (this.ball.x > this.pole.x && this.ball.y < 200 && this.ball.y > 150 && this.p2.velocity.y === 0) {
+      this.p2.velocity.y = 12;
     }
     if (this.ball.x > this.pole.x - this.p1.width && this.ball.x < this.p2.x) {
       this.p2.x -= (Constants.MOVEMENT_SPEED * .75) + (Constants.MOVEMENT_SPEED * Constants.AI_DIFFICULTY);

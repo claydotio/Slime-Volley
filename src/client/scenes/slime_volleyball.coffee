@@ -55,8 +55,8 @@ class SlimeVolleyball extends Scene
 		changed
 	
 	moveCPU: -> # implement a basic AI
-		if @ball.x > @pole.x && @ball.y < 200 && @ball.y > 150 && @p2.jumpSpeed == 0
-			@p2.jumpSpeed = 12
+		if @ball.x > @pole.x && @ball.y < 200 && @ball.y > 150 && @p2.velocity.y == 0
+			@p2.velocity.y = 12
 		if @ball.x > @pole.x - @p1.width && @ball.x < @p2.x
 			@p2.x -= (Constants.MOVEMENT_SPEED*.75) + (Constants.MOVEMENT_SPEED*Constants.AI_DIFFICULTY)
 		if @ball.x > @pole.x - @p1.width && @ball.x + @ball.width + (@ball.velocity.x * Constants.AI_DIFFICULTY) > @p2.x + @p2.width && @ball.x + @ball.width < @width
