@@ -21,7 +21,9 @@ Player = (function() {
   }
 
   Player.prototype.receiveInput = function(frame) {
-    if (this.room) return this.room.game.injectFrame(frame, this === this.room.p2);
+    if (this.room && this.room.game) {
+      return this.room.game.injectFrame(frame, this === this.room.p2);
+    }
   };
 
   Player.prototype.receiveGameEnd = function(winner) {
@@ -34,7 +36,7 @@ Player = (function() {
     var playerID, roomID, secret;
     roomID = obj.roomID;
     playerID = obj.playerID;
-    secret = 'amAiFpm3mFYEsF2TDbWgHtmcPdajVM';
+    secret = 'SECRETKEYHERE';
     this.clay = new Clay(playerID, secret);
     if (this.room) this.room.stopGame;
     this.room = Room.AllRooms[roomID] || new Room(2);

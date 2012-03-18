@@ -8,6 +8,7 @@ Input = (function() {
     var _this = this;
     this.keys = {};
     this.anyInput = false;
+    this.wasdEnabled = true;
     normalizeKeyEvent = function(e) {
       e.which || (e.which = e.charCode);
       e.which || (e.which = e.keyCode);
@@ -99,15 +100,15 @@ Input = (function() {
   }
 
   Input.prototype.left = function(p2) {
-    return this.keys[this.shortcuts['left'][0]] || this.keys[this.shortcuts['left'][1]] || false;
+    return this.keys[this.shortcuts['left'][p2]] || (this.wasdEnabled && this.keys[this.shortcuts['left'][1 - p2]]) || false;
   };
 
   Input.prototype.right = function(p2) {
-    return this.keys[this.shortcuts['right'][0]] || this.keys[this.shortcuts['right'][1]] || false;
+    return this.keys[this.shortcuts['right'][p2]] || (this.wasdEnabled && this.keys[this.shortcuts['right'][1 - p2]]) || false;
   };
 
   Input.prototype.up = function(p2) {
-    return this.keys[this.shortcuts['up'][0]] || this.keys[this.shortcuts['up'][1]] || false;
+    return this.keys[this.shortcuts['up'][p2]] || (this.wasdEnabled && this.keys[this.shortcuts['up'][1 - p2]]) || false;
   };
 
   Input.prototype.reset = function() {
@@ -123,9 +124,9 @@ Input = (function() {
 
   Input.prototype.getState = function(p2) {
     return {
-      left: this.keys[this.shortcuts['left'][0]] || this.keys[this.shortcuts['left'][1]],
-      right: this.keys[this.shortcuts['right'][0]] || this.keys[this.shortcuts['right'][1]],
-      up: this.keys[this.shortcuts['up'][0]] || this.keys[this.shortcuts['up'][1]]
+      left: this.left(p2),
+      right: this.right(p2),
+      up: this.up(p2)
     };
   };
 

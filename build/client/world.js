@@ -1,4 +1,4 @@
-var Ball, Constants, GameStateBuffer, Helpers, Slime, Sprite, World;
+var Ball, Constants, Helpers, Slime, Sprite, World;
 
 if (module) {
   Constants = require('./constants');
@@ -7,98 +7,6 @@ if (module) {
   Slime = require('./slime');
   Ball = require('./ball');
 }
-
-GameStateBuffer = (function() {
-
-  function GameStateBuffer() {
-    this.first = this.last = null;
-    this.length = 0;
-    this.lastPush = 0;
-  }
-
-  GameStateBuffer.prototype.push = function(gs) {
-    var idx, ref;
-    if (!gs.state || !gs.state.clock) return;
-    if (!this.first) {
-      this.first = this.last = gs;
-      this.length += 1;
-      return;
-    }
-    ref = this.first;
-    idx = 0;
-    while (ref && ref.state.clock > gs.state.clock) {
-      ref = ref.next;
-      idx++;
-    }
-    if (ref === this.first) {
-      gs.prev = null;
-      gs.next = this.first;
-      this.first.prev = gs;
-      this.first = gs;
-    } else if (!ref) {
-      this.last.next = gs;
-      gs.prev = this.last;
-      gs.next = null;
-      this.last = gs;
-    } else {
-      gs.next = ref;
-      gs.prev = ref.prev;
-      if (gs.prev) gs.prev.next = gs;
-      ref.prev = gs;
-    }
-    this.length += 1;
-    return idx;
-  };
-
-  GameStateBuffer.prototype.pop = function() {
-    var old;
-    if (this.length < 1) return null;
-    old = this.first;
-    this.first = this.first ? this.first.next : null;
-    if (this.first) this.first.prev = null;
-    this.length -= 1;
-    if (!this.first) this.last = null;
-    return old;
-  };
-
-  GameStateBuffer.prototype.shift = function() {
-    var old;
-    if (this.length < 1) return null;
-    old = this.last;
-    this.last = this.last.prev;
-    if (this.last) this.last.next = null;
-    if (old) old.prev = null;
-    this.length -= 1;
-    if (!this.last) this.first = null;
-    return old;
-  };
-
-  GameStateBuffer.prototype.cleanSaves = function(currClock) {
-    var i, minClock, ref, _results;
-    ref = this.last;
-    minClock = currClock - Constants.SAVE_LIFETIME;
-    i = 0;
-    _results = [];
-    while (ref && ref.state && ref !== this.head && ref.state.clock < minClock) {
-      ref = ref.prev;
-      this.shift();
-      _results.push(i++);
-    }
-    return _results;
-  };
-
-  GameStateBuffer.prototype.findStateBefore = function(clock) {
-    var ref;
-    ref = this.first;
-    while (ref && ref.next && ref.next.state && ref.state.clock >= clock) {
-      ref = ref.next;
-    }
-    return ref;
-  };
-
-  return GameStateBuffer;
-
-})();
 
 World = (function() {
 
@@ -176,40 +84,23 @@ World = (function() {
   };
 
   World.prototype.step = function(interval, dontIncrementClock) {
-    var a, borderRadius, circle, dist, now, tick;
+    var a, borderRadius, circle, dist, newInterval, now, tick;
     now = new Date().getTime();
     tick = Constants.TICK_DURATION;
     if (this.lastStep) interval || (interval = now - this.lastStep);
     interval || (interval = tick);
     if (!dontIncrementClock) this.lastStep = now;
-    /*
-    		# automatically break up longer steps into a series of shorter steps
-    		if interval >= tick*2
-    			while interval > 0
-    				if @deterministic # discrete chunk size required for determinism
-    					newInterval = tick
-    				else
-    					newInterval = if interval >= 2*tick then tick else newInterval
-    				this.step(newInterval, dontIncrementClock)
-    				interval -= newInterval
-    			return # don't continue stepping
-    		else interval = tick
-    */
+    if (interval >= 1.3 * tick) {
+      while (interval > 0) {
+        newInterval = interval >= 1.3 * tick ? tick : interval;
+        this.step(newInterval, dontIncrementClock);
+        interval -= newInterval;
+      }
+      return;
+    } else {
+      interval = tick;
+    }
     this.numFrames = interval / tick;
-    /*
-    		unless dontIncrementClock # means this is a "realtime" step, so we increment the clock
-    			# look through @future frames to see if we can apply any of them now.
-    			ref = @futureFrames.last
-    			while ref && ref.state && ref.state.clock <= @clock
-    				this.setFrame(ref)
-    				@futureFrames.shift()
-    				prevRef = ref.prev # since push() changes the .next and .prev attributes of ref
-    				ref.next = ref.prev = null 
-    				@stateSaves.push(ref)
-    				ref = prevRef
-    			@clock += interval
-    			@stateSaves.cleanSaves(@clock)
-    */
     this.clock += interval;
     this.handleInput();
     this.ball.incrementPosition(this.numFrames);
@@ -317,8 +208,8 @@ World = (function() {
   };
 
   World.prototype.handleInput = function() {
-    this.p1.handleInput(this.input);
-    return this.p2.handleInput(this.input);
+    this.p1.handleInput(this.input, true);
+    return this.p2.handleInput(this.input, true);
   };
 
   World.prototype.injectFrame = function(frame) {

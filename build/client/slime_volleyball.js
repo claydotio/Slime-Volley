@@ -39,10 +39,15 @@ SlimeVolleyball = (function() {
       right: false,
       up: false
     };
+    if (this.isLocalMultiplayer) Globals.Input.wasdEnabled = false;
     if (!dontOverrideInput) {
       this.world.handleInput = function() {
         _this.world.p1.handleInput(Globals.Input);
-        return _this.moveCPU.apply(_this.world);
+        if (_this.isLocalMultiplayer) {
+          return _this.world.p2.handleInput(Globals.Input);
+        } else {
+          return _this.moveCPU.apply(_this.world);
+        }
       };
     }
     return SlimeVolleyball.__super__.init.call(this);
@@ -68,7 +73,7 @@ SlimeVolleyball = (function() {
 
   SlimeVolleyball.prototype.moveCPU = function() {
     if (this.ball.x > this.pole.x && this.ball.y < 200 && this.ball.y > 150 && this.p2.velocity.y === 0) {
-      this.p2.velocity.y = -12;
+      this.p2.velocity.y = -8;
     }
     if (this.ball.x > this.pole.x - this.p1.width && this.ball.x < this.p2.x) {
       this.p2.x -= (Constants.MOVEMENT_SPEED * .75) + (Constants.MOVEMENT_SPEED * Constants.AI_DIFFICULTY);
@@ -125,6 +130,18 @@ SlimeVolleyball = (function() {
       msgList = this.failMsgs;
     }
     msgIdx = winner.score < Constants.WIN_SCORE ? Helpers.rand(msgList.length - 2) : msgList.length - 1;
+    if (winner === this.world.p1 && !this.hasPointAchiev) {
+      (new Clay.Achievement({
+        id: 15
+      })).award();
+      this.hasPointAchiev = true;
+    }
+    if (winner === this.world.p1 && winner.score >= Constants.WIN_SCORE && !this.hasWinAchiev) {
+      (new Clay.Achievement({
+        id: 14
+      })).award();
+      this.hasWinAchiev = true;
+    }
     this.displayMsg = msgList[msgIdx];
     if (winner.score < Constants.WIN_SCORE) {
       this.displayMsg += "\nGame restarts in 1 second...";
@@ -149,6 +166,7 @@ SlimeVolleyball = (function() {
   };
 
   SlimeVolleyball.prototype.buttonPressed = function(e) {
+    Globals.Input.wasdEnabled = true;
     return Globals.Manager.popScene();
   };
 

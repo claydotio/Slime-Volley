@@ -15,12 +15,10 @@ NetworkSlimeVolleyball = (function() {
     NetworkSlimeVolleyball.__super__.init.call(this, true);
     this.freezeGame = true;
     this.displayMsg = 'Loading...';
+    this.step();
     this.receivedFrames = [];
-    this.framebuffer = [];
-    this.networkInterpolationRemainder = 0;
     this.world.deterministic = true;
     this.msAhead = Constants.TARGET_LATENCY;
-    this.sentWin = false;
     this.stepCallback = function() {
       return _this.step();
     };
@@ -37,36 +35,39 @@ NetworkSlimeVolleyball = (function() {
       _this.displayMsg = 'Opponent found! Game begins in 1 second...';
       return _this.world.setFrame(frame);
     });
-    this.socket.on('gameStart', function(lastWinner, frame) {
+    this.socket.on('gameStart', function(frame) {
       _this.freezeGame = false;
       _this.displayMsg = null;
-      if (_this.lastWinner) _this.world.reset(_this.lastWinner);
-      _this.lastWinner = null;
-      _this.sentWin = false;
+      _this.world.setFrame(frame);
+      _this.receivedFrames = [];
       return _this.start();
     });
     this.socket.on('gameFrame', function(data) {
-      var msAhead;
-      msAhead = _this.world.clock - data.state.clock;
-      _this.msAhead = msAhead;
+      _this.msAhead = _this.world.clock - data.state.clock;
       return _this.receivedFrames.push(data);
     });
     this.socket.on('gameWin', function(jwt) {
       var lb;
-      console.log(jwt);
       lb = new Clay.Leaderboard({
-        id: 1
+        id: 6
       });
-      return lb.post(jwt);
+      return lb.post({
+        jwt: jwt
+      });
     });
     this.socket.on('roundEnd', function(didWin) {
       var endRound;
       endRound = function() {
         _this.freezeGame = true;
         _this.world.ball.y = _this.height - Constants.BOTTOM - 2 * _this.world.ball.radius;
-        _this.lastWinner = didWin ? _this.world.p1 : _this.world.p2;
         if (didWin) {
           _this.displayMsg = _this.winMsgs[Helpers.rand(_this.winMsgs.length - 2)];
+          if (!_this.hasPointAchiev) {
+            (new Clay.Achievement({
+              id: 15
+            })).award();
+            _this.hasPointAchiev = true;
+          }
           _this.world.p1.score += 1;
         } else {
           _this.displayMsg = _this.failMsgs[Helpers.rand(_this.winMsgs.length - 2)];
@@ -74,6 +75,12 @@ NetworkSlimeVolleyball = (function() {
         }
         if (_this.world.p1.score >= Constants.WIN_SCORE || _this.world.p2.score >= Constants.WIN_SCORE) {
           if (_this.world.p1.score >= Constants.WIN_SCORE) {
+            if (!_this.hasWinAchiev) {
+              (new Clay.Achievement({
+                id: 14
+              })).award();
+              _this.hasWinAchiev = true;
+            }
             _this.displayMsg = 'You WIN!!!';
           } else {
             _this.displayMsg = 'You LOSE.';
@@ -127,10 +134,6 @@ NetworkSlimeVolleyball = (function() {
   };
 
   NetworkSlimeVolleyball.prototype.start = function() {
-    var i, _ref;
-    for (i = 0, _ref = Constants.FRAME_DELAY; 0 <= _ref ? i < _ref : i > _ref; 0 <= _ref ? i++ : i--) {
-      this.world.step(Constants.TICK_DURATION, true);
-    }
     this.step();
     return this.gameInterval = setInterval(this.stepCallback, Constants.TICK_DURATION);
   };
@@ -138,8 +141,7 @@ NetworkSlimeVolleyball = (function() {
   NetworkSlimeVolleyball.prototype.draw = function() {
     var frame, msgs;
     if (!this.ctx) return;
-    if (this.framebuffer) frame = this.framebuffer.shift();
-    frame || (frame = this.world.getState());
+    frame = this.world.getState();
     this.ctx.clearRect(0, 0, this.width, this.height);
     this.bg.draw(this.ctx);
     this.world.p1.draw(this.ctx, frame.p1.x, frame.p1.y);
@@ -161,14 +163,6 @@ NetworkSlimeVolleyball = (function() {
       }
     }
   };
-
-  /*
-  	throttleFPS: ->
-  		if @msAhead > Constants.TARGET_LATENCY # throttle fps to sync with the server's clock
-  			if @loopCount % 10 == 0 # drop every tenth frame
-  				@stepLen = Constants.TICK_DURATION # we have to explicitly set step size, otherwise the physics engine will just compensate by calculating a larger step
-  				return
-  */
 
   NetworkSlimeVolleyball.prototype.handleInput = function() {
     var changed, frame;
@@ -195,7 +189,7 @@ NetworkSlimeVolleyball = (function() {
     if (this.receivedFrames) {
       while (this.receivedFrames.length > 0) {
         f = this.receivedFrames.shift();
-        this.world.injectFrame(f);
+        if (!this.freezeGame) this.world.injectFrame(f);
       }
     }
     this.handleInput();
@@ -203,7 +197,7 @@ NetworkSlimeVolleyball = (function() {
       this.draw();
       return;
     }
-    this.world.step();
+    this.world.step(Constants.TICK_DURATION);
     return this.draw();
   };
 

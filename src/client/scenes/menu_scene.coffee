@@ -9,7 +9,6 @@ class MenuScene extends Scene
 		loader = Globals.Loader
 		@bg = new StretchySprite(0, 0, @width, @height, 1, 1, loader.getAsset('menu_bg'))
 		@logo = new Sprite(@center.x-128, @center.y-155, 256, 256, loader.getAsset('logo'))
-		@logo.velocity = 0
 		Clay.ready =>
 			@clayRooms = new Clay.Rooms (roomInfo) =>
 				networkGame = new NetworkSlimeVolleyball()
@@ -44,8 +43,8 @@ class MenuScene extends Scene
 		label.draw(@ctx) for label in @labels
 
 		# "animate" logo by moving it up and down
-		@logo.y += Math.sin(Math.PI/180.0*@logo.velocity)/3
-		@logo.velocity += 2
+		@logo.y += Math.sin(Math.PI/180.0*@logo.velocity.y)/3
+		@logo.velocity.y += 2
 
 	# delegate callback when a button is pressed
 	buttonPressed: (btn) ->
@@ -54,7 +53,7 @@ class MenuScene extends Scene
 			# TODO: multiplayer LB
 		else if btn == @buttons['onePlayer']
 			# new volleyball game
-			Globals.Manager.pushScene new SlimeVolleyball()
+			Globals.Manager.pushScene new OpponentSelectScene()
 		else if btn == @buttons['options']
 			Globals.Manager.pushScene new OptionsScene()
 		else if btn == @buttons['wifi']

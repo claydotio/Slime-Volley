@@ -183,8 +183,8 @@ class World
 		@p2.x = @width - @p2.width if @p2.x > @width - @p2.width
 
 	handleInput: ->
-		@p1.handleInput(@input)
-		@p2.handleInput(@input)
+		@p1.handleInput(@input, true)
+		@p2.handleInput(@input, true)
 		
 	injectFrame: (frame) ->
 		# I took out this whole inserting in the past an recalculating

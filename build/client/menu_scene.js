@@ -12,7 +12,6 @@ MenuScene = (function() {
     loader = Globals.Loader;
     this.bg = new StretchySprite(0, 0, this.width, this.height, 1, 1, loader.getAsset('menu_bg'));
     this.logo = new Sprite(this.center.x - 128, this.center.y - 155, 256, 256, loader.getAsset('logo'));
-    this.logo.velocity = 0;
     Clay.ready(function() {
       return _this.clayRooms = new Clay.Rooms(function(roomInfo) {
         var networkGame;
@@ -61,8 +60,8 @@ MenuScene = (function() {
       label = _ref2[_i];
       label.draw(this.ctx);
     }
-    this.logo.y += Math.sin(Math.PI / 180.0 * this.logo.velocity) / 3;
-    return this.logo.velocity += 2;
+    this.logo.y += Math.sin(Math.PI / 180.0 * this.logo.velocity.y) / 3;
+    return this.logo.velocity.y += 2;
   };
 
   MenuScene.prototype.buttonPressed = function(btn) {
@@ -71,7 +70,7 @@ MenuScene = (function() {
         id: 6
       }).show();
     } else if (btn === this.buttons['onePlayer']) {
-      return Globals.Manager.pushScene(new SlimeVolleyball());
+      return Globals.Manager.pushScene(new OpponentSelectScene());
     } else if (btn === this.buttons['options']) {
       return Globals.Manager.pushScene(new OptionsScene());
     } else if (btn === this.buttons['wifi']) {

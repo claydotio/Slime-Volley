@@ -41,6 +41,12 @@ GameRunner = (function() {
     var _this = this;
     this.freezeGame = true;
     this.stop();
+    this.world.ball.y = this.height - Constants.BOTTOM - this.world.ball.height;
+    this.world.ball.velocity = {
+      x: 0,
+      y: 0
+    };
+    this.world.ball.falling = false;
     p1Won = winner === 'p1' || this.world.ball.x + this.world.ball.radius > this.width / 2;
     this.world.reset(p1Won ? this.world.p1 : this.world.p2);
     if (this.room.p1) this.room.p1.socket.emit('roundEnd', p1Won);
@@ -58,6 +64,7 @@ GameRunner = (function() {
             score: 1
           });
         }
+        console.log('-- GAME WON BY P1 --');
         if (this.room.p1) this.room.p1.socket.emit('gameWin', jwt);
         gameOver = true;
       } else {
@@ -66,6 +73,7 @@ GameRunner = (function() {
             score: 1
           });
         }
+        console.log('-- GAME WON BY P2 --');
         if (this.room.p2) this.room.p2.socket.emit('gameWin', jwt);
         gameOver = true;
       }

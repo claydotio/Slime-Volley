@@ -37,10 +37,14 @@ class SlimeVolleyball extends Scene
 			right: false
 			up: false
 		}
+		if @isLocalMultiplayer 
+			Globals.Input.wasdEnabled = false
 		unless dontOverrideInput
 			@world.handleInput = => # override handleInput
 				@world.p1.handleInput(Globals.Input)
-				this.moveCPU.apply(@world)
+				if @isLocalMultiplayer 
+					@world.p2.handleInput(Globals.Input)
+				else this.moveCPU.apply(@world)
 		super()
 
 	inputChanged: -> # returns whether input has been received since last check
@@ -131,4 +135,5 @@ class SlimeVolleyball extends Scene
 		this.draw()
 	
 	buttonPressed: (e) -> # menu pressed, end game and pop
+		Globals.Input.wasdEnabled = true
 		Globals.Manager.popScene()

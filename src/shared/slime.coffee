@@ -12,7 +12,7 @@ class Slime extends Sprite
 		@mass = Constants.SLIME_MASS
 		super(@x, @y, @radius*2, @radius, @bg)
 
-	handleInput: (input) ->
+	handleInput: (input) -> # captureBothArrows lets you use WASD OR arrow jeys
 		# check for up, left, right
 		pNum = if @isP2 then 1 else 0
 		if input.left(pNum)

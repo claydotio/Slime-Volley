@@ -55,7 +55,9 @@ Constants = {
     score_b: 'assets/images/score_b.png',
     back_arrow: 'assets/images/back_arrow.png',
     options: 'assets/images/options.png',
-    btn_leaderboards: 'assets/images/btn_leaderboards.png'
+    btn_leaderboards: 'assets/images/btn_leaderboards.png',
+    btn_ai: 'assets/images/btn_ai.png',
+    btn_multi: 'assets/images/btn_multi.png'
   }
 };
 
