@@ -12,7 +12,7 @@ class Player
 		@clay = null
 
 	receiveInput: (frame) ->
-		@room.game.injectFrame(frame, this == @room.p2) if @room
+		@room.game.injectFrame(frame, this == @room.p2) if @room && @room.game
 
 	receiveGameEnd: (winner) ->
 		@room.game.handleWin(winner) if @room && this == @room.p1

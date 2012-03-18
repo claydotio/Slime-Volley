@@ -14,9 +14,6 @@ class GameRunner
 		@running = false
 		@loopCount = 0
 		@stepCallback = => this.step( Constants.TICK_DURATION )
-			
-	#next: -> # iterate game "loop"
-	#	@lastTimeout = setTimeout(@stepCallback, Constants.TICK_DURATION)
 
 	start: -> # send gameStart signal
 		@running = true
@@ -49,24 +46,29 @@ class GameRunner
 			@world.p2.score++
 		
 		# check if the game is over and handle the leaderboard
-		if @world.p1.score >= Constants.WIN_SCORE || @world.p2.score >= Constants.WIN_SCORE
+		gameOver = @world.p1.score >= Constants.WIN_SCORE || @world.p2.score >= Constants.WIN_SCORE
+		if gameOver
 			if @world.p1.score >= Constants.WIN_SCORE
 				# Increment leaderboard by 1 for player 1
 				jwt = @room.p1.clay.encode { score: 1 } if @room.p2
+				console.log '-- GAME WON BY P1 --'
 				@room.p1.socket.emit('gameWin', jwt) if @room.p1
+				gameOver = true
 			else 
 				# Increment leaderboard by 1 for player 2
 				jwt = @room.p2.clay.encode { score: 1 } if @room.p2
+				console.log '-- GAME WON BY P2 --'
 				@room.p2.socket.emit('gameWin', jwt) if @room.p2
+				gameOver = true
 				
 		
 		# start game again in one second
 		@lastTimeout = setTimeout =>
 			@freezeGame = false
 			this.sendFrame('gameStart')
-			this.step( Constants.TICK_DURATION )
-			@gameInterval = setInterval(@stepCallback, Constants.TICK_DURATION)
-		, 3000
+			this.step()
+			@gameInterval = setInterval @stepCallback, Constants.TICK_DURATION
+		, if gameOver then 3000 else 2000
 
 	step: ->
 		return if @freezeGame
@@ -75,14 +77,12 @@ class GameRunner
 			this.handleWin()
 			return
 		@loopCount++
-		#this.next() # this runs on an inverval now to make it more of a concrete time
 
 		# The server doesn't iterate at exactly the frame rate we want, but on average it does
 		# So we can do this (setting the tick)
 		@world.step( Constants.TICK_DURATION )
 		# For position/state verification
 		this.sendFrame() if @loopCount % 10 == 0 
-		# @newInput = null
 
 	stop: ->
 		clearTimeout @lastTimeout

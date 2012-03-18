@@ -97,6 +97,17 @@ class SlimeVolleyball extends Scene
 		else
 			msgList = @failMsgs
 		msgIdx    = if winner.score < Constants.WIN_SCORE then Helpers.rand(msgList.length-2) else msgList.length-1
+		
+		# Clay achievement - score first point
+		if winner == @world.p1 && !@hasPointAchiev
+			( new Clay.Achievement( { id: 15 } ) ).award()
+			@hasPointAchiev = true
+		
+		# Clay achievement - win first game
+		if winner == @world.p1 && winner.score >= Constants.WIN_SCORE && !@hasWinAchiev
+			( new Clay.Achievement( { id: 14 } ) ).award()
+			@hasWinAchiev = true
+		
 		@displayMsg = msgList[msgIdx]
 		if winner.score < Constants.WIN_SCORE
 			@displayMsg += "\nGame restarts in 1 second..."

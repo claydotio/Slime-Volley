@@ -5,75 +5,6 @@ if module
 	Slime = require('./slime')
 	Ball = require('./ball')
 
-# implement a doubly linked list for the game state buffer
-# for fast insertion/removal. it is sorted by clock from latest
-# (current) to earliest (old)
-class GameStateBuffer
-	constructor: ->
-		@first = @last = null
-		@length = 0
-		@lastPush = 0
-	push: (gs) -> # walks the list until it finds the correct place for gs
-		return if !gs.state || !gs.state.clock  # invalid frame
-		if !@first
-			@first = @last = gs 
-			@length += 1
-			return
-		ref = @first
-		idx = 0	
-		while ref && ref.state.clock > gs.state.clock
-			ref = ref.next
-			idx++
-		if ref == @first
-			gs.prev = null
-			gs.next = @first
-			@first.prev = gs
-			@first = gs
-		else if !ref
-			@last.next = gs
-			gs.prev = @last
-			gs.next = null
-			@last = gs
-		else # insert before ref
-			gs.next = ref
-			gs.prev = ref.prev
-			gs.prev.next = gs if gs.prev
-			ref.prev = gs
-		@length += 1
-		idx
-	pop: -> # removes & returns the head
-		return null if @length < 1
-		old = @first
-		@first = if @first then @first.next else null
-		@first.prev = null if @first
-		@length -= 1
-		@last = null if !@first
-		old
-	shift: -> # removes & returns the tail
-		return null if @length < 1
-		old = @last
-		@last = @last.prev
-		@last.next = null if @last
-		old.prev = null if old # prevent dangling reference
-		@length -= 1
-		@first = null if !@last
-		old
-	cleanSaves: (currClock) -> # throw away saves that are too old
-		#console.log 'cleanSaves() called, clock='+currClock+', len='+@length
-		ref = @last
-		minClock = currClock - Constants.SAVE_LIFETIME
-		i = 0
-		while ref && ref.state && ref != @head && ref.state.clock < minClock
-			ref = ref.prev
-			this.shift()
-			i++
-	findStateBefore: (clock) ->
-		ref = @first
-		ref = ref.next while ref && ref.next && ref.next.state && ref.state.clock >= clock
-		ref
-	
-	
-
 # World implements a (somewhat) deterministic physics simulator for our slime game.
 # We sync the world over the network by receiving and sending Input notifications with
 # the current @clock. Upon receiving an Input notification, we step through a @buffer
@@ -89,8 +20,6 @@ class World
 		@lastStep = null
 		@clock = 0
 		@numFrames = 1
-		#@stateSaves = new GameStateBuffer()
-		#@futureFrames = new GameStateBuffer()
 		# initialize game objects
 		@ball = new Ball(@width/4-Constants.BALL_RADIUS, @height-Constants.BALL_START_HEIGHT, Constants.BALL_RADIUS)
 		@p1 = new Slime(@width/4-Constants.SLIME_RADIUS, @height-Constants.SLIME_START_HEIGHT, @ball, false)
@@ -99,8 +28,6 @@ class World
 		@deterministic = true
 
 	reset: (servingPlayer) -> # reset positions / velocities. servingPlayer is p1 by default.
-		#@stateSaves = new GameStateBuffer()
-		#@futureFrames = new GameStateBuffer()
 		@p1.setPosition(@width/4-Constants.SLIME_RADIUS, @height-Constants.SLIME_START_HEIGHT)
 		@input.setState( { left: false, right: false, up: false }, 0 )
 		@p2.setPosition(3*@width/4-Constants.SLIME_RADIUS, @height-Constants.SLIME_START_HEIGHT)
@@ -117,6 +44,10 @@ class World
 
 	## -- PHYSICS CODE -- ## 
 
+	# resolve collisions between ball and a circle. back ball up along its
+	# negative velocity vector until its center is c1.radius + c2.radius 
+	# units from c2's center. if circle is moving, see which item has more
+	# momentum, and move b along that velocity line.
 	# resolve collisions between ball and a circle. move to closest exterior point.
 	resolveCollision: (b, circle) -> 
 		# resolve collision : move b along radius to outside of circle
@@ -144,37 +75,17 @@ class World
 		interval ||= tick # in case no interval is passed
 		@lastStep = now unless dontIncrementClock
  
-		
-		###
 		# automatically break up longer steps into a series of shorter steps
-		if interval >= tick*2
+		if interval >= 1.3 * tick
 			while interval > 0
-				if @deterministic # discrete chunk size required for determinism
-					newInterval = tick
-				else
-					newInterval = if interval >= 2*tick then tick else newInterval
+				newInterval = if interval >= 1.3 * tick then tick else interval
 				this.step(newInterval, dontIncrementClock)
 				interval -= newInterval
 			return # don't continue stepping
 		else interval = tick
-		###
 		
 		@numFrames = interval / tick
-		
-		###
-		unless dontIncrementClock # means this is a "realtime" step, so we increment the clock
-			# look through @future frames to see if we can apply any of them now.
-			ref = @futureFrames.last
-			while ref && ref.state && ref.state.clock <= @clock
-				this.setFrame(ref)
-				@futureFrames.shift()
-				prevRef = ref.prev # since push() changes the .next and .prev attributes of ref
-				ref.next = ref.prev = null 
-				@stateSaves.push(ref)
-				ref = prevRef
-			@clock += interval
-			@stateSaves.cleanSaves(@clock)
-		###
+
 		@clock += interval
 
 		this.handleInput()
