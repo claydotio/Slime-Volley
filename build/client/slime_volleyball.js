@@ -105,7 +105,7 @@ SlimeVolleyball = (function() {
   };
 
   SlimeVolleyball.prototype.handleWin = function(winner) {
-    var msgIdx, msgList;
+    var lb, msgIdx, msgList;
     var _this = this;
     this.freezeGame = true;
     winner.score++;
@@ -115,7 +115,15 @@ SlimeVolleyball = (function() {
       y: 0
     };
     this.world.ball.falling = false;
-    msgList = winner === this.world.p1 ? this.winMsgs : this.failMsgs;
+    if (winner === this.world.p1) {
+      msgList = this.winMsgs;
+      if (winner.score >= Constants.WIN_SCORE) {
+        lb = new Clay.Leaderboard(5);
+        lb.post(1);
+      }
+    } else {
+      msgList = this.failMsgs;
+    }
     msgIdx = winner.score < Constants.WIN_SCORE ? Helpers.rand(msgList.length - 2) : msgList.length - 1;
     this.displayMsg = msgList[msgIdx];
     if (winner.score < Constants.WIN_SCORE) {

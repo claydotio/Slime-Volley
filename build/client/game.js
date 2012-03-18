@@ -4,8 +4,10 @@
   lastTime = 0;
   vendors = ['ms', 'moz', 'webkit', 'o'];
   _fn = function(x) {
-    window.requestAnimationFrame = window[vendors[x] + 'RequestAnimationFrame'];
-    return window.cancelAnimationFrame = window[vendors[x] + 'CancelAnimationFrame'] || window[vendors[x] + 'CancelRequestAnimationFrame'];
+    if (!window.requestAnimationFrame) {
+      window.requestAnimationFrame = window[vendors[x] + 'RequestAnimationFrame'];
+      return window.cancelAnimationFrame = window[vendors[x] + 'CancelAnimationFrame'] || window[vendors[x] + 'CancelRequestAnimationFrame'];
+    }
   };
   for (x = 0, _ref = vendors.length; 0 <= _ref ? x <= _ref : x >= _ref; 0 <= _ref ? x++ : x--) {
     _fn.call(this, x);
@@ -91,7 +93,8 @@ Constants = {
   SLIME_START_HEIGHT: 91,
   AI_DIFFICULTY: 0.25,
   MSG_FONT: 'Courier, monospace, sans-serif',
-  TICK_DURATION: 16,
+  FPS_RATIO: 24 / 16,
+  TICK_DURATION: 24,
   FRAME_DELAY: 5,
   STATE_SAVE: 200,
   SAVE_LIFETIME: 5000,
@@ -467,15 +470,15 @@ Input = (function() {
   }
 
   Input.prototype.left = function(p2) {
-    return this.keys[this.shortcuts['left'][p2]] || false;
+    return this.keys[this.shortcuts['left'][0]] || this.keys[this.shortcuts['left'][1]] || false;
   };
 
   Input.prototype.right = function(p2) {
-    return this.keys[this.shortcuts['right'][p2]] || false;
+    return this.keys[this.shortcuts['right'][0]] || this.keys[this.shortcuts['right'][1]] || false;
   };
 
   Input.prototype.up = function(p2) {
-    return this.keys[this.shortcuts['up'][p2]] || false;
+    return this.keys[this.shortcuts['up'][0]] || this.keys[this.shortcuts['up'][1]] || false;
   };
 
   Input.prototype.reset = function() {
@@ -491,9 +494,9 @@ Input = (function() {
 
   Input.prototype.getState = function(p2) {
     return {
-      left: this.keys[this.shortcuts['left'][p2]],
-      right: this.keys[this.shortcuts['right'][p2]],
-      up: this.keys[this.shortcuts['up'][p2]]
+      left: this.keys[this.shortcuts['left'][0]] || this.keys[this.shortcuts['left'][1]],
+      right: this.keys[this.shortcuts['right'][0]] || this.keys[this.shortcuts['right'][1]],
+      up: this.keys[this.shortcuts['up'][0]] || this.keys[this.shortcuts['up'][1]]
     };
   };
 
@@ -551,10 +554,10 @@ Sprite = (function() {
   };
 
   Sprite.prototype.incrementPosition = function(numFrames) {
-    this.x += this.velocity.x * numFrames;
-    this.y += this.velocity.y * numFrames;
-    this.velocity.x += this.acceleration.x * this.mass * numFrames * numFrames;
-    return this.velocity.y += this.acceleration.y * this.mass * numFrames * numFrames;
+    this.x += this.velocity.x * numFrames * Constants.FPS_RATIO;
+    this.y += this.velocity.y * numFrames * Constants.FPS_RATIO;
+    this.velocity.x += this.acceleration.x * this.mass * numFrames * Constants.FPS_RATIO;
+    return this.velocity.y += this.acceleration.y * this.mass * numFrames * Constants.FPS_RATIO;
   };
 
   Sprite.prototype.draw = function(ctx, x, y) {
@@ -902,6 +905,28 @@ Scoreboard = (function() {
 
 })();
 
+var Social;
+
+Social = (function() {
+
+  function Social() {}
+
+  Social.tweet = function() {
+    var twitter;
+    twitter = new Clay.Twitter();
+    return twitter.post("Check out this game, Slime Volley, on clay.io - http://slime.clay.io");
+  };
+
+  Social.facebook = function() {
+    var facebook;
+    facebook = new Clay.Facebook();
+    return facebook.post("Check out this game, Slime Volley, on clay.io - http://slime.clay.io");
+  };
+
+  return Social;
+
+})();
+
 var Ball, Constants, GameStateBuffer, Helpers, Slime, Sprite, World;
 
 if (module) {
@@ -994,7 +1019,7 @@ GameStateBuffer = (function() {
   GameStateBuffer.prototype.findStateBefore = function(clock) {
     var ref;
     ref = this.first;
-    while (ref && ref.state && ref.state.clock >= clock) {
+    while (ref && ref.next && ref.next.state && ref.state.clock >= clock) {
       ref = ref.next;
     }
     return ref;
@@ -1013,8 +1038,6 @@ World = (function() {
     this.lastStep = null;
     this.clock = 0;
     this.numFrames = 1;
-    this.stateSaves = new GameStateBuffer();
-    this.futureFrames = new GameStateBuffer();
     this.ball = new Ball(this.width / 4 - Constants.BALL_RADIUS, this.height - Constants.BALL_START_HEIGHT, Constants.BALL_RADIUS);
     this.p1 = new Slime(this.width / 4 - Constants.SLIME_RADIUS, this.height - Constants.SLIME_START_HEIGHT, this.ball, false);
     this.p2 = new Slime(3 * this.width / 4 - Constants.SLIME_RADIUS, this.height - Constants.SLIME_START_HEIGHT, this.ball, true);
@@ -1024,7 +1047,17 @@ World = (function() {
 
   World.prototype.reset = function(servingPlayer) {
     this.p1.setPosition(this.width / 4 - Constants.SLIME_RADIUS, this.height - Constants.SLIME_START_HEIGHT);
+    this.input.setState({
+      left: false,
+      right: false,
+      up: false
+    }, 0);
     this.p2.setPosition(3 * this.width / 4 - Constants.SLIME_RADIUS, this.height - Constants.SLIME_START_HEIGHT);
+    this.input.setState({
+      left: false,
+      right: false,
+      up: false
+    }, 1);
     this.ball.setPosition((this.p2 === servingPlayer ? 3 : 1) * this.width / 4 - Constants.BALL_RADIUS, this.height - Constants.BALL_START_HEIGHT);
     this.pole.setPosition(this.width / 2 - 4, this.height - 60 - 64 - 1, 8, 64);
     this.p1.velocity = {
@@ -1072,42 +1105,41 @@ World = (function() {
   };
 
   World.prototype.step = function(interval, dontIncrementClock) {
-    var a, borderRadius, circle, dist, newInterval, now, prevRef, ref, tick;
+    var a, borderRadius, circle, dist, now, tick;
     now = new Date().getTime();
     tick = Constants.TICK_DURATION;
-    if (this.lastStep && !this.deterministic) {
-      interval || (interval = now - this.lastStep);
-    }
+    if (this.lastStep) interval || (interval = now - this.lastStep);
     interval || (interval = tick);
     if (!dontIncrementClock) this.lastStep = now;
-    if (interval >= tick * 2) {
-      while (interval > 0) {
-        if (this.deterministic) {
-          newInterval = tick;
-        } else {
-          newInterval = interval >= 2 * tick ? tick : newInterval;
-        }
-        this.step(newInterval, dontIncrementClock);
-        interval -= newInterval;
-      }
-      return;
-    } else {
-      interval = tick;
-    }
+    /*
+    		# automatically break up longer steps into a series of shorter steps
+    		if interval >= tick*2
+    			while interval > 0
+    				if @deterministic # discrete chunk size required for determinism
+    					newInterval = tick
+    				else
+    					newInterval = if interval >= 2*tick then tick else newInterval
+    				this.step(newInterval, dontIncrementClock)
+    				interval -= newInterval
+    			return # don't continue stepping
+    		else interval = tick
+    */
     this.numFrames = interval / tick;
-    if (!dontIncrementClock) {
-      ref = this.futureFrames.last;
-      while (ref && ref.state && ref.state.clock <= this.clock) {
-        this.setFrame(ref);
-        this.futureFrames.shift();
-        prevRef = ref.prev;
-        ref.next = ref.prev = null;
-        this.stateSaves.push(ref);
-        ref = prevRef;
-      }
-      this.clock += interval;
-      this.stateSaves.cleanSaves(this.clock);
-    }
+    /*
+    		unless dontIncrementClock # means this is a "realtime" step, so we increment the clock
+    			# look through @future frames to see if we can apply any of them now.
+    			ref = @futureFrames.last
+    			while ref && ref.state && ref.state.clock <= @clock
+    				this.setFrame(ref)
+    				@futureFrames.shift()
+    				prevRef = ref.prev # since push() changes the .next and .prev attributes of ref
+    				ref.next = ref.prev = null 
+    				@stateSaves.push(ref)
+    				ref = prevRef
+    			@clock += interval
+    			@stateSaves.cleanSaves(@clock)
+    */
+    this.clock += interval;
     this.handleInput();
     this.ball.incrementPosition(this.numFrames);
     this.p1.incrementPosition(this.numFrames);
@@ -1120,6 +1152,10 @@ World = (function() {
     if (this.p2.y + this.p2.height > this.height - Constants.BOTTOM) {
       this.p2.y = this.height - Constants.BOTTOM - this.p2.height;
       this.p2.velocity.y = Math.min(this.p2.velocity.y, 0);
+    }
+    if (this.ball.y + this.ball.height >= this.height - Constants.BOTTOM) {
+      this.ball.y = this.height - Constants.BOTTOM - this.ball.height;
+      this.ball.velocity.y = 0;
     }
     if (this.ball.y + this.ball.height < this.p1.y + this.p1.height && Math.sqrt(Math.pow((this.ball.x + this.ball.radius) - (this.p1.x + this.p1.radius), 2) + Math.pow((this.ball.y + this.ball.radius) - (this.p1.y + this.p1.radius), 2)) < this.ball.radius + this.p1.radius) {
       this.ball.setPosition(this.resolveCollision(this.ball, this.p1));
@@ -1149,7 +1185,7 @@ World = (function() {
       if (this.ball.y + this.ball.radius >= this.pole.y + borderRadius) {
         this.ball.x = this.ball.velocity.x > 0 ? this.pole.x - this.ball.width : this.pole.x + this.pole.width;
         this.ball.velocity.x *= -1;
-        this.ball.velocity.y = Helpers.yFromAngle(180 - (this.ball.velocity.x / this.ball.velocity.y)) * this.ball.velocity.y;
+        return this.ball.velocity.y = Helpers.yFromAngle(180 - (this.ball.velocity.x / this.ball.velocity.y)) * this.ball.velocity.y;
       } else {
         if (this.ball.x + this.ball.radius < this.pole.x + borderRadius) {
           circle = {
@@ -1162,7 +1198,7 @@ World = (function() {
             this.ball.setPosition(this.resolveCollision(this.ball, circle));
             a = Helpers.rad2Deg(Math.atan(-((this.ball.x + this.ball.radius) - (circle.x + circle.radius)) / ((this.ball.y + this.ball.radius) - (circle.y + circle.radius))));
             this.ball.velocity.x = Helpers.xFromAngle(a) * 6;
-            this.ball.velocity.y = Helpers.yFromAngle(a) * 6;
+            return this.ball.velocity.y = Helpers.yFromAngle(a) * 6;
           }
         } else if (this.ball.x + this.ball.radius > this.pole.x + this.pole.width - borderRadius) {
           circle = {
@@ -1175,31 +1211,24 @@ World = (function() {
             this.ball.setPosition(this.resolveCollision(this.ball, circle));
             a = Helpers.rad2Deg(Math.atan(-((this.ball.x + this.ball.radius) - (circle.x + circle.radius)) / ((this.ball.y + this.ball.radius) - (circle.y + circle.radius))));
             this.ball.velocity.x = Helpers.xFromAngle(a) * 6;
-            this.ball.velocity.y = Helpers.yFromAngle(a) * 6;
+            return this.ball.velocity.y = Helpers.yFromAngle(a) * 6;
           }
         } else {
           this.ball.velocity.y *= -1;
           if (Math.abs(this.ball.velocity.x) < 0.1) this.ball.velocity.x = .5;
-          this.ball.y = this.pole.y - this.ball.height;
+          return this.ball.y = this.pole.y - this.ball.height;
         }
       }
     } else if (this.ball.x < this.pole.x + this.pole.width && this.ball.x > this.pole.x + this.ball.velocity.x && this.ball.y >= this.pole.y && this.ball.y <= this.pole.y + this.pole.height && this.ball.velocity.x < 0) {
       if (this.ball.y + this.ball.height >= this.pole.y + borderRadius) {
         this.ball.x = this.pole.x + this.pole.width;
         this.ball.velocity.x *= -1;
-        this.ball.velocity.y = Helpers.yFromAngle(180 - (this.ball.velocity.x / this.ball.velocity.y)) * this.ball.velocity.y;
+        return this.ball.velocity.y = Helpers.yFromAngle(180 - (this.ball.velocity.x / this.ball.velocity.y)) * this.ball.velocity.y;
       } else {
         this.ball.velocity.y *= -1;
         if (Math.abs(this.ball.velocity.x) < 0.1) this.ball.velocity.x = .5;
-        this.ball.y = this.pole.y - this.ball.height;
+        return this.ball.y = this.pole.y - this.ball.height;
       }
-    }
-    if (now - this.stateSaves.lastPush > Constants.STATE_SAVE) {
-      this.stateSaves.lastPush = now;
-      return this.stateSaves.push({
-        state: this.getState(),
-        input: null
-      });
     }
   };
 
@@ -1222,35 +1251,38 @@ World = (function() {
   };
 
   World.prototype.injectFrame = function(frame) {
-    var currClock, firstFrame, firstIteration, nextClock, _results;
-    if (frame && frame.state.clock < this.clock) {
-      firstFrame = this.stateSaves.findStateBefore(frame.state.clock);
-      this.setFrame(firstFrame);
-      this.step(frame.state.clock - firstFrame.state.clock, true);
-      this.stateSaves.push(frame);
-      this.setState(frame.state);
-      firstIteration = true;
-      _results = [];
-      while (frame) {
-        currClock = frame.state.clock;
-        nextClock = frame.prev ? frame.prev.state.clock : this.clock;
-        this.setInput(frame.input);
-        if (!firstIteration) {
-          frame.state = this.getState();
-          frame.state.clock = currClock;
-        }
-        firstIteration = false;
-        this.step(nextClock - currClock, true);
-        if (frame.prev) {
-          _results.push(frame = frame.prev);
-        } else {
-          break;
-        }
-      }
-      return _results;
-    } else {
-      return this.futureFrames.push(frame);
-    }
+    this.setFrame(frame);
+    /*
+    		# starting from that frame, recalculate input
+    		if frame && frame.state.clock < @clock
+    			console.log '============================='
+    			console.log 'applying frame...'
+    			firstFrame = @stateSaves.findStateBefore(frame.state.clock)
+    			this.setFrame(firstFrame)
+    			this.step(frame.state.clock - firstFrame.state.clock, true)
+    			console.log 'c1: ' + frame.state.clock + ' c2: ' + firstFrame.state.clock
+    			console.log 'stepped1 '+(frame.state.clock - firstFrame.state.clock)+'ms'
+    			@stateSaves.push(frame) # assigns .next and .prev to frame
+    			this.setState(frame.state)
+    			firstIteration = true
+    			while frame
+    				currClock = frame.state.clock
+    				console.log @clock
+    				nextClock = if frame.prev then frame.prev.state.clock else @clock
+    				console.log nextClock
+    				this.setInput(frame.input)
+    				unless firstIteration # this frame's state might be different, 
+    					frame.state = this.getState() # this resets the clock
+    					frame.state.clock = currClock # fixed
+    				firstIteration = false
+    				this.step(nextClock - currClock, true)
+    				console.log 'stepped2 '+(nextClock - currClock)+'ms'
+    				if frame.prev then frame = frame.prev else break	
+    
+    		else # we'll deal with this later
+    			console.log 'future frame'
+    			@futureFrames.push(frame)
+    */
   };
 
   /* -- GAME STATE GETTER + SETTERS --
@@ -1373,11 +1405,21 @@ MenuScene = (function() {
 
   function MenuScene() {
     var btnHeight, btnWidth, dy, key, labelImgs, loader, yOffset, _fn, _i, _len, _ref;
+    var _this = this;
     MenuScene.__super__.constructor.call(this);
     loader = Globals.Loader;
     this.bg = new StretchySprite(0, 0, this.width, this.height, 1, 1, loader.getAsset('menu_bg'));
     this.logo = new Sprite(this.center.x - 128, this.center.y - 155, 256, 256, loader.getAsset('logo'));
     this.logo.velocity = 0;
+    Clay.ready(function() {
+      return _this.clayRooms = new Clay.Rooms(function(roomInfo) {
+        var networkGame;
+        networkGame = new NetworkSlimeVolleyball();
+        networkGame.roomID = roomInfo.id;
+        networkGame.rooms = roomInfo.instance;
+        return Globals.Manager.pushScene(networkGame);
+      });
+    });
     dy = this.center.y + 30;
     btnWidth = 234;
     btnHeight = 44;
@@ -1422,21 +1464,16 @@ MenuScene = (function() {
   };
 
   MenuScene.prototype.buttonPressed = function(btn) {
-    var r;
     if (btn === this.buttons['leaderboards']) {
-      return new Clay.Leaderboard(1).show();
+      return new Clay.Leaderboard({
+        id: 6
+      }).show();
     } else if (btn === this.buttons['onePlayer']) {
       return Globals.Manager.pushScene(new SlimeVolleyball());
     } else if (btn === this.buttons['options']) {
       return Globals.Manager.pushScene(new OptionsScene());
     } else if (btn === this.buttons['wifi']) {
-      r = new Clay.Rooms(function(roomInfo) {
-        var networkGame;
-        networkGame = new NetworkSlimeVolleyball();
-        networkGame.roomID = roomInfo.id;
-        return Globals.Manager.pushScene(networkGame);
-      });
-      return r.show();
+      return this.clayRooms.show();
     }
   };
 
@@ -1551,7 +1588,7 @@ SlimeVolleyball = (function() {
   };
 
   SlimeVolleyball.prototype.handleWin = function(winner) {
-    var msgIdx, msgList;
+    var lb, msgIdx, msgList;
     var _this = this;
     this.freezeGame = true;
     winner.score++;
@@ -1561,7 +1598,15 @@ SlimeVolleyball = (function() {
       y: 0
     };
     this.world.ball.falling = false;
-    msgList = winner === this.world.p1 ? this.winMsgs : this.failMsgs;
+    if (winner === this.world.p1) {
+      msgList = this.winMsgs;
+      if (winner.score >= Constants.WIN_SCORE) {
+        lb = new Clay.Leaderboard(5);
+        lb.post(1);
+      }
+    } else {
+      msgList = this.failMsgs;
+    }
     msgIdx = winner.score < Constants.WIN_SCORE ? Helpers.rand(msgList.length - 2) : msgList.length - 1;
     this.displayMsg = msgList[msgIdx];
     if (winner.score < Constants.WIN_SCORE) {
@@ -1676,14 +1721,18 @@ NetworkSlimeVolleyball = (function() {
     this.freezeGame = true;
     this.displayMsg = 'Loading...';
     this.receivedFrames = [];
-    this.framebuffer = [];
     this.networkInterpolationRemainder = 0;
     this.world.deterministic = true;
     this.msAhead = Constants.TARGET_LATENCY;
     this.sentWin = false;
-    this.loopCount = 0;
+    this.stepCallback = function() {
+      return _this.step();
+    };
     if (this.socket) this.socket.disconnect() && (this.socket = null);
-    this.socket = io.connect('/');
+    this.socket = io.connect('http://clay.io:845', {
+      'force new connection': true,
+      'reconnect': false
+    });
     this.socket.on('connect', function() {
       _this.displayMsg = 'Connected. Waiting for opponent...';
       return _this.joinRoom();
@@ -1695,83 +1744,107 @@ NetworkSlimeVolleyball = (function() {
     this.socket.on('gameStart', function(lastWinner, frame) {
       _this.freezeGame = false;
       _this.displayMsg = null;
-      if (_this.lastWinner) _this.world.reset(_this.lastWinner);
+      _this.world.setFrame(frame);
+      _this.receivedFrames = [];
       _this.lastWinner = null;
       _this.sentWin = false;
       return _this.start();
     });
     this.socket.on('gameFrame', function(data) {
-      var msAhead;
-      msAhead = _this.world.clock - data.state.clock;
-      _this.msAhead = 0.8 * _this.msAhead + 0.2 * msAhead;
+      _this.msAhead = _this.world.clock - data.state.clock;
       return _this.receivedFrames.push(data);
     });
+    this.socket.on('gameWin', function(jwt) {
+      var lb;
+      lb = new Clay.Leaderboard({
+        id: 1
+      });
+      return lb.post(jwt);
+    });
     this.socket.on('roundEnd', function(didWin) {
-      _this.freezeGame = true;
-      _this.world.ball.y = _this.height - Constants.BOTTOM - 2 * _this.world.ball.radius;
-      _this.lastWinner = didWin ? _this.world.p1 : _this.world.p2;
-      if (didWin) {
-        _this.displayMsg = _this.winMsgs[Helpers.rand(_this.winMsgs.length - 2)];
-        _this.world.p1.score += 1;
-      } else {
-        _this.displayMsg = _this.failMsgs[Helpers.rand(_this.winMsgs.length - 2)];
-        _this.world.p2.score += 1;
-      }
-      if (_this.world.p1.score >= Constants.WIN_SCORE) {
-        _this.displayMsg = 'You WIN!!!';
+      var endRound;
+      endRound = function() {
         _this.freezeGame = true;
-        _this.socket = null;
-        return setTimeout((function() {
-          return Globals.Manager.popScene();
-        }), 1000);
-      } else if (_this.world.p2.score >= Constants.WIN_SCORE) {
-        _this.displayMsg = 'You LOSE.';
-        _this.freezeGame = true;
-        _this.socket = null;
-        return setTimeout((function() {
-          return Globals.Manager.popScene();
-        }), 1000);
-      }
+        _this.world.ball.y = _this.height - Constants.BOTTOM - 2 * _this.world.ball.radius;
+        _this.lastWinner = didWin ? _this.world.p1 : _this.world.p2;
+        if (didWin) {
+          _this.displayMsg = _this.winMsgs[Helpers.rand(_this.winMsgs.length - 2)];
+          _this.world.p1.score += 1;
+        } else {
+          _this.displayMsg = _this.failMsgs[Helpers.rand(_this.winMsgs.length - 2)];
+          _this.world.p2.score += 1;
+        }
+        if (_this.world.p1.score >= Constants.WIN_SCORE || _this.world.p2.score >= Constants.WIN_SCORE) {
+          if (_this.world.p1.score >= Constants.WIN_SCORE) {
+            _this.displayMsg = 'You WIN!!!';
+          } else {
+            _this.displayMsg = 'You LOSE.';
+          }
+          _this.displayMsg += 'New game starting in 3 seconds';
+          _this.world.p1.score = 0;
+          _this.world.p2.score = 0;
+        }
+        return _this.stop();
+      };
+      return setTimeout(endRound, Constants.TARGET_LATENCY);
     });
     this.socket.on('gameDestroy', function(winner) {
-      _this.freezeGame = true;
-      _this.socket = null;
-      return _this.displayMsg = 'Lost connection to opponent.';
+      if (_this.socket) {
+        _this.freezeGame = true;
+        _this.socket = null;
+        _this.displayMsg = 'Lost connection to opponent.';
+        _this.stop();
+        return setTimeout((function() {
+          if (Globals.Manager.sceneStack[Globals.Manager.sceneStack.length - 2]) {
+            Globals.Manager.popScene();
+          }
+          return _this.rooms.leaveRoom();
+        }), 2000);
+      }
     });
     this.socket.on('disconnect', function() {
-      _this.freezeGame = true;
-      _this.socket = null;
-      return _this.displayMsg = 'Lost connection to opponent.';
+      if (_this.socket) {
+        _this.freezeGame = true;
+        _this.socket = null;
+        _this.displayMsg = 'Lost connection to opponent.';
+        _this.stop();
+        return setTimeout((function() {
+          if (Globals.Manager.sceneStack[Globals.Manager.sceneStack.length - 2]) {
+            Globals.Manager.popScene();
+          }
+          return _this.rooms.leaveRoom();
+        }), 2000);
+      }
     });
     return this.socketInitialized = true;
   };
 
   NetworkSlimeVolleyball.prototype.joinRoom = function() {
-    if (this.roomID) return this.socket.emit('joinRoom', this.roomID);
+    var obj;
+    obj = {
+      roomID: this.roomID,
+      playerID: Clay.player.identifier
+    };
+    if (this.roomID) return this.socket.emit('joinRoom', obj);
   };
 
   NetworkSlimeVolleyball.prototype.start = function() {
-    var i, _ref;
-    for (i = 0, _ref = Constants.FRAME_DELAY; 0 <= _ref ? i < _ref : i > _ref; 0 <= _ref ? i++ : i--) {
-      this.world.step(Constants.TICK_DURATION, true);
-      this.framebuffer.push(this.world.getState());
-    }
-    return NetworkSlimeVolleyball.__super__.start.call(this);
+    this.step();
+    return this.gameInterval = setInterval(this.stepCallback, Constants.TICK_DURATION);
   };
 
   NetworkSlimeVolleyball.prototype.draw = function() {
     var frame, msgs;
     if (!this.ctx) return;
-    if (this.framebuffer) frame = this.framebuffer.shift();
-    frame || (frame = this.world.getState());
+    frame = this.world.getState();
     this.ctx.clearRect(0, 0, this.width, this.height);
     this.bg.draw(this.ctx);
     this.world.p1.draw(this.ctx, frame.p1.x, frame.p1.y);
     this.world.p2.draw(this.ctx, frame.p2.x, frame.p2.y);
+    this.world.ball.draw(this.ctx, frame.ball.x, frame.ball.y);
     this.world.pole.draw(this.ctx);
     this.p1Scoreboard.draw(this.ctx);
     this.p2Scoreboard.draw(this.ctx);
-    this.world.ball.draw(this.ctx, frame.ball.x, frame.ball.y);
     this.buttons['back'].draw(this.ctx);
     if (this.displayMsg) {
       this.ctx.font = 'bold 14px ' + Constants.MSG_FONT;
@@ -1786,62 +1859,48 @@ NetworkSlimeVolleyball = (function() {
     }
   };
 
-  NetworkSlimeVolleyball.prototype.throttleFPS = function() {
-    if (this.msAhead > Constants.TARGET_LATENCY) {
-      if (this.loopCount % 10 === 0) this.stepLen = Constants.TICK_DURATION;
-    }
-  };
+  /*
+  	throttleFPS: ->
+  		if @msAhead > Constants.TARGET_LATENCY # throttle fps to sync with the server's clock
+  			if @loopCount % 10 == 0 # drop every tenth frame
+  				@stepLen = Constants.TICK_DURATION # we have to explicitly set step size, otherwise the physics engine will just compensate by calculating a larger step
+  				return
+  */
 
   NetworkSlimeVolleyball.prototype.handleInput = function() {
     var changed, frame;
-    changed = this.inputChanged();
-    if (changed) {
-      frame = {
-        input: {
-          p1: changed
-        },
-        state: {
-          p1: this.world.p1.getState(),
-          ball: this.world.ball.getState(),
-          clock: this.world.clock
-        }
-      };
-      this.socket.emit('input', frame);
-      return this.world.injectFrame(frame);
+    if (!this.freezeGame) {
+      changed = this.inputChanged();
+      if (changed) {
+        frame = {
+          input: {
+            p1: changed
+          }
+        };
+        return this.socket.emit('input', frame);
+      }
     }
   };
 
-  NetworkSlimeVolleyball.prototype.handleWin = function(winner) {
-    if (!this.sentWin) {
-      this.socket.emit('gameEnd', winner);
-      return this.sentWin = true;
-    }
+  NetworkSlimeVolleyball.prototype.stop = function() {
+    this.draw();
+    return clearInterval(this.gameInterval);
   };
 
   NetworkSlimeVolleyball.prototype.step = function(timestamp) {
-    var f, winner;
-    this.next();
-    this.loopCount++;
+    var f;
     if (this.receivedFrames) {
       while (this.receivedFrames.length > 0) {
         f = this.receivedFrames.shift();
         this.world.injectFrame(f);
       }
     }
+    this.handleInput();
     if (this.freezeGame || !this.socketInitialized) {
-      if (this.gameStateBuffer) this.gameStateBuffer.push(this.world.getState());
       this.draw();
       return;
     }
-    this.handleInput();
-    this.throttleFPS();
-    if (this.world.ball.y + this.world.ball.height >= this.world.height - Constants.BOTTOM) {
-      winner = this.world.ball.x + this.world.ball.radius > this.width / 2 ? 'p1' : 'p2';
-      this.handleWin(winner);
-    }
-    this.world.step(this.stepLen);
-    this.stepLen = null;
-    this.framebuffer.push(this.world.getState());
+    this.world.step();
     return this.draw();
   };
 
@@ -1971,11 +2030,40 @@ OptionsScene = (function() {
 
 })();
 
+var scrollTop;
+
+scrollTop = function() {
+  var doScrollTop;
+  return doScrollTop = setInterval(function() {
+    var pageYOffset;
+    if (document.body) {
+      clearInterval(doScrollTop);
+      scrollTo(0, 1);
+      pageYOffset = 0;
+      scrollTo(0, (pageYOffset === document.body.scrollTop ? 1 : 0));
+      if (window.innerWidth < 350) {
+        return document.getElementById('please-rotate').style.display = 'block';
+      } else {
+        return document.getElementById('please-rotate').style.display = 'none';
+      }
+    }
+  }, 200);
+};
+
+window.addEventListener('orientationchange', function() {
+  return scrollTop();
+});
 
 window.addEventListener('load', function() {
-  var canvas, loadingScene, pixelRatio;
+  var canvas, loadingScene, pageFill, pixelRatio;
   pixelRatio = window.devicePixelRatio || 1;
   canvas = document.getElementById('canvas');
+  if ((document.body.clientHeight - 100) < window.innerHeight) {
+    pageFill = document.createElement("div");
+    pageFill.style.height = (window.innerHeight - document.body.clientHeight + 100) + "px";
+    document.getElementsByTagName("body")[0].appendChild(pageFill);
+  }
+  scrollTop();
   Globals.Manager.canvas = canvas;
   Globals.Manager.ctx = Globals.Manager.canvas.getContext('2d');
   Globals.Input = new Input();

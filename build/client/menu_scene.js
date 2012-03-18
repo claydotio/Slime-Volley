@@ -7,11 +7,21 @@ MenuScene = (function() {
 
   function MenuScene() {
     var btnHeight, btnWidth, dy, key, labelImgs, loader, yOffset, _fn, _i, _len, _ref;
+    var _this = this;
     MenuScene.__super__.constructor.call(this);
     loader = Globals.Loader;
     this.bg = new StretchySprite(0, 0, this.width, this.height, 1, 1, loader.getAsset('menu_bg'));
     this.logo = new Sprite(this.center.x - 128, this.center.y - 155, 256, 256, loader.getAsset('logo'));
     this.logo.velocity = 0;
+    Clay.ready(function() {
+      return _this.clayRooms = new Clay.Rooms(function(roomInfo) {
+        var networkGame;
+        networkGame = new NetworkSlimeVolleyball();
+        networkGame.roomID = roomInfo.id;
+        networkGame.rooms = roomInfo.instance;
+        return Globals.Manager.pushScene(networkGame);
+      });
+    });
     dy = this.center.y + 30;
     btnWidth = 234;
     btnHeight = 44;
@@ -56,21 +66,16 @@ MenuScene = (function() {
   };
 
   MenuScene.prototype.buttonPressed = function(btn) {
-    var r;
     if (btn === this.buttons['leaderboards']) {
-      return new Clay.Leaderboard(1).show();
+      return new Clay.Leaderboard({
+        id: 6
+      }).show();
     } else if (btn === this.buttons['onePlayer']) {
       return Globals.Manager.pushScene(new SlimeVolleyball());
     } else if (btn === this.buttons['options']) {
       return Globals.Manager.pushScene(new OptionsScene());
     } else if (btn === this.buttons['wifi']) {
-      r = new Clay.Rooms(function(roomInfo) {
-        var networkGame;
-        networkGame = new NetworkSlimeVolleyball();
-        networkGame.roomID = roomInfo.id;
-        return Globals.Manager.pushScene(networkGame);
-      });
-      return r.show();
+      return this.clayRooms.show();
     }
   };
 

@@ -8,18 +8,16 @@ Player = (function() {
     var _this = this;
     this.socket = socket;
     this.room = null;
-    this.socket.on('joinRoom', function(roomID) {
-      return _this.joinRoom(roomID);
+    this.socket.on('joinRoom', function(obj) {
+      return _this.joinRoom(obj);
     });
     this.socket.on('input', function(frame) {
       return _this.receiveInput(frame);
     });
-    this.socket.on('gameEnd', function(frame) {
-      return _this.receiveGameEnd(frame);
-    });
     this.socket.on('disconnect', function() {
       return _this.didDisconnect();
     });
+    this.clay = null;
   }
 
   Player.prototype.receiveInput = function(frame) {
@@ -32,10 +30,16 @@ Player = (function() {
     }
   };
 
-  Player.prototype.joinRoom = function(roomID) {
+  Player.prototype.joinRoom = function(obj) {
+    var playerID, roomID, secret;
+    roomID = obj.roomID;
+    playerID = obj.playerID;
+    secret = 'amAiFpm3mFYEsF2TDbWgHtmcPdajVM';
+    this.clay = new Clay(playerID, secret);
     if (this.room) this.room.stopGame;
     this.room = Room.AllRooms[roomID] || new Room(2);
     this.room.addPlayer(this);
+    this.room.id = roomID;
     return Room.AllRooms[roomID] = this.room;
   };
 

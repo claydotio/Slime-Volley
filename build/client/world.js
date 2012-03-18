@@ -90,7 +90,7 @@ GameStateBuffer = (function() {
   GameStateBuffer.prototype.findStateBefore = function(clock) {
     var ref;
     ref = this.first;
-    while (ref && ref.state && ref.state.clock >= clock) {
+    while (ref && ref.next && ref.next.state && ref.state.clock >= clock) {
       ref = ref.next;
     }
     return ref;
@@ -109,8 +109,6 @@ World = (function() {
     this.lastStep = null;
     this.clock = 0;
     this.numFrames = 1;
-    this.stateSaves = new GameStateBuffer();
-    this.futureFrames = new GameStateBuffer();
     this.ball = new Ball(this.width / 4 - Constants.BALL_RADIUS, this.height - Constants.BALL_START_HEIGHT, Constants.BALL_RADIUS);
     this.p1 = new Slime(this.width / 4 - Constants.SLIME_RADIUS, this.height - Constants.SLIME_START_HEIGHT, this.ball, false);
     this.p2 = new Slime(3 * this.width / 4 - Constants.SLIME_RADIUS, this.height - Constants.SLIME_START_HEIGHT, this.ball, true);
@@ -120,7 +118,17 @@ World = (function() {
 
   World.prototype.reset = function(servingPlayer) {
     this.p1.setPosition(this.width / 4 - Constants.SLIME_RADIUS, this.height - Constants.SLIME_START_HEIGHT);
+    this.input.setState({
+      left: false,
+      right: false,
+      up: false
+    }, 0);
     this.p2.setPosition(3 * this.width / 4 - Constants.SLIME_RADIUS, this.height - Constants.SLIME_START_HEIGHT);
+    this.input.setState({
+      left: false,
+      right: false,
+      up: false
+    }, 1);
     this.ball.setPosition((this.p2 === servingPlayer ? 3 : 1) * this.width / 4 - Constants.BALL_RADIUS, this.height - Constants.BALL_START_HEIGHT);
     this.pole.setPosition(this.width / 2 - 4, this.height - 60 - 64 - 1, 8, 64);
     this.p1.velocity = {
@@ -168,42 +176,41 @@ World = (function() {
   };
 
   World.prototype.step = function(interval, dontIncrementClock) {
-    var a, borderRadius, circle, dist, newInterval, now, prevRef, ref, tick;
+    var a, borderRadius, circle, dist, now, tick;
     now = new Date().getTime();
     tick = Constants.TICK_DURATION;
-    if (this.lastStep && !this.deterministic) {
-      interval || (interval = now - this.lastStep);
-    }
+    if (this.lastStep) interval || (interval = now - this.lastStep);
     interval || (interval = tick);
     if (!dontIncrementClock) this.lastStep = now;
-    if (interval >= tick * 2) {
-      while (interval > 0) {
-        if (this.deterministic) {
-          newInterval = tick;
-        } else {
-          newInterval = interval >= 2 * tick ? tick : newInterval;
-        }
-        this.step(newInterval, dontIncrementClock);
-        interval -= newInterval;
-      }
-      return;
-    } else {
-      interval = tick;
-    }
+    /*
+    		# automatically break up longer steps into a series of shorter steps
+    		if interval >= tick*2
+    			while interval > 0
+    				if @deterministic # discrete chunk size required for determinism
+    					newInterval = tick
+    				else
+    					newInterval = if interval >= 2*tick then tick else newInterval
+    				this.step(newInterval, dontIncrementClock)
+    				interval -= newInterval
+    			return # don't continue stepping
+    		else interval = tick
+    */
     this.numFrames = interval / tick;
-    if (!dontIncrementClock) {
-      ref = this.futureFrames.last;
-      while (ref && ref.state && ref.state.clock <= this.clock) {
-        this.setFrame(ref);
-        this.futureFrames.shift();
-        prevRef = ref.prev;
-        ref.next = ref.prev = null;
-        this.stateSaves.push(ref);
-        ref = prevRef;
-      }
-      this.clock += interval;
-      this.stateSaves.cleanSaves(this.clock);
-    }
+    /*
+    		unless dontIncrementClock # means this is a "realtime" step, so we increment the clock
+    			# look through @future frames to see if we can apply any of them now.
+    			ref = @futureFrames.last
+    			while ref && ref.state && ref.state.clock <= @clock
+    				this.setFrame(ref)
+    				@futureFrames.shift()
+    				prevRef = ref.prev # since push() changes the .next and .prev attributes of ref
+    				ref.next = ref.prev = null 
+    				@stateSaves.push(ref)
+    				ref = prevRef
+    			@clock += interval
+    			@stateSaves.cleanSaves(@clock)
+    */
+    this.clock += interval;
     this.handleInput();
     this.ball.incrementPosition(this.numFrames);
     this.p1.incrementPosition(this.numFrames);
@@ -216,6 +223,10 @@ World = (function() {
     if (this.p2.y + this.p2.height > this.height - Constants.BOTTOM) {
       this.p2.y = this.height - Constants.BOTTOM - this.p2.height;
       this.p2.velocity.y = Math.min(this.p2.velocity.y, 0);
+    }
+    if (this.ball.y + this.ball.height >= this.height - Constants.BOTTOM) {
+      this.ball.y = this.height - Constants.BOTTOM - this.ball.height;
+      this.ball.velocity.y = 0;
     }
     if (this.ball.y + this.ball.height < this.p1.y + this.p1.height && Math.sqrt(Math.pow((this.ball.x + this.ball.radius) - (this.p1.x + this.p1.radius), 2) + Math.pow((this.ball.y + this.ball.radius) - (this.p1.y + this.p1.radius), 2)) < this.ball.radius + this.p1.radius) {
       this.ball.setPosition(this.resolveCollision(this.ball, this.p1));
@@ -245,7 +256,7 @@ World = (function() {
       if (this.ball.y + this.ball.radius >= this.pole.y + borderRadius) {
         this.ball.x = this.ball.velocity.x > 0 ? this.pole.x - this.ball.width : this.pole.x + this.pole.width;
         this.ball.velocity.x *= -1;
-        this.ball.velocity.y = Helpers.yFromAngle(180 - (this.ball.velocity.x / this.ball.velocity.y)) * this.ball.velocity.y;
+        return this.ball.velocity.y = Helpers.yFromAngle(180 - (this.ball.velocity.x / this.ball.velocity.y)) * this.ball.velocity.y;
       } else {
         if (this.ball.x + this.ball.radius < this.pole.x + borderRadius) {
           circle = {
@@ -258,7 +269,7 @@ World = (function() {
             this.ball.setPosition(this.resolveCollision(this.ball, circle));
             a = Helpers.rad2Deg(Math.atan(-((this.ball.x + this.ball.radius) - (circle.x + circle.radius)) / ((this.ball.y + this.ball.radius) - (circle.y + circle.radius))));
             this.ball.velocity.x = Helpers.xFromAngle(a) * 6;
-            this.ball.velocity.y = Helpers.yFromAngle(a) * 6;
+            return this.ball.velocity.y = Helpers.yFromAngle(a) * 6;
           }
         } else if (this.ball.x + this.ball.radius > this.pole.x + this.pole.width - borderRadius) {
           circle = {
@@ -271,31 +282,24 @@ World = (function() {
             this.ball.setPosition(this.resolveCollision(this.ball, circle));
             a = Helpers.rad2Deg(Math.atan(-((this.ball.x + this.ball.radius) - (circle.x + circle.radius)) / ((this.ball.y + this.ball.radius) - (circle.y + circle.radius))));
             this.ball.velocity.x = Helpers.xFromAngle(a) * 6;
-            this.ball.velocity.y = Helpers.yFromAngle(a) * 6;
+            return this.ball.velocity.y = Helpers.yFromAngle(a) * 6;
           }
         } else {
           this.ball.velocity.y *= -1;
           if (Math.abs(this.ball.velocity.x) < 0.1) this.ball.velocity.x = .5;
-          this.ball.y = this.pole.y - this.ball.height;
+          return this.ball.y = this.pole.y - this.ball.height;
         }
       }
     } else if (this.ball.x < this.pole.x + this.pole.width && this.ball.x > this.pole.x + this.ball.velocity.x && this.ball.y >= this.pole.y && this.ball.y <= this.pole.y + this.pole.height && this.ball.velocity.x < 0) {
       if (this.ball.y + this.ball.height >= this.pole.y + borderRadius) {
         this.ball.x = this.pole.x + this.pole.width;
         this.ball.velocity.x *= -1;
-        this.ball.velocity.y = Helpers.yFromAngle(180 - (this.ball.velocity.x / this.ball.velocity.y)) * this.ball.velocity.y;
+        return this.ball.velocity.y = Helpers.yFromAngle(180 - (this.ball.velocity.x / this.ball.velocity.y)) * this.ball.velocity.y;
       } else {
         this.ball.velocity.y *= -1;
         if (Math.abs(this.ball.velocity.x) < 0.1) this.ball.velocity.x = .5;
-        this.ball.y = this.pole.y - this.ball.height;
+        return this.ball.y = this.pole.y - this.ball.height;
       }
-    }
-    if (now - this.stateSaves.lastPush > Constants.STATE_SAVE) {
-      this.stateSaves.lastPush = now;
-      return this.stateSaves.push({
-        state: this.getState(),
-        input: null
-      });
     }
   };
 
@@ -318,35 +322,38 @@ World = (function() {
   };
 
   World.prototype.injectFrame = function(frame) {
-    var currClock, firstFrame, firstIteration, nextClock, _results;
-    if (frame && frame.state.clock < this.clock) {
-      firstFrame = this.stateSaves.findStateBefore(frame.state.clock);
-      this.setFrame(firstFrame);
-      this.step(frame.state.clock - firstFrame.state.clock, true);
-      this.stateSaves.push(frame);
-      this.setState(frame.state);
-      firstIteration = true;
-      _results = [];
-      while (frame) {
-        currClock = frame.state.clock;
-        nextClock = frame.prev ? frame.prev.state.clock : this.clock;
-        this.setInput(frame.input);
-        if (!firstIteration) {
-          frame.state = this.getState();
-          frame.state.clock = currClock;
-        }
-        firstIteration = false;
-        this.step(nextClock - currClock, true);
-        if (frame.prev) {
-          _results.push(frame = frame.prev);
-        } else {
-          break;
-        }
-      }
-      return _results;
-    } else {
-      return this.futureFrames.push(frame);
-    }
+    this.setFrame(frame);
+    /*
+    		# starting from that frame, recalculate input
+    		if frame && frame.state.clock < @clock
+    			console.log '============================='
+    			console.log 'applying frame...'
+    			firstFrame = @stateSaves.findStateBefore(frame.state.clock)
+    			this.setFrame(firstFrame)
+    			this.step(frame.state.clock - firstFrame.state.clock, true)
+    			console.log 'c1: ' + frame.state.clock + ' c2: ' + firstFrame.state.clock
+    			console.log 'stepped1 '+(frame.state.clock - firstFrame.state.clock)+'ms'
+    			@stateSaves.push(frame) # assigns .next and .prev to frame
+    			this.setState(frame.state)
+    			firstIteration = true
+    			while frame
+    				currClock = frame.state.clock
+    				console.log @clock
+    				nextClock = if frame.prev then frame.prev.state.clock else @clock
+    				console.log nextClock
+    				this.setInput(frame.input)
+    				unless firstIteration # this frame's state might be different, 
+    					frame.state = this.getState() # this resets the clock
+    					frame.state.clock = currClock # fixed
+    				firstIteration = false
+    				this.step(nextClock - currClock, true)
+    				console.log 'stepped2 '+(nextClock - currClock)+'ms'
+    				if frame.prev then frame = frame.prev else break	
+    
+    		else # we'll deal with this later
+    			console.log 'future frame'
+    			@futureFrames.push(frame)
+    */
   };
 
   /* -- GAME STATE GETTER + SETTERS --

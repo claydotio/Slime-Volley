@@ -16,14 +16,18 @@ NetworkSlimeVolleyball = (function() {
     this.freezeGame = true;
     this.displayMsg = 'Loading...';
     this.receivedFrames = [];
-    this.framebuffer = [];
     this.networkInterpolationRemainder = 0;
     this.world.deterministic = true;
     this.msAhead = Constants.TARGET_LATENCY;
     this.sentWin = false;
-    this.loopCount = 0;
+    this.stepCallback = function() {
+      return _this.step();
+    };
     if (this.socket) this.socket.disconnect() && (this.socket = null);
-    this.socket = io.connect('/');
+    this.socket = io.connect('http://clay.io:845', {
+      'force new connection': true,
+      'reconnect': false
+    });
     this.socket.on('connect', function() {
       _this.displayMsg = 'Connected. Waiting for opponent...';
       return _this.joinRoom();
@@ -35,83 +39,107 @@ NetworkSlimeVolleyball = (function() {
     this.socket.on('gameStart', function(lastWinner, frame) {
       _this.freezeGame = false;
       _this.displayMsg = null;
-      if (_this.lastWinner) _this.world.reset(_this.lastWinner);
+      _this.world.setFrame(frame);
+      _this.receivedFrames = [];
       _this.lastWinner = null;
       _this.sentWin = false;
       return _this.start();
     });
     this.socket.on('gameFrame', function(data) {
-      var msAhead;
-      msAhead = _this.world.clock - data.state.clock;
-      _this.msAhead = 0.8 * _this.msAhead + 0.2 * msAhead;
+      _this.msAhead = _this.world.clock - data.state.clock;
       return _this.receivedFrames.push(data);
     });
+    this.socket.on('gameWin', function(jwt) {
+      var lb;
+      lb = new Clay.Leaderboard({
+        id: 1
+      });
+      return lb.post(jwt);
+    });
     this.socket.on('roundEnd', function(didWin) {
-      _this.freezeGame = true;
-      _this.world.ball.y = _this.height - Constants.BOTTOM - 2 * _this.world.ball.radius;
-      _this.lastWinner = didWin ? _this.world.p1 : _this.world.p2;
-      if (didWin) {
-        _this.displayMsg = _this.winMsgs[Helpers.rand(_this.winMsgs.length - 2)];
-        _this.world.p1.score += 1;
-      } else {
-        _this.displayMsg = _this.failMsgs[Helpers.rand(_this.winMsgs.length - 2)];
-        _this.world.p2.score += 1;
-      }
-      if (_this.world.p1.score >= Constants.WIN_SCORE) {
-        _this.displayMsg = 'You WIN!!!';
+      var endRound;
+      endRound = function() {
         _this.freezeGame = true;
-        _this.socket = null;
-        return setTimeout((function() {
-          return Globals.Manager.popScene();
-        }), 1000);
-      } else if (_this.world.p2.score >= Constants.WIN_SCORE) {
-        _this.displayMsg = 'You LOSE.';
-        _this.freezeGame = true;
-        _this.socket = null;
-        return setTimeout((function() {
-          return Globals.Manager.popScene();
-        }), 1000);
-      }
+        _this.world.ball.y = _this.height - Constants.BOTTOM - 2 * _this.world.ball.radius;
+        _this.lastWinner = didWin ? _this.world.p1 : _this.world.p2;
+        if (didWin) {
+          _this.displayMsg = _this.winMsgs[Helpers.rand(_this.winMsgs.length - 2)];
+          _this.world.p1.score += 1;
+        } else {
+          _this.displayMsg = _this.failMsgs[Helpers.rand(_this.winMsgs.length - 2)];
+          _this.world.p2.score += 1;
+        }
+        if (_this.world.p1.score >= Constants.WIN_SCORE || _this.world.p2.score >= Constants.WIN_SCORE) {
+          if (_this.world.p1.score >= Constants.WIN_SCORE) {
+            _this.displayMsg = 'You WIN!!!';
+          } else {
+            _this.displayMsg = 'You LOSE.';
+          }
+          _this.displayMsg += 'New game starting in 3 seconds';
+          _this.world.p1.score = 0;
+          _this.world.p2.score = 0;
+        }
+        return _this.stop();
+      };
+      return setTimeout(endRound, Constants.TARGET_LATENCY);
     });
     this.socket.on('gameDestroy', function(winner) {
-      _this.freezeGame = true;
-      _this.socket = null;
-      return _this.displayMsg = 'Lost connection to opponent.';
+      if (_this.socket) {
+        _this.freezeGame = true;
+        _this.socket = null;
+        _this.displayMsg = 'Lost connection to opponent.';
+        _this.stop();
+        return setTimeout((function() {
+          if (Globals.Manager.sceneStack[Globals.Manager.sceneStack.length - 2]) {
+            Globals.Manager.popScene();
+          }
+          return _this.rooms.leaveRoom();
+        }), 2000);
+      }
     });
     this.socket.on('disconnect', function() {
-      _this.freezeGame = true;
-      _this.socket = null;
-      return _this.displayMsg = 'Lost connection to opponent.';
+      if (_this.socket) {
+        _this.freezeGame = true;
+        _this.socket = null;
+        _this.displayMsg = 'Lost connection to opponent.';
+        _this.stop();
+        return setTimeout((function() {
+          if (Globals.Manager.sceneStack[Globals.Manager.sceneStack.length - 2]) {
+            Globals.Manager.popScene();
+          }
+          return _this.rooms.leaveRoom();
+        }), 2000);
+      }
     });
     return this.socketInitialized = true;
   };
 
   NetworkSlimeVolleyball.prototype.joinRoom = function() {
-    if (this.roomID) return this.socket.emit('joinRoom', this.roomID);
+    var obj;
+    obj = {
+      roomID: this.roomID,
+      playerID: Clay.player.identifier
+    };
+    if (this.roomID) return this.socket.emit('joinRoom', obj);
   };
 
   NetworkSlimeVolleyball.prototype.start = function() {
-    var i, _ref;
-    for (i = 0, _ref = Constants.FRAME_DELAY; 0 <= _ref ? i < _ref : i > _ref; 0 <= _ref ? i++ : i--) {
-      this.world.step(Constants.TICK_DURATION, true);
-      this.framebuffer.push(this.world.getState());
-    }
-    return NetworkSlimeVolleyball.__super__.start.call(this);
+    this.step();
+    return this.gameInterval = setInterval(this.stepCallback, Constants.TICK_DURATION);
   };
 
   NetworkSlimeVolleyball.prototype.draw = function() {
     var frame, msgs;
     if (!this.ctx) return;
-    if (this.framebuffer) frame = this.framebuffer.shift();
-    frame || (frame = this.world.getState());
+    frame = this.world.getState();
     this.ctx.clearRect(0, 0, this.width, this.height);
     this.bg.draw(this.ctx);
     this.world.p1.draw(this.ctx, frame.p1.x, frame.p1.y);
     this.world.p2.draw(this.ctx, frame.p2.x, frame.p2.y);
+    this.world.ball.draw(this.ctx, frame.ball.x, frame.ball.y);
     this.world.pole.draw(this.ctx);
     this.p1Scoreboard.draw(this.ctx);
     this.p2Scoreboard.draw(this.ctx);
-    this.world.ball.draw(this.ctx, frame.ball.x, frame.ball.y);
     this.buttons['back'].draw(this.ctx);
     if (this.displayMsg) {
       this.ctx.font = 'bold 14px ' + Constants.MSG_FONT;
@@ -126,62 +154,48 @@ NetworkSlimeVolleyball = (function() {
     }
   };
 
-  NetworkSlimeVolleyball.prototype.throttleFPS = function() {
-    if (this.msAhead > Constants.TARGET_LATENCY) {
-      if (this.loopCount % 10 === 0) this.stepLen = Constants.TICK_DURATION;
-    }
-  };
+  /*
+  	throttleFPS: ->
+  		if @msAhead > Constants.TARGET_LATENCY # throttle fps to sync with the server's clock
+  			if @loopCount % 10 == 0 # drop every tenth frame
+  				@stepLen = Constants.TICK_DURATION # we have to explicitly set step size, otherwise the physics engine will just compensate by calculating a larger step
+  				return
+  */
 
   NetworkSlimeVolleyball.prototype.handleInput = function() {
     var changed, frame;
-    changed = this.inputChanged();
-    if (changed) {
-      frame = {
-        input: {
-          p1: changed
-        },
-        state: {
-          p1: this.world.p1.getState(),
-          ball: this.world.ball.getState(),
-          clock: this.world.clock
-        }
-      };
-      this.socket.emit('input', frame);
-      return this.world.injectFrame(frame);
+    if (!this.freezeGame) {
+      changed = this.inputChanged();
+      if (changed) {
+        frame = {
+          input: {
+            p1: changed
+          }
+        };
+        return this.socket.emit('input', frame);
+      }
     }
   };
 
-  NetworkSlimeVolleyball.prototype.handleWin = function(winner) {
-    if (!this.sentWin) {
-      this.socket.emit('gameEnd', winner);
-      return this.sentWin = true;
-    }
+  NetworkSlimeVolleyball.prototype.stop = function() {
+    this.draw();
+    return clearInterval(this.gameInterval);
   };
 
   NetworkSlimeVolleyball.prototype.step = function(timestamp) {
-    var f, winner;
-    this.next();
-    this.loopCount++;
+    var f;
     if (this.receivedFrames) {
       while (this.receivedFrames.length > 0) {
         f = this.receivedFrames.shift();
         this.world.injectFrame(f);
       }
     }
+    this.handleInput();
     if (this.freezeGame || !this.socketInitialized) {
-      if (this.gameStateBuffer) this.gameStateBuffer.push(this.world.getState());
       this.draw();
       return;
     }
-    this.handleInput();
-    this.throttleFPS();
-    if (this.world.ball.y + this.world.ball.height >= this.world.height - Constants.BOTTOM) {
-      winner = this.world.ball.x + this.world.ball.radius > this.width / 2 ? 'p1' : 'p2';
-      this.handleWin(winner);
-    }
-    this.world.step(this.stepLen);
-    this.stepLen = null;
-    this.framebuffer.push(this.world.getState());
+    this.world.step();
     return this.draw();
   };
 

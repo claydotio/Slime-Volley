@@ -14,6 +14,7 @@ Room = (function() {
     if (this.p1) this.players.push(this.p1);
     if (this.p2) this.players.push(this.p2);
     this.open = this.startGame();
+    this.id = 0;
   }
 
   Room.prototype.addPlayer = function(p) {
@@ -28,7 +29,9 @@ Room = (function() {
     this.players.push(p);
     p.room = this;
     p.socket.on('disconnect', function() {
-      return _this.stopGame();
+      _this.stopGame();
+      console.log('-- DELETING ROOM ' + _this.id);
+      return delete Room.AllRooms[_this.id];
     });
     console.log('-- NUM PLAYERS IN ROOM = ' + this.players.length + ' --');
     this.startGame();

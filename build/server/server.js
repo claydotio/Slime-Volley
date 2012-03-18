@@ -1,4 +1,4 @@
-var Player, app, connect, io, socketServer;
+var Clay, Player, app, connect, io, socketServer;
 
 connect = require('connect');
 
@@ -6,7 +6,9 @@ io = require('socket.io');
 
 Player = require('./player');
 
-app = connect().use(connect.static(__dirname + '/../../')).listen(8000);
+Clay = require('./encryption');
+
+app = connect().use(connect.static(__dirname + '/../../')).listen(845);
 
 socketServer = io.listen(app);
 
