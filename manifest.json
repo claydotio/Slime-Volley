@@ -1,7 +1,7 @@
 {
   "name": "Slime Volley",
   "description": "Volleyball...between two slimes.",
-  "version": "0.1.8",
+  "version": "0.2.0",
   "app": {
     "launch": {
       "local_path": "index.html"
