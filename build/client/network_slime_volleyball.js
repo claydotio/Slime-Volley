@@ -16,6 +16,7 @@ NetworkSlimeVolleyball = (function() {
     this.freezeGame = true;
     this.displayMsg = 'Loading...';
     this.receivedFrames = [];
+    this.framebuffer = [];
     this.networkInterpolationRemainder = 0;
     this.world.deterministic = true;
     this.msAhead = Constants.TARGET_LATENCY;
@@ -39,18 +40,20 @@ NetworkSlimeVolleyball = (function() {
     this.socket.on('gameStart', function(lastWinner, frame) {
       _this.freezeGame = false;
       _this.displayMsg = null;
-      _this.world.setFrame(frame);
-      _this.receivedFrames = [];
+      if (_this.lastWinner) _this.world.reset(_this.lastWinner);
       _this.lastWinner = null;
       _this.sentWin = false;
       return _this.start();
     });
     this.socket.on('gameFrame', function(data) {
-      _this.msAhead = _this.world.clock - data.state.clock;
+      var msAhead;
+      msAhead = _this.world.clock - data.state.clock;
+      _this.msAhead = msAhead;
       return _this.receivedFrames.push(data);
     });
     this.socket.on('gameWin', function(jwt) {
       var lb;
+      console.log(jwt);
       lb = new Clay.Leaderboard({
         id: 1
       });
@@ -124,6 +127,10 @@ NetworkSlimeVolleyball = (function() {
   };
 
   NetworkSlimeVolleyball.prototype.start = function() {
+    var i, _ref;
+    for (i = 0, _ref = Constants.FRAME_DELAY; 0 <= _ref ? i < _ref : i > _ref; 0 <= _ref ? i++ : i--) {
+      this.world.step(Constants.TICK_DURATION, true);
+    }
     this.step();
     return this.gameInterval = setInterval(this.stepCallback, Constants.TICK_DURATION);
   };
@@ -131,7 +138,8 @@ NetworkSlimeVolleyball = (function() {
   NetworkSlimeVolleyball.prototype.draw = function() {
     var frame, msgs;
     if (!this.ctx) return;
-    frame = this.world.getState();
+    if (this.framebuffer) frame = this.framebuffer.shift();
+    frame || (frame = this.world.getState());
     this.ctx.clearRect(0, 0, this.width, this.height);
     this.bg.draw(this.ctx);
     this.world.p1.draw(this.ctx, frame.p1.x, frame.p1.y);
