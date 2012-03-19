@@ -100,15 +100,15 @@ Input = (function() {
   }
 
   Input.prototype.left = function(p2) {
-    return this.keys[this.shortcuts['left'][p2]] || (this.wasdEnabled && this.keys[this.shortcuts['left'][1 - p2]]) || false;
+    return this.keys[this.shortcuts['left'][p2]] || false;
   };
 
   Input.prototype.right = function(p2) {
-    return this.keys[this.shortcuts['right'][p2]] || (this.wasdEnabled && this.keys[this.shortcuts['right'][1 - p2]]) || false;
+    return this.keys[this.shortcuts['right'][p2]] || false;
   };
 
   Input.prototype.up = function(p2) {
-    return this.keys[this.shortcuts['up'][p2]] || (this.wasdEnabled && this.keys[this.shortcuts['up'][1 - p2]]) || false;
+    return this.keys[this.shortcuts['up'][p2]] || false;
   };
 
   Input.prototype.reset = function() {

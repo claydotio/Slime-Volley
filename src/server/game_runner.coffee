@@ -11,9 +11,10 @@ class GameRunner
 		@width = 480
 		@height = 268
 		@world = new World(@width, @height, new InputSnapshot())
+		@world.deterministic = true
 		@running = false
 		@loopCount = 0
-		@stepCallback = => this.step( Constants.TICK_DURATION )
+		@stepCallback = => this.step()
 
 	start: -> # send gameStart signal
 		@running = true
@@ -28,9 +29,10 @@ class GameRunner
 			this.step()	
 			@gameInterval = setInterval(@stepCallback, Constants.TICK_DURATION)
 		, 1000 # start game in 1 second
+
 	handleWin: (winner) ->
 		@freezeGame = true
-		@stop()
+		this.stop()
 		@world.ball.y = @height-Constants.BOTTOM-@world.ball.height
 		@world.ball.velocity = { x: 0, y: 0 }
 		@world.ball.falling = false
@@ -66,26 +68,24 @@ class GameRunner
 		@lastTimeout = setTimeout =>
 			@freezeGame = false
 			this.sendFrame('gameStart')
+			@world.clock = 0
 			this.step()
-			@gameInterval = setInterval @stepCallback, Constants.TICK_DURATION
+			@gameInterval = setInterval(@stepCallback, Constants.TICK_DURATION)
 		, if gameOver then 3000 else 2000
 
 	step: ->
 		return if @freezeGame
+		#for i in [0...10]
 		#	check if game over
 		if @world.ball.y + @world.ball.height >= @height-Constants.BOTTOM
 			this.handleWin()
 			return
+		@world.step(Constants.TICK_DURATION)
 		@loopCount++
-
-		# The server doesn't iterate at exactly the frame rate we want, but on average it does
-		# So we can do this (setting the tick)
-		@world.step( Constants.TICK_DURATION )
-		# For position/state verification
-		this.sendFrame() if @loopCount % 10 == 0 
+		if @loopCount % 40 == 0 # todo uncomment
+			this.sendFrame('gameFrame')
 
 	stop: ->
-		clearTimeout @lastTimeout
 		clearInterval @gameInterval
 
 	invertFrameX: (frame) ->
@@ -103,45 +103,30 @@ class GameRunner
 			frame.input.p1 = frame.input.p2
 			frame.input.p2 = ref
 			for obj in [frame.input.p1, frame.input.p2]
-				@invertInput obj
-
+				if obj
+					ref2 = obj.left
+					obj.left = obj.right
+					obj.right = ref2
 		frame
-		
-	# inverts input for 1 player
-	invertInput: (obj) ->
-		if obj
-			ref = obj.left
-			obj.left = obj.right
-			obj.right = ref
-		obj
 
-	#game.injectFrame(input, this == @room.p2) 
 	# this just handles input now 
 	injectFrame: (frame, isP2) ->
+		console.log '===== game_runner injectFrame()'
+		@world.input.log()
+		console.log '====='
 		return if @freezeGame
-		inputTypes = ['left', 'right', 'up']
-		inputState = {}
-		# Input received from p1
 		if !isP2 && @room.p1
-			# Have to set this inputs individually
-			# Since the client only passes the inputs that were changed
-			for type in inputTypes
-				if typeof frame.input.p1[type] != 'undefined'
-					inputState[type] = frame.input.p1[type] #update p1's input
-			# Save it
-			@world.input.setState inputState, 0
-					
+			@world.injectFrame frame
+			this.invertFrameX frame
+			outgoingFrame = state: frame.state, input: frame.input
+			@room.p2.socket.emit('gameFrame', outgoingFrame)
 		# Input received from p2
 		if isP2 && @room.p2
-			@invertFrameX frame
-			for type in inputTypes
-				if typeof frame.input.p2[type] != 'undefined'
-					inputState[type] = frame.input.p2[type] #update p2's input
-			# Save it
-			@world.input.setState inputState, 1
-
-		# Send back to clients
-		@sendFrame()
+			this.invertFrameX frame
+			@world.injectFrame frame
+			outgoingFrame = state: frame.state, input: frame.input
+			@room.p1.socket.emit('gameFrame', outgoingFrame) 
+		@world.input.log()
 
 	sendFrame: (notificationName) -> # take a snapshot of game state and send it to our clients
 		notificationName ||= 'gameFrame'

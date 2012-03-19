@@ -32,11 +32,6 @@ class SlimeVolleyball extends Scene
 			'either you\'re good, or you got lucky!', '*** YOU WON THE GAME ***' ]
 		@displayMsg = null # displayMsg is drawn in the center of the screen unless null
 		@freezeGame = false
-		@keyState = {
-			left: false
-			right: false
-			up: false
-		}
 		if @isLocalMultiplayer 
 			Globals.Input.wasdEnabled = false
 		unless dontOverrideInput
@@ -47,17 +42,6 @@ class SlimeVolleyball extends Scene
 				else this.moveCPU.apply(@world)
 		super()
 
-	inputChanged: -> # returns whether input has been received since last check
-		input = Globals.Input
-		changed = false
-		for own key, val of @keyState
-			currState = input[key](0) # pass 0 to signify 'p1'
-			if val != currState
-				changed = {} unless changed
-				changed[key] = currState
-				@keyState[key] = currState # save change to keyState
-		changed
-	
 	moveCPU: -> # implement a basic AI
 		if @ball.x > @pole.x && @ball.y < 200 && @ball.y > 150 && @p2.velocity.y == 0
 			@p2.velocity.y = -8

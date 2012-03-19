@@ -8,9 +8,9 @@ Player = require('./player');
 
 Clay = require('./encryption');
 
-app = connect().use(connect.static(__dirname + '/../../')).listen(845);
+app = connect().use(connect.static(__dirname + '/../../')).listen(8000);
 
-socketServer = io.listen(app);
+socketServer = io.listen(845);
 
 socketServer.configure(function() {
   return socketServer.set("log level", -1);

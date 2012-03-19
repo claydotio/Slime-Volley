@@ -4,9 +4,9 @@
 	lastTime = 0
 	vendors = ['ms', 'moz', 'webkit', 'o']
 	((x) ->
-		if !window.requestAnimationFrame
-			window.requestAnimationFrame = window[vendors[x]+'RequestAnimationFrame']
-			window.cancelAnimationFrame = window[vendors[x]+'CancelAnimationFrame'] || window[vendors[x]+'CancelRequestAnimationFrame']
+		#if !window.requestAnimationFrame
+		window.requestAnimationFrame = window[vendors[x]+'RequestAnimationFrame']
+		window.cancelAnimationFrame = window[vendors[x]+'CancelAnimationFrame'] || window[vendors[x]+'CancelRequestAnimationFrame']
 	).call(this, x) for x in [0..vendors.length]
 	# fallback to setTimeout, aim for ~16ms frame
 	if !window.requestAnimationFrame

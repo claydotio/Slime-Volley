@@ -31,10 +31,10 @@ Sprite = (function() {
   };
 
   Sprite.prototype.incrementPosition = function(numFrames) {
-    this.x += this.velocity.x * numFrames * Constants.FPS_RATIO;
-    this.y += this.velocity.y * numFrames * Constants.FPS_RATIO;
-    this.velocity.x += this.acceleration.x * this.mass * numFrames * Constants.FPS_RATIO;
-    return this.velocity.y += this.acceleration.y * this.mass * numFrames * Constants.FPS_RATIO;
+    this.x += this.velocity.x * numFrames;
+    this.y += this.velocity.y * numFrames;
+    this.velocity.x += this.acceleration.x * this.mass * numFrames;
+    return this.velocity.y += this.acceleration.y * this.mass * numFrames;
   };
 
   Sprite.prototype.draw = function(ctx, x, y) {

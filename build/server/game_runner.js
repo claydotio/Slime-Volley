@@ -14,10 +14,11 @@ GameRunner = (function() {
     this.width = 480;
     this.height = 268;
     this.world = new World(this.width, this.height, new InputSnapshot());
+    this.world.deterministic = true;
     this.running = false;
     this.loopCount = 0;
     this.stepCallback = function() {
-      return _this.step(Constants.TICK_DURATION);
+      return _this.step();
     };
   }
 
@@ -81,6 +82,7 @@ GameRunner = (function() {
     return this.lastTimeout = setTimeout(function() {
       _this.freezeGame = false;
       _this.sendFrame('gameStart');
+      _this.world.clock = 0;
       _this.step();
       return _this.gameInterval = setInterval(_this.stepCallback, Constants.TICK_DURATION);
     }, gameOver ? 3000 : 2000);
@@ -92,18 +94,17 @@ GameRunner = (function() {
       this.handleWin();
       return;
     }
-    this.loopCount++;
     this.world.step(Constants.TICK_DURATION);
-    if (this.loopCount % 10 === 0) return this.sendFrame();
+    this.loopCount++;
+    if (this.loopCount % 40 === 0) return this.sendFrame('gameFrame');
   };
 
   GameRunner.prototype.stop = function() {
-    clearTimeout(this.lastTimeout);
     return clearInterval(this.gameInterval);
   };
 
   GameRunner.prototype.invertFrameX = function(frame) {
-    var obj, ref, _i, _j, _len, _len2, _ref, _ref2;
+    var obj, ref, ref2, _i, _j, _len, _len2, _ref, _ref2;
     if (frame.state) {
       _ref = [frame.state.p1, frame.state.p2, frame.state.ball];
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
@@ -124,47 +125,41 @@ GameRunner = (function() {
       _ref2 = [frame.input.p1, frame.input.p2];
       for (_j = 0, _len2 = _ref2.length; _j < _len2; _j++) {
         obj = _ref2[_j];
-        this.invertInput(obj);
+        if (obj) {
+          ref2 = obj.left;
+          obj.left = obj.right;
+          obj.right = ref2;
+        }
       }
     }
     return frame;
   };
 
-  GameRunner.prototype.invertInput = function(obj) {
-    var ref;
-    if (obj) {
-      ref = obj.left;
-      obj.left = obj.right;
-      obj.right = ref;
-    }
-    return obj;
-  };
-
   GameRunner.prototype.injectFrame = function(frame, isP2) {
-    var inputState, inputTypes, type, _i, _j, _len, _len2;
+    var outgoingFrame;
+    console.log('===== game_runner injectFrame()');
+    this.world.input.log();
+    console.log('=====');
     if (this.freezeGame) return;
-    inputTypes = ['left', 'right', 'up'];
-    inputState = {};
     if (!isP2 && this.room.p1) {
-      for (_i = 0, _len = inputTypes.length; _i < _len; _i++) {
-        type = inputTypes[_i];
-        if (typeof frame.input.p1[type] !== 'undefined') {
-          inputState[type] = frame.input.p1[type];
-        }
-      }
-      this.world.input.setState(inputState, 0);
+      this.world.injectFrame(frame);
+      this.invertFrameX(frame);
+      outgoingFrame = {
+        state: frame.state,
+        input: frame.input
+      };
+      this.room.p2.socket.emit('gameFrame', outgoingFrame);
     }
     if (isP2 && this.room.p2) {
       this.invertFrameX(frame);
-      for (_j = 0, _len2 = inputTypes.length; _j < _len2; _j++) {
-        type = inputTypes[_j];
-        if (typeof frame.input.p2[type] !== 'undefined') {
-          inputState[type] = frame.input.p2[type];
-        }
-      }
-      this.world.input.setState(inputState, 1);
+      this.world.injectFrame(frame);
+      outgoingFrame = {
+        state: frame.state,
+        input: frame.input
+      };
+      this.room.p1.socket.emit('gameFrame', outgoingFrame);
     }
-    return this.sendFrame();
+    return this.world.input.log();
   };
 
   GameRunner.prototype.sendFrame = function(notificationName) {

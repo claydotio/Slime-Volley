@@ -5,17 +5,15 @@ class Player
 		@room = null
 		@socket.on 'joinRoom', (obj) => this.joinRoom(obj)
 		@socket.on 'input', (frame) =>     this.receiveInput(frame)
-		# @socket.on 'gameEnd', (frame) =>   this.receiveGameEnd(frame)
 		@socket.on 'disconnect', => this.didDisconnect()
 		
 		# Accessor for encoding JWT objects
 		@clay = null
 
 	receiveInput: (frame) ->
+		console.log '===== RECEIVED FRAME ======'+(if this==@room.p2 then 'p2' else 'p1')
+		console.log frame
 		@room.game.injectFrame(frame, this == @room.p2) if @room && @room.game
-
-	receiveGameEnd: (winner) ->
-		@room.game.handleWin(winner) if @room && this == @room.p1
 
 	joinRoom: (obj) ->
 		roomID = obj.roomID

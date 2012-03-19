@@ -3,8 +3,8 @@ io      = require('socket.io')
 Player  = require('./player')
 Clay    = require('./encryption')
 
-app = connect().use(connect.static(__dirname+'/../../')).listen(845)
-socketServer = io.listen(app)
+app = connect().use(connect.static(__dirname+'/../../')).listen(8000)
+socketServer = io.listen(845)
 
 socketServer.configure ->
 	socketServer.set "log level", -1

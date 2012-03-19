@@ -81,9 +81,10 @@ class Input
 
 	# shortcuts for arrow states
 	# If we every allow playing WASD vs arrow keys we'll have to change this back to [p2] instead of [0] || [1]
-	left:  (p2) -> @keys[@shortcuts['left'][p2]] || (@wasdEnabled && @keys[@shortcuts['left'][1-p2]]) || false
-	right: (p2) -> @keys[@shortcuts['right'][p2]] || (@wasdEnabled && @keys[@shortcuts['right'][1-p2]]) || false
-	up:    (p2) -> @keys[@shortcuts['up'][p2]]  || (@wasdEnabled && @keys[@shortcuts['up'][1-p2]]) || false
+	left:  (p2) -> @keys[@shortcuts['left'][p2]] || false#(@wasdEnabled && @keys[@shortcuts['left'][1-p2]]) || false
+	right: (p2) -> @keys[@shortcuts['right'][p2]] || false#(@wasdEnabled && @keys[@shortcuts['right'][1-p2]]) || false
+	up:    (p2) -> @keys[@shortcuts['up'][p2]]  || false#(@wasdEnabled && @keys[@shortcuts['up'][1-p2]]) || false
+	# TODO: FIX THIS
 	reset:      -> @keys[key] = false for key, val of @keys
 	getState: (p2) ->
 		# If we every allow playing WASD vs arrow keys we'll have to change this back to [p2] instead of [0] || [1]

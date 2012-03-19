@@ -15,10 +15,10 @@ class Sprite
 		@y = y
 
 	incrementPosition: (numFrames) ->
-		@x += @velocity.x * numFrames * Constants.FPS_RATIO
-		@y += @velocity.y * numFrames * Constants.FPS_RATIO
-		@velocity.x += @acceleration.x * @mass * numFrames * Constants.FPS_RATIO
-		@velocity.y += @acceleration.y * @mass * numFrames * Constants.FPS_RATIO
+		@x += @velocity.x * numFrames
+		@y += @velocity.y * numFrames
+		@velocity.x += @acceleration.x * @mass * numFrames
+		@velocity.y += @acceleration.y * @mass * numFrames
 
 	draw: (ctx, x, y) -> 
 		x ||= @x

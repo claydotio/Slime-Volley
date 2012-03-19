@@ -21,14 +21,10 @@ Player = (function() {
   }
 
   Player.prototype.receiveInput = function(frame) {
+    console.log('===== RECEIVED FRAME ======' + (this === this.room.p2 ? 'p2' : 'p1'));
+    console.log(frame);
     if (this.room && this.room.game) {
       return this.room.game.injectFrame(frame, this === this.room.p2);
-    }
-  };
-
-  Player.prototype.receiveGameEnd = function(winner) {
-    if (this.room && this === this.room.p1) {
-      return this.room.game.handleWin(winner);
     }
   };
 

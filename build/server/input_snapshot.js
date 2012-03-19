@@ -56,6 +56,11 @@ InputSnapshot = (function() {
     return this.states[player]['up'];
   };
 
+  InputSnapshot.prototype.log = function() {
+    console.log('L' + this.left(0) + ' R' + this.right(0) + ' U' + this.up(0));
+    return console.log('L2' + this.left(1) + ' R2' + this.right(1) + ' U2' + this.up(1));
+  };
+
   return InputSnapshot;
 
 })();

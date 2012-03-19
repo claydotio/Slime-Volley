@@ -28,12 +28,11 @@ Constants =
 	SLIME_START_HEIGHT: 91
 	AI_DIFFICULTY: 0.25
 	MSG_FONT: 'Courier, monospace, sans-serif'
-	FPS_RATIO: 24 / 16 # in relation to what the initial speeds were set for (16ms)
-	TICK_DURATION: 24 #ms
+	TICK_DURATION: 16 #ms
 	FRAME_DELAY: 5
-	STATE_SAVE: 200
-	SAVE_LIFETIME: 5000 # save for 2s
-	TARGET_LATENCY: 50 # latency accrued by FRAME_DELAY
+	STATE_SAVE: 500 # save state every 500ms
+	SAVE_LIFETIME: 20000 # save for 20s
+	TARGET_LATENCY: 200 # drop or double frames until we get here
 	ASSETS: # images and sounds
 		p1:      'assets/images/s_0.png',
 		p2:      'assets/images/s_1.png'

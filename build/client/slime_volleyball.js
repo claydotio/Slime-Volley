@@ -34,11 +34,6 @@ SlimeVolleyball = (function() {
     this.winMsgs = ['nice shot!', 'good job!', 'you\'ve got this!', 'keep it up!', 'either you\'re good, or you got lucky!', '*** YOU WON THE GAME ***'];
     this.displayMsg = null;
     this.freezeGame = false;
-    this.keyState = {
-      left: false,
-      right: false,
-      up: false
-    };
     if (this.isLocalMultiplayer) Globals.Input.wasdEnabled = false;
     if (!dontOverrideInput) {
       this.world.handleInput = function() {
@@ -51,24 +46,6 @@ SlimeVolleyball = (function() {
       };
     }
     return SlimeVolleyball.__super__.init.call(this);
-  };
-
-  SlimeVolleyball.prototype.inputChanged = function() {
-    var changed, currState, input, key, val, _ref;
-    input = Globals.Input;
-    changed = false;
-    _ref = this.keyState;
-    for (key in _ref) {
-      if (!__hasProp.call(_ref, key)) continue;
-      val = _ref[key];
-      currState = input[key](0);
-      if (val !== currState) {
-        if (!changed) changed = {};
-        changed[key] = currState;
-        this.keyState[key] = currState;
-      }
-    }
-    return changed;
   };
 
   SlimeVolleyball.prototype.moveCPU = function() {

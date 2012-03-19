@@ -4,10 +4,8 @@
   lastTime = 0;
   vendors = ['ms', 'moz', 'webkit', 'o'];
   _fn = function(x) {
-    if (!window.requestAnimationFrame) {
-      window.requestAnimationFrame = window[vendors[x] + 'RequestAnimationFrame'];
-      return window.cancelAnimationFrame = window[vendors[x] + 'CancelAnimationFrame'] || window[vendors[x] + 'CancelRequestAnimationFrame'];
-    }
+    window.requestAnimationFrame = window[vendors[x] + 'RequestAnimationFrame'];
+    return window.cancelAnimationFrame = window[vendors[x] + 'CancelAnimationFrame'] || window[vendors[x] + 'CancelRequestAnimationFrame'];
   };
   for (x = 0, _ref = vendors.length; 0 <= _ref ? x <= _ref : x >= _ref; 0 <= _ref ? x++ : x--) {
     _fn.call(this, x);
