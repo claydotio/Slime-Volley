@@ -26,7 +26,7 @@ Constants =
 	MOVEMENT_SPEED: 4
 	JUMP_SPEED: 12
 	SLIME_START_HEIGHT: 91
-	AI_DIFFICULTY: 0.25
+	AI_DIFFICULTY: 0.35
 	MSG_FONT: 'Courier, monospace, sans-serif'
 	FPS_RATIO: 24 / 16 # in relation to what the initial speeds were set for (16ms)
 	TICK_DURATION: 24 #ms

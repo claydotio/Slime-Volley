@@ -76,13 +76,14 @@ class World
 		@lastStep = now unless dontIncrementClock
  
 		# automatically break up longer steps into a series of shorter steps
-		if interval >= 1.3 * tick
+		if interval >= 1.3 * tick && @deterministic
 			while interval > 0
 				newInterval = if interval >= 1.3 * tick then tick else interval
 				this.step(newInterval, dontIncrementClock)
 				interval -= newInterval
 			return # don't continue stepping
-		else interval = tick
+		else if @deterministic
+			interval = tick
 		
 		@numFrames = interval / tick
 
