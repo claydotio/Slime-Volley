@@ -1,8 +1,0 @@
-{
-  "name": "slimevolley",
-  "version": "0.0.1",
-  "dependencies": {
-    "connect":   "2.0.0",
-    "socket.io": "0.9.0"
-  }
-}
