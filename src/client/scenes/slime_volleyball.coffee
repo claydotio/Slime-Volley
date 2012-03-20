@@ -52,7 +52,10 @@ class SlimeVolleyball extends Scene
 				@world.p1.handleInput(Globals.Input)
 				if @isLocalMultiplayer 
 					@world.p2.handleInput(Globals.Input)
-				else this.moveCPU.apply(@world)
+				else
+					this.moveCPU.apply(@world)
+					@world.onCollision = -> 
+						@sweetSpot = null # reset sweet spot and grab again
 		super()
 
 	inputChanged: -> # returns whether input has been received since last check
@@ -85,35 +88,56 @@ class SlimeVolleyball extends Scene
 		floor = @height - Constants.BOTTOM
 		while ball.y < floor - @p2.height # predicting the position where will be at slime height
 			# switch vel if hits wall
-			ball.velocity.x *= -1 if ball.x > @width || ball.x < 0
+			if ( ball.x > @width && ball.velocity.x > 0 ) || ( ball.x < 0 && ball.velocity.x < 0 )
+				ball.velocity.x *= -1
+				ball.velocity.y = Helpers.yFromAngle(180-ball.velocity.x/ball.velocity.y) * ball.velocity.y
+				ball.velocity.x = 1 if Math.abs(ball.velocity.x) <= 0.1
+
 			ball.x += ball.velocity.x * Constants.FPS_RATIO
 			ball.y += ball.velocity.y * Constants.FPS_RATIO
-			ball.velocity.y += ball.acceleration.y * Constants.FPS_RATIO
-		
+			ball.velocity.y += ball.acceleration.y * @ball.mass * Constants.FPS_RATIO
+
+			if ball.y + ball.height >= floor # ball on ground
+				ball.y = @height - Constants.BOTTOM - ball.height
+				ball.velocity.y = 0 
+		ballPos = @ball.x + @ball.radius
 		p2Pos = @p2.x + @p2.width / 2
 		pastP1 = @ball.x > @p1.x + @p1.width / 2 + @ball.radius
 		pastPole = ball.x > @pole.x
-		ballPos = @ball.x + @ball.radius
 		ballLand = ball.x + @ball.radius
+		# more randomness the lower the difficulty. Ranges from 0 - 20
+		randomOffset = 50 * ( 1 - Constants.AI_DIFFICULTY ) * ( Math.random() )
 		
 		# Angle between current pos, and land
-		ballAngle = Math.atan2( ballLand - ballPos, @ball.height )
+		ballAngle = Math.atan2( ballLand - ballPos, @ball.y )
 		
 		# Where he wants to be to hit it (based on the angle of the ball and distance from pole)
 		# More weight is on the angle than the distance
 		# the randomness makes him stupider
-		randomOffset = ( 1 - Constants.AI_DIFFICULTY ) * 50 * ( Math.random() - .5 ) # -50 to 50
-		sweetSpot = p2Pos - 14 - randomOffset - Constants.AI_DIFFICULTY * .8 * ( 2 * ( ( ( p2Pos - @pole.x ) / ( @width / 2 ) ) + 8 * ( 1.57 - Math.abs ballAngle ) * ( 1.57 - Math.abs ballAngle ) ) )
-
+		if !@sweetSpot # only generated after collisions
+			angle = Math.atan2( ball.velocity.x, ball.velocity.y )
+			sign = if ball.velocity.x < 0 then -1 else 1
+			#console.log @p2.radius
+			offset = Math.atan( angle ) * @p2.height
+			offset -= sign * randomOffset 
+			# Distance from net, further it is, the lower we should angle
+			offset -= 10 * ( ( ballLand - @pole.x ) / ( @width / 2 ) )
+			# Angle the ball comes in at
+			offset -= 10 * Constants.AI_DIFFICULTY * 1 * ( 1.57 - Math.abs angle )
+			@sweetSpot = ballLand - offset 	
+		
+		sweetSpot = @sweetSpot
 		# jump only if angle is steep enough, or ball will land past
-		if ( Math.abs( ballPos - sweetSpot ) <= 5 || ballPos - sweetSpot > 5 ) && @ball.y < 200 && @ball.y > 100 && @p2.velocity.y == 0 && ( ( ballAngle > -.8 && ballAngle < 0.8 ) )
+		if( pastPole && Math.abs( ballPos - ballLand ) < 5 && Math.abs( p2Pos - sweetSpot ) <= 6 && @ball.y < 300 && @ball.y > 50 && @p2.velocity.y == 0 && ballAngle > -1.2 && ballAngle < 1.2 )
 			@p2.velocity.y = -8 # jump
+		else
+			@p2.velocity.x = 0
 		# ball will pass p2
-		if ballLand - sweetSpot > 5 # have him shoot at a lower angle if it's less steep
-			@p2.x += (Constants.MOVEMENT_SPEED*.55) + (Constants.MOVEMENT_SPEED*Constants.AI_DIFFICULTY)
+		if sweetSpot > p2Pos + 5
+			@p2.x += (Constants.MOVEMENT_SPEED*.75) + (Constants.MOVEMENT_SPEED*Constants.AI_DIFFICULTY)
 		# Ball past 1 and will land past net OR ball heading toward p1 from our side
-		else if ( ( pastP1 && pastPole ) || ( @ball.velocity.x < 0 && @ball.x > @pole.x ) ) && ballLand - sweetSpot < -5
-			@p2.x -= (Constants.MOVEMENT_SPEED*.55) + (Constants.MOVEMENT_SPEED*Constants.AI_DIFFICULTY)
+		else if ( ( pastP1 && pastPole ) || ( @ball.velocity.x < 0 && @ball.x > @pole.x ) ) && sweetSpot < p2Pos - 5
+			@p2.x -= (Constants.MOVEMENT_SPEED*.75) + (Constants.MOVEMENT_SPEED*Constants.AI_DIFFICULTY)
 
 	draw: ->
 		# draw everything!
@@ -137,6 +161,7 @@ class SlimeVolleyball extends Scene
 		@world.ball.y = @height-Constants.BOTTOM-@world.ball.height
 		@world.ball.velocity = { x: 0, y: 0 }
 		@world.ball.falling = false
+		@world.sweetSpot = null # for AI
 		if winner == @world.p1
 			msgList = @winMsgs
 			if winner.score >= Constants.WIN_SCORE # p1 won the game
@@ -166,6 +191,18 @@ class SlimeVolleyball extends Scene
 				@stepLen = Constants.TICK_DURATION
 				@freezeGame = false
 			), 1000)
+		else # game over
+			# Press A to play again
+			@displayMsg += "\nPress the enter key to play again"
+			window.addEventListener 'keydown', (e) =>
+				if e.which == 13
+					@world.reset()
+					@displayMsg = null
+					@stepLen = Constants.TICK_DURATION
+					@freezeGame = false
+					@world.p1.score = 0
+					@world.p2.score = 0
+					window.removeEventListener 'keydown', arguments.callee
 
 
 	# main "loop" iteration 

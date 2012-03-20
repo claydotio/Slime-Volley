@@ -26,6 +26,7 @@ class World
 		@p2 = new Slime(3*@width/4-Constants.SLIME_RADIUS, @height-Constants.SLIME_START_HEIGHT, @ball, true)
 		@pole = new Sprite(@width/2-Constants.POLE_WIDTH/2, @height-Constants.BOTTOM-Constants.POLE_HEIGHT-1, Constants.POLE_WIDTH, Constants.POLE_HEIGHT)
 		@deterministic = true
+		@onCollision = false
 
 	reset: (servingPlayer) -> # reset positions / velocities. servingPlayer is p1 by default.
 		@p1.setPosition(@width/4-Constants.SLIME_RADIUS, @height-Constants.SLIME_START_HEIGHT)
@@ -111,22 +112,26 @@ class World
 			a = Helpers.rad2Deg(Math.atan(-((@ball.x + @ball.radius) - (@p1.x + @p1.radius)) / ((@ball.y + @ball.radius) - (@p1.y + @p1.radius))))
 			@ball.velocity.x = Helpers.xFromAngle(a) * (6.5 + 1.5 * Constants.AI_DIFFICULTY)
 			@ball.velocity.y = Helpers.yFromAngle(a) * (6.5 + 1.5 * Constants.AI_DIFFICULTY)
+			@onCollision() if @onCollision # used to reset sweet spot
 		if @ball.y + @ball.height < @p2.y + @p2.radius && Math.sqrt(Math.pow((@ball.x + @ball.radius) - (@p2.x + @p2.radius), 2) + Math.pow((@ball.y + @ball.radius) - (@p2.y + @p2.radius), 2)) < @ball.radius + @p2.radius
 			@ball.setPosition(this.resolveCollision(@ball, @p2))
 			a = Helpers.rad2Deg(Math.atan(-((@ball.x + @ball.radius) - (@p2.x + @p2.radius)) / ((@ball.y + @ball.radius) - (@p2.y + @p2.radius))))
 			@ball.velocity.x = Helpers.xFromAngle(a) * (6.5 + 1.5 * Constants.AI_DIFFICULTY)
 			@ball.velocity.y = Helpers.yFromAngle(a) * (6.5 + 1.5 * Constants.AI_DIFFICULTY)
+			@onCollision() if @onCollision # used to reset sweet spot
 		# check collisions against left and right walls
 		if @ball.x + @ball.width > @width
 			@ball.x = @width - @ball.width
 			@ball.velocity.x *= -1
 			@ball.velocity.y = Helpers.yFromAngle(180-@ball.velocity.x/@ball.velocity.y) * @ball.velocity.y
 			@ball.velocity.x = -1 if Math.abs(@ball.velocity.x) <= 0.1
+			@onCollision() if @onCollision # used to reset sweet spot
 		else if @ball.x < 0
 			@ball.x = 0
 			@ball.velocity.x *= -1
 			@ball.velocity.y = Helpers.yFromAngle(180-@ball.velocity.x/@ball.velocity.y) * @ball.velocity.y
 			@ball.velocity.x = 1 if Math.abs(@ball.velocity.x) <= 0.1
+			@onCollision() if @onCollision # used to reset sweet spot
 
 
 		# ball collision against pole: mimics a rounded rec
@@ -159,6 +164,7 @@ class World
 					@ball.velocity.y *= -1
 					@ball.velocity.x = .5 if Math.abs(@ball.velocity.x) < 0.1
 					@ball.y = @pole.y - @ball.height
+			@onCollision() if @onCollision # used to reset sweet spot
 		else if @ball.x < @pole.x + @pole.width && @ball.x > @pole.x + @ball.velocity.x && @ball.y >= @pole.y && @ball.y <= @pole.y + @pole.height && @ball.velocity.x < 0 # coming from the right
 			if @ball.y + @ball.height >= @pole.y + borderRadius # middle and bottom of pole
 				@ball.x = @pole.x + @pole.width
@@ -168,6 +174,7 @@ class World
 				@ball.velocity.y *= -1
 				@ball.velocity.x = .5 if Math.abs(@ball.velocity.x) < 0.1
 				@ball.y = @pole.y - @ball.height
+			@onCollision() if @onCollision # used to reset sweet spot
 		
 		#if now - @stateSaves.lastPush > Constants.STATE_SAVE # save current state every STATE_SAVE ms
 		#	@stateSaves.lastPush = now
