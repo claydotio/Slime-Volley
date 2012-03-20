@@ -26,6 +26,7 @@ class World
 		@p2 = new Slime(3*@width/4-Constants.SLIME_RADIUS, @height-Constants.SLIME_START_HEIGHT, @ball, true)
 		@pole = new Sprite(@width/2-Constants.POLE_WIDTH/2, @height-Constants.BOTTOM-Constants.POLE_HEIGHT-1, Constants.POLE_WIDTH, Constants.POLE_HEIGHT)
 		@deterministic = true
+		@multiplayer = false
 		@onCollision = false
 
 	reset: (servingPlayer) -> # reset positions / velocities. servingPlayer is p1 by default.
@@ -191,8 +192,8 @@ class World
 		@p2.x = @width - @p2.width if @p2.x > @width - @p2.width
 
 	handleInput: ->
-		@p1.handleInput(@input, true)
-		@p2.handleInput(@input, true)
+		@p1.handleInput(@input, !@multiplayer)
+		@p2.handleInput(@input, !@multiplayer)
 		
 	injectFrame: (frame) ->
 		# I took out this whole inserting in the past an recalculating

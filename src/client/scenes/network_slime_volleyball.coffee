@@ -9,6 +9,7 @@ class NetworkSlimeVolleyball extends SlimeVolleyball
 		@step() # load in the text
 		@receivedFrames = []
 		@world.deterministic = true # necessary for sync
+		@world.multiplayer = true
 		@msAhead = Constants.TARGET_LATENCY
 
 		@stepCallback = => this.step()

@@ -11,6 +11,7 @@ class GameRunner
 		@width = 480
 		@height = 268
 		@world = new World(@width, @height, new InputSnapshot())
+		@world.multiplayer = true
 		@running = false
 		@loopCount = 0
 		@stepCallback = => this.step( Constants.TICK_DURATION )
