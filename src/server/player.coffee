@@ -22,7 +22,7 @@ class Player
 		playerID = obj.playerID
 
 		# Store the unique identifier for this player
-		secret = 'SECRETKEYHERE' # Secret key for this game
+		secret = 'amAiFpm3mFYEsF2TDbWgHtmcPdajVM' # Secret key for this game
 		@clay = new Clay( playerID, secret )
 
 		@room.stopGame if @room

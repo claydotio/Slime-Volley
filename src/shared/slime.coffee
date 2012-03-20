@@ -16,10 +16,19 @@ class Slime extends Sprite
 		# check for up, left, right
 		pNum = if @isP2 then 1 else 0
 		if input.left(pNum)
-			@velocity.x = -Constants.MOVEMENT_SPEED
+			if @velocity.x > -Constants.MOVEMENT_SPEED
+				@acceleration.x = -Constants.MOVEMENT_SPEED / 15
+			else
+				@acceleration.x = 0
+				@velocity.x = -Constants.MOVEMENT_SPEED
 		else if input.right(pNum)
-			@velocity.x = Constants.MOVEMENT_SPEED
+			if @velocity.x < Constants.MOVEMENT_SPEED
+				@acceleration.x = Constants.MOVEMENT_SPEED / 15
+			else
+				@acceleration.x = 0
+				@velocity.x = Constants.MOVEMENT_SPEED
 		else
+			@acceleration.x = 0
 			@velocity.x = 0
 		if input.up(pNum)
 			@velocity.y = -Constants.SLIME_JUMP if @y >= Constants.BASE_HEIGHT - Constants.BOTTOM - @height
