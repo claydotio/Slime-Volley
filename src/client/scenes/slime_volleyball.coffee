@@ -105,8 +105,6 @@ class SlimeVolleyball extends Scene
 		pastP1 = @ball.x > @p1.x + @p1.width / 2 + @ball.radius
 		pastPole = ball.x > @pole.x
 		ballLand = ball.x + @ball.radius
-		# more randomness the lower the difficulty. Ranges from 0 - 20
-		randomOffset = 50 * ( 1 - Constants.AI_DIFFICULTY ) * ( Math.random() )
 		
 		# Angle between current pos, and land
 		ballAngle = Math.atan2( ballLand - ballPos, @ball.y )
@@ -117,32 +115,40 @@ class SlimeVolleyball extends Scene
 		if !@sweetSpot # only generated after collisions
 			angle = Math.atan2( ball.velocity.x, ball.velocity.y )
 			sign = if ball.velocity.x < 0 then -1 else 1
-			#console.log @p2.radius
+
+			# randomness to change up the game
+			randomOffset = 3 * Math.random() * sign
+			# Random chance to fail .1 * .5 = 
+			if Math.random() < 0.5 - ( 0.48 * Constants.AI_DIFFICULTY ) # highest difficulty = 2% fail, lowest = 50% fail
+				randomOffset += ( .75 + Math.random() * .25 ) * 27 * ( 1.7 - Constants.AI_DIFFICULTY * .7) # highest difficulty = ~28, lowest = ~48, mid = ~38
+
 			offset = Math.atan( angle ) * @p2.height
-			offset -= sign * randomOffset 
+			offset -= randomOffset 
 			# Distance from net, further it is, the lower we should angle
 			offset -= 10 * ( ( ballLand - @pole.x ) / ( @width / 2 ) )
 			# Angle the ball comes in at
-			offset -= 10 * Constants.AI_DIFFICULTY * 1 * ( 1.57 - Math.abs angle )
+			offset -= 8 * Constants.AI_DIFFICULTY + .2 * 1 * ( 1.57 - Math.abs angle )
 			@sweetSpot = ballLand - offset 	
 		
 		sweetSpot = @sweetSpot
 		# jump only if angle is steep enough, or ball will land past
 		if( pastPole && Math.abs( ballPos - ballLand ) < 5 && Math.abs( p2Pos - sweetSpot ) <= 6 && @ball.y < 300 && @ball.y > 50 && @p2.velocity.y == 0 && ballAngle > -1.2 && ballAngle < 1.2 )
 			@p2.velocity.y = -8 # jump
-		else
-			@p2.velocity.x = 0
 		# ball will pass p2
 		if sweetSpot > p2Pos + 5
-			@p2.x += (Constants.MOVEMENT_SPEED*.75) + (Constants.MOVEMENT_SPEED*Constants.AI_DIFFICULTY)
+			@p2.x += (Constants.MOVEMENT_SPEED*.55) + (Constants.MOVEMENT_SPEED*Constants.AI_DIFFICULTY*.5)
 		# Ball past 1 and will land past net OR ball heading toward p1 from our side
 		else if ( ( pastP1 && pastPole ) || ( @ball.velocity.x < 0 && @ball.x > @pole.x ) ) && sweetSpot < p2Pos - 5
-			@p2.x -= (Constants.MOVEMENT_SPEED*.75) + (Constants.MOVEMENT_SPEED*Constants.AI_DIFFICULTY)
+			@p2.x -= (Constants.MOVEMENT_SPEED*.55) + (Constants.MOVEMENT_SPEED*Constants.AI_DIFFICULTY*.7)
 
 	draw: ->
 		# draw everything!
 		@ctx.clearRect(0, 0, @width, @height) 
 		sprite.draw(@ctx) for sprite in @sprites
+	
+		# draw the ball helper if ball is out of view
+		if @world.ball.y < 0
+			@world.drawBallHelper( @ctx ) 
 
 		# draw displayMsg, if any
 		if @displayMsg

@@ -18,14 +18,12 @@ class Slime extends Sprite
 		pNum = if @isP2 then 1 else 0
 		if input.left(pNum)
 			if accelerate && @velocity.x > -Constants.MOVEMENT_SPEED
-				console.log 'accelerating!'
 				@acceleration.x = -Constants.MOVEMENT_SPEED / 15
 			else
 				@acceleration.x = 0
 				@velocity.x = -Constants.MOVEMENT_SPEED
 		else if input.right(pNum)
 			if accelerate && @velocity.x < Constants.MOVEMENT_SPEED
-				console.log 'accelerating!'
 				@acceleration.x = Constants.MOVEMENT_SPEED / 15
 			else
 				@acceleration.x = 0

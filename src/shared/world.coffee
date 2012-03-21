@@ -108,6 +108,8 @@ class World
 			@ball.velocity.y = 0 
 		
 		# apply collisions against slimes
+		# TODO: Find a way to allow spiking the ball
+		# This is an issue because the physics are applied against a circle rather than semi-circle
 		if @ball.y + @ball.height < @p1.y + @p1.height && Math.sqrt(Math.pow((@ball.x + @ball.radius) - (@p1.x + @p1.radius), 2) + Math.pow((@ball.y + @ball.radius) - (@p1.y + @p1.radius), 2)) < @ball.radius + @p1.radius
 			@ball.setPosition(this.resolveCollision(@ball, @p1))
 			a = Helpers.rad2Deg(Math.atan(-((@ball.x + @ball.radius) - (@p1.x + @p1.radius)) / ((@ball.y + @ball.radius) - (@p1.y + @p1.radius))))
@@ -190,6 +192,17 @@ class World
 		@p1.x = @pole.x - @p1.width if @p1.x + @p1.width > @pole.x
 		@p2.x = @pole.x + @pole.width if @p2.x < @pole.x + @pole.width
 		@p2.x = @width - @p2.width if @p2.x > @width - @p2.width
+
+	drawBallHelper: (@ctx) ->
+		# If the ball is out of view, draw an arrow beneath it
+		@ctx.beginPath()
+		tmp = @ctx.fillStyle
+		@ctx.fillStyle = "black"
+		@ctx.moveTo( @ball.x + @ball.radius, 0 )
+		@ctx.lineTo( @ball.x + @ball.radius - Constants.HELPER_SIZE, Constants.HELPER_SIZE )
+		@ctx.lineTo( @ball.x + @ball.radius + Constants.HELPER_SIZE, Constants.HELPER_SIZE )
+		@ctx.fill()
+		@ctx.fillStyle = tmp
 
 	handleInput: ->
 		@p1.handleInput(@input, !@multiplayer)
