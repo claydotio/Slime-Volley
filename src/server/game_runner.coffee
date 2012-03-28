@@ -61,6 +61,9 @@ class GameRunner
 				console.log '-- GAME WON BY P2 --'
 				@room.p2.socket.emit('gameWin', jwt) if @room.p2
 				gameOver = true
+			# Reset score
+			@world.p1.score = 0
+			@world.p2.score = 0
 				
 		
 		# start game again in one second
