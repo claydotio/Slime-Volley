@@ -110,17 +110,13 @@ class World
 		# apply collisions against slimes
 		# TODO: Find a way to allow spiking the ball
 		# This is an issue because the physics are applied against a circle rather than semi-circle
-		if @ball.y + @ball.height < @p1.y + @p1.height && Math.sqrt(Math.pow((@ball.x + @ball.radius) - (@p1.x + @p1.radius), 2) + Math.pow((@ball.y + @ball.radius) - (@p1.y + @p1.radius), 2)) < @ball.radius + @p1.radius
+		if @ball.collidesWith @p1
 			@ball.setPosition(this.resolveCollision(@ball, @p1))
-			a = Helpers.rad2Deg(Math.atan(-((@ball.x + @ball.radius) - (@p1.x + @p1.radius)) / ((@ball.y + @ball.radius) - (@p1.y + @p1.radius))))
-			@ball.velocity.x = Helpers.xFromAngle(a) * (6.5 + 1.5 * Constants.AI_DIFFICULTY)
-			@ball.velocity.y = Helpers.yFromAngle(a) * (6.5 + 1.5 * Constants.AI_DIFFICULTY)
+			@ball.resolveCollision @p1
 			@onCollision() if @onCollision # used to reset sweet spot
-		if @ball.y + @ball.height < @p2.y + @p2.radius && Math.sqrt(Math.pow((@ball.x + @ball.radius) - (@p2.x + @p2.radius), 2) + Math.pow((@ball.y + @ball.radius) - (@p2.y + @p2.radius), 2)) < @ball.radius + @p2.radius
+		if @ball.collidesWith @p2
 			@ball.setPosition(this.resolveCollision(@ball, @p2))
-			a = Helpers.rad2Deg(Math.atan(-((@ball.x + @ball.radius) - (@p2.x + @p2.radius)) / ((@ball.y + @ball.radius) - (@p2.y + @p2.radius))))
-			@ball.velocity.x = Helpers.xFromAngle(a) * (6.5 + 1.5 * Constants.AI_DIFFICULTY)
-			@ball.velocity.y = Helpers.yFromAngle(a) * (6.5 + 1.5 * Constants.AI_DIFFICULTY)
+			@ball.resolveCollision @p2
 			@onCollision() if @onCollision # used to reset sweet spot
 		# check collisions against left and right walls
 		if @ball.x + @ball.width > @width

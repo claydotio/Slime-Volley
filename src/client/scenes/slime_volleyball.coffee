@@ -127,7 +127,7 @@ class SlimeVolleyball extends Scene
 			# Distance from net, further it is, the lower we should angle
 			offset -= 10 * ( ( ballLand - @pole.x ) / ( @width / 2 ) )
 			# Angle the ball comes in at
-			offset -= 8 * Constants.AI_DIFFICULTY + .2 * 1 * ( 1.57 - Math.abs angle )
+			offset -= 8 * Constants.AI_DIFFICULTY + .2 * ( 1.57 - Math.abs angle )
 			@sweetSpot = ballLand - offset 	
 		
 		sweetSpot = @sweetSpot
