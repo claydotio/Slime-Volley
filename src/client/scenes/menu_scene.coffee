@@ -49,7 +49,9 @@ class MenuScene extends Scene
 	# delegate callback when a button is pressed
 	buttonPressed: (btn) ->
 		if btn == @buttons['leaderboards']
-			new Clay.Leaderboard( { id: 6 } ).show();
+			( new Clay.Leaderboard( { id: 6 } ) ).show( { filters: ['day', 'month', 'all'], tabs: [ 
+					{	id: 5, filters: ['day', 'month', 'all'] } 
+				] } )
 			# TODO: multiplayer LB
 		else if btn == @buttons['onePlayer']
 			# new volleyball game

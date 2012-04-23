@@ -28,7 +28,8 @@ class Loader
 			src: asset,
 			image: img
 		@totalAssets++
-		img.src = asset
+		basePath = if ( window && window.basePath ) then window.basePath else ''
+		img.src = basePath + asset
 
 	loadProgress: (func) ->
 		@onprogress = func

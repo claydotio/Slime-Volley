@@ -8,16 +8,16 @@ scrollTop = ->
 			scrollTo 0, (if (pageYOffset is document.body.scrollTop) then 1 else 0)
 			
 			# Check width
-			if window.innerWidth < 350
-				document.getElementById( 'please-rotate' ).style.display = 'block'
-			else
-				document.getElementById( 'please-rotate' ).style.display = 'none'
+			pleaseRotate = document.getElementById( 'please-rotate' )
+			if window.innerWidth < 350 && pleaseRotate
+				pleaseRotate.style.display = 'block'
+			else if pleaseRotate
+				pleaseRotate.style.display = 'none'
 	, 200)
 window.addEventListener 'orientationchange', ->
 	scrollTop()
-	
-# FIXME run the game when the dom loads
-window.addEventListener 'load', ->
+
+window.fireUpSlime = ->
 	pixelRatio = window.devicePixelRatio || 1
 	canvas = document.getElementById('canvas')
 
@@ -35,3 +35,6 @@ window.addEventListener 'load', ->
 	loadingScene = new LoadingScene()
 	Globals.Manager.pushScene(loadingScene)
 	loadingScene.start()
+# run the game when the dom loads
+window.addEventListener 'load', ->
+	window.fireUpSlime()
