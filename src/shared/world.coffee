@@ -150,7 +150,7 @@ class World
 						@ball.setPosition(this.resolveCollision(@ball, circle))
 						a = Helpers.rad2Deg(Math.atan(-((@ball.x + @ball.radius) - (circle.x + circle.radius)) / ((@ball.y + @ball.radius) - (circle.y + circle.radius))))
 						@ball.velocity.x = Helpers.xFromAngle(a) * 6
-						@ball.velocity.y = Helpers.yFromAngle(a) * 6
+						@ball.velocity.y = Helpers.yFromAngle(a) * 7
 				else if @ball.x + @ball.radius > @pole.x + @pole.width - borderRadius # right corner
 					circle = { x: @pole.x+@pole.width - borderRadius, y: @pole.y + borderRadius, radius: borderRadius }
 					dist = Math.sqrt(Math.pow(@ball.x+@ball.radius-circle.x, 2) + Math.pow(@ball.y+@ball.radius-circle.y, 2))
@@ -158,7 +158,7 @@ class World
 						@ball.setPosition(this.resolveCollision(@ball, circle))
 						a = Helpers.rad2Deg(Math.atan(-((@ball.x + @ball.radius) - (circle.x + circle.radius)) / ((@ball.y + @ball.radius) - (circle.y + circle.radius))))
 						@ball.velocity.x = Helpers.xFromAngle(a) * 6
-						@ball.velocity.y = Helpers.yFromAngle(a) * 6
+						@ball.velocity.y = Helpers.yFromAngle(a) * 7
 				else # top (flat bounce)
 					@ball.velocity.y *= -1
 					@ball.velocity.x = .5 if Math.abs(@ball.velocity.x) < 0.1

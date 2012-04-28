@@ -118,6 +118,11 @@ class NetworkSlimeVolleyball extends SlimeVolleyball
 		@p1Scoreboard.draw(@ctx)
 		@p2Scoreboard.draw(@ctx)
 		@buttons['back'].draw(@ctx)
+	
+		# draw the ball helper if ball is out of view
+		if @world.ball.y < 0
+			@world.drawBallHelper( @ctx ) 
+
 		# draw displayMsg, if any
 		if @displayMsg
 			@ctx.font = 'bold 14px '+ Constants.MSG_FONT

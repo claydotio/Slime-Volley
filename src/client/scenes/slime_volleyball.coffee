@@ -119,7 +119,7 @@ class SlimeVolleyball extends Scene
 			# randomness to change up the game
 			randomOffset = 3 * Math.random() * sign
 			# Random chance to fail .1 * .5 = 
-			if Math.random() < 0.5 - ( 0.48 * Constants.AI_DIFFICULTY ) # highest difficulty = 2% fail, lowest = 50% fail
+			if Math.random() < 0.25 - ( 0.23 * Constants.AI_DIFFICULTY ) # highest difficulty = 2% fail, lowest = 25% fail
 				randomOffset += ( .75 + Math.random() * .25 ) * 27 * ( 1.7 - Constants.AI_DIFFICULTY * .7) # highest difficulty = ~28, lowest = ~48, mid = ~38
 
 			offset = Math.atan( angle ) * @p2.height
@@ -127,7 +127,7 @@ class SlimeVolleyball extends Scene
 			# Distance from net, further it is, the lower we should angle
 			offset -= 10 * ( ( ballLand - @pole.x ) / ( @width / 2 ) )
 			# Angle the ball comes in at
-			offset -= 8 * Constants.AI_DIFFICULTY + .2 * ( 1.57 - Math.abs angle )
+			offset -= 12 * Constants.AI_DIFFICULTY + .2 * ( 1.57 - Math.abs angle )
 			@sweetSpot = ballLand - offset 	
 		
 		sweetSpot = @sweetSpot
