@@ -1,9 +1,10 @@
-var OpponentSelectScene;
-var __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
+var OpponentSelectScene,
+  __hasProp = Object.prototype.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
 
-OpponentSelectScene = (function() {
+OpponentSelectScene = (function(_super) {
 
-  __extends(OpponentSelectScene, Scene);
+  __extends(OpponentSelectScene, _super);
 
   function OpponentSelectScene() {
     var btnHeight, btnWidth, dy, key, labelImgs, loader, yOffset, _fn, _i, _len, _ref;
@@ -73,4 +74,4 @@ OpponentSelectScene = (function() {
 
   return OpponentSelectScene;
 
-})();
+})(Scene);

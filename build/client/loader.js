@@ -26,7 +26,7 @@ Loader = (function() {
   };
 
   Loader.prototype.loadAsset = function(name, asset) {
-    var img, loader;
+    var basePath, img, loader;
     img = new Image();
     loader = this;
     img.onload = function() {
@@ -40,7 +40,8 @@ Loader = (function() {
       image: img
     };
     this.totalAssets++;
-    return img.src = asset;
+    basePath = window && window.basePath ? window.basePath : '';
+    return img.src = basePath + asset;
   };
 
   Loader.prototype.loadProgress = function(func) {

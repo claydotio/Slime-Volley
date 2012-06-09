@@ -88,10 +88,11 @@ Constants = {
   SLIME_JUMP: 10,
   BALL_RADIUS: 10,
   BALL_MASS: 1.4,
-  MOVEMENT_SPEED: 4,
+  HELPER_SIZE: 10,
+  MOVEMENT_SPEED: 5,
   JUMP_SPEED: 12,
   SLIME_START_HEIGHT: 91,
-  AI_DIFFICULTY: 0.25,
+  AI_DIFFICULTY: 0.45,
   MSG_FONT: 'Courier, monospace, sans-serif',
   FPS_RATIO: 24 / 16,
   TICK_DURATION: 24,
@@ -206,8 +207,8 @@ SceneManager = (function() {
 
 })();
 
-var Scene;
-var __hasProp = Object.prototype.hasOwnProperty;
+var Scene,
+  __hasProp = Object.prototype.hasOwnProperty;
 
 Scene = (function() {
 
@@ -338,7 +339,7 @@ Loader = (function() {
   };
 
   Loader.prototype.loadAsset = function(name, asset) {
-    var img, loader;
+    var basePath, img, loader;
     img = new Image();
     loader = this;
     img.onload = function() {
@@ -352,7 +353,8 @@ Loader = (function() {
       image: img
     };
     this.totalAssets++;
-    return img.src = asset;
+    basePath = window && window.basePath ? window.basePath : '';
+    return img.src = basePath + asset;
   };
 
   Loader.prototype.loadProgress = function(func) {
@@ -371,16 +373,15 @@ Loader = (function() {
 
 })();
 
-var Input;
-var __hasProp = Object.prototype.hasOwnProperty;
+var Input,
+  __hasProp = Object.prototype.hasOwnProperty;
 
 Input = (function() {
 
   function Input() {
-    var canvas, handleClick, handleKeyDown, handleKeyUp, handleMouseDown, handleMouseMove, handleMouseOut, handleMouseUp, multitouchShim, normalizeCoordinates, normalizeKeyEvent, normalizeMouseEvent;
-    var _this = this;
+    var canvas, handleClick, handleKeyDown, handleKeyUp, handleMouseDown, handleMouseMove, handleMouseOut, handleMouseUp, multitouchShim, normalizeCoordinates, normalizeKeyEvent, normalizeMouseEvent,
+      _this = this;
     this.keys = {};
-    this.anyInput = false;
     this.wasdEnabled = true;
     normalizeKeyEvent = function(e) {
       e.which || (e.which = e.charCode);
@@ -407,20 +408,16 @@ Input = (function() {
       });
     };
     handleKeyDown = function(e) {
-      _this.anyInput = true;
       return _this.keys['key' + normalizeKeyEvent(e).which] = true;
     };
     handleKeyUp = function(e) {
-      _this.anyInput = false;
       return _this.keys['key' + normalizeKeyEvent(e).which] = false;
     };
     handleMouseUp = function(e) {
-      _this.anyInput = false;
       e = normalizeMouseEvent(e);
       return Globals.Manager.currScene.mouseup(e);
     };
     handleMouseDown = function(e) {
-      _this.anyInput = true;
       e = normalizeMouseEvent(e);
       return Globals.Manager.currScene.mousedown(e);
     };
@@ -473,15 +470,15 @@ Input = (function() {
   }
 
   Input.prototype.left = function(p2) {
-    return this.keys[this.shortcuts['left'][p2]] || (this.wasdEnabled && this.keys[this.shortcuts['left'][1 - p2]]) || false;
+    return this.keys[this.shortcuts['left'][1 - p2]] || (this.wasdEnabled && this.keys[this.shortcuts['left'][p2]]) || false;
   };
 
   Input.prototype.right = function(p2) {
-    return this.keys[this.shortcuts['right'][p2]] || (this.wasdEnabled && this.keys[this.shortcuts['right'][1 - p2]]) || false;
+    return this.keys[this.shortcuts['right'][1 - p2]] || (this.wasdEnabled && this.keys[this.shortcuts['right'][p2]]) || false;
   };
 
   Input.prototype.up = function(p2) {
-    return this.keys[this.shortcuts['up'][p2]] || (this.wasdEnabled && this.keys[this.shortcuts['up'][1 - p2]]) || false;
+    return this.keys[this.shortcuts['up'][1 - p2]] || (this.wasdEnabled && this.keys[this.shortcuts['up'][p2]]) || false;
   };
 
   Input.prototype.reset = function() {
@@ -600,12 +597,13 @@ Sprite = (function() {
 
 if (module) module.exports = Sprite;
 
-var Button;
-var __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
+var Button,
+  __hasProp = Object.prototype.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
 
-Button = (function() {
+Button = (function(_super) {
 
-  __extends(Button, Sprite);
+  __extends(Button, _super);
 
   function Button(x, y, width, height, img, downImg, scene) {
     this.x = x;
@@ -647,7 +645,7 @@ Button = (function() {
 
   return Button;
 
-})();
+})(Sprite);
 
 var GamePad;
 
@@ -724,12 +722,13 @@ Globals = {
   Loader: new Loader()
 };
 
-var StretchySprite;
-var __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
+var StretchySprite,
+  __hasProp = Object.prototype.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
 
-StretchySprite = (function() {
+StretchySprite = (function(_super) {
 
-  __extends(StretchySprite, Sprite);
+  __extends(StretchySprite, _super);
 
   function StretchySprite(x, y, width, height, rightCap, topCap, bg) {
     this.x = x;
@@ -777,19 +776,21 @@ StretchySprite = (function() {
 
   return StretchySprite;
 
-})();
+})(Sprite);
 
-var Ball, Constants, Sprite;
-var __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
+var Ball, Constants, Helpers, Sprite,
+  __hasProp = Object.prototype.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
 
 if (module) {
   Sprite = require('./sprite');
   Constants = require('./constants');
+  Helpers = require('./helpers');
 }
 
-Ball = (function() {
+Ball = (function(_super) {
 
-  __extends(Ball, Sprite);
+  __extends(Ball, _super);
 
   function Ball(x, y) {
     this.x = x;
@@ -801,23 +802,35 @@ Ball = (function() {
     Ball.__super__.constructor.call(this, this.x, this.y, this.radius * 2, this.radius * 2, this.bg);
   }
 
+  Ball.prototype.collidesWith = function(obj) {
+    return this.y + this.height < obj.y + obj.height && Math.sqrt(Math.pow((this.x + this.radius) - (obj.x + obj.radius), 2) + Math.pow((this.y + this.radius) - (obj.y + obj.radius), 2)) < this.radius + obj.radius;
+  };
+
+  Ball.prototype.resolveCollision = function(obj) {
+    var a;
+    a = Helpers.rad2Deg(Math.atan(-((this.x + this.radius) - (obj.x + obj.radius)) / ((this.y + this.radius) - (obj.y + obj.radius))));
+    this.velocity.x = Helpers.xFromAngle(a) * (6.5 + 2 * Constants.AI_DIFFICULTY) + 0.05 * obj.velocity.x;
+    return this.velocity.y = Helpers.yFromAngle(a) * (6.5 + 2 * Constants.AI_DIFFICULTY) + 0.05 * obj.velocity.y;
+  };
+
   return Ball;
 
-})();
+})(Sprite);
 
 if (module) module.exports = Ball;
 
-var Constants, Slime, Sprite;
-var __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
+var Constants, Slime, Sprite,
+  __hasProp = Object.prototype.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
 
 if (module) {
   Sprite = require('./sprite');
   Constants = require('./constants');
 }
 
-Slime = (function() {
+Slime = (function(_super) {
 
-  __extends(Slime, Sprite);
+  __extends(Slime, _super);
 
   function Slime(x, y, ball, isP2) {
     this.x = x;
@@ -834,14 +847,26 @@ Slime = (function() {
     Slime.__super__.constructor.call(this, this.x, this.y, this.radius * 2, this.radius, this.bg);
   }
 
-  Slime.prototype.handleInput = function(input) {
+  Slime.prototype.handleInput = function(input, accelerate) {
     var pNum;
+    if (accelerate == null) accelerate = true;
     pNum = this.isP2 ? 1 : 0;
     if (input.left(pNum)) {
-      this.velocity.x = -Constants.MOVEMENT_SPEED;
+      if (accelerate && this.velocity.x > -Constants.MOVEMENT_SPEED) {
+        this.acceleration.x = -Constants.MOVEMENT_SPEED / 15;
+      } else {
+        this.acceleration.x = 0;
+        this.velocity.x = -Constants.MOVEMENT_SPEED;
+      }
     } else if (input.right(pNum)) {
-      this.velocity.x = Constants.MOVEMENT_SPEED;
+      if (accelerate && this.velocity.x < Constants.MOVEMENT_SPEED) {
+        this.acceleration.x = Constants.MOVEMENT_SPEED / 15;
+      } else {
+        this.acceleration.x = 0;
+        this.velocity.x = Constants.MOVEMENT_SPEED;
+      }
     } else {
+      this.acceleration.x = 0;
       this.velocity.x = 0;
     }
     if (input.up(pNum)) {
@@ -871,16 +896,17 @@ Slime = (function() {
 
   return Slime;
 
-})();
+})(Sprite);
 
 if (module) module.exports = Slime;
 
-var Scoreboard;
-var __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
+var Scoreboard,
+  __hasProp = Object.prototype.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
 
-Scoreboard = (function() {
+Scoreboard = (function(_super) {
 
-  __extends(Scoreboard, Sprite);
+  __extends(Scoreboard, _super);
 
   function Scoreboard(x, y, bgImg, slime) {
     this.x = x;
@@ -906,7 +932,7 @@ Scoreboard = (function() {
 
   return Scoreboard;
 
-})();
+})(Sprite);
 
 var Social;
 
@@ -954,6 +980,8 @@ World = (function() {
     this.p2 = new Slime(3 * this.width / 4 - Constants.SLIME_RADIUS, this.height - Constants.SLIME_START_HEIGHT, this.ball, true);
     this.pole = new Sprite(this.width / 2 - Constants.POLE_WIDTH / 2, this.height - Constants.BOTTOM - Constants.POLE_HEIGHT - 1, Constants.POLE_WIDTH, Constants.POLE_HEIGHT);
     this.deterministic = true;
+    this.multiplayer = false;
+    this.onCollision = false;
   }
 
   World.prototype.reset = function(servingPlayer) {
@@ -1022,14 +1050,14 @@ World = (function() {
     if (this.lastStep) interval || (interval = now - this.lastStep);
     interval || (interval = tick);
     if (!dontIncrementClock) this.lastStep = now;
-    if (interval >= 1.3 * tick) {
+    if (interval >= 1.3 * tick && this.deterministic) {
       while (interval > 0) {
         newInterval = interval >= 1.3 * tick ? tick : interval;
         this.step(newInterval, dontIncrementClock);
         interval -= newInterval;
       }
       return;
-    } else {
+    } else if (this.deterministic) {
       interval = tick;
     }
     this.numFrames = interval / tick;
@@ -1051,35 +1079,35 @@ World = (function() {
       this.ball.y = this.height - Constants.BOTTOM - this.ball.height;
       this.ball.velocity.y = 0;
     }
-    if (this.ball.y + this.ball.height < this.p1.y + this.p1.height && Math.sqrt(Math.pow((this.ball.x + this.ball.radius) - (this.p1.x + this.p1.radius), 2) + Math.pow((this.ball.y + this.ball.radius) - (this.p1.y + this.p1.radius), 2)) < this.ball.radius + this.p1.radius) {
+    if (this.ball.collidesWith(this.p1)) {
       this.ball.setPosition(this.resolveCollision(this.ball, this.p1));
-      a = Helpers.rad2Deg(Math.atan(-((this.ball.x + this.ball.radius) - (this.p1.x + this.p1.radius)) / ((this.ball.y + this.ball.radius) - (this.p1.y + this.p1.radius))));
-      this.ball.velocity.x = Helpers.xFromAngle(a) * (6.5 + 1.5 * Constants.AI_DIFFICULTY);
-      this.ball.velocity.y = Helpers.yFromAngle(a) * (6.5 + 1.5 * Constants.AI_DIFFICULTY);
+      this.ball.resolveCollision(this.p1);
+      if (this.onCollision) this.onCollision();
     }
-    if (this.ball.y + this.ball.height < this.p2.y + this.p2.radius && Math.sqrt(Math.pow((this.ball.x + this.ball.radius) - (this.p2.x + this.p2.radius), 2) + Math.pow((this.ball.y + this.ball.radius) - (this.p2.y + this.p2.radius), 2)) < this.ball.radius + this.p2.radius) {
+    if (this.ball.collidesWith(this.p2)) {
       this.ball.setPosition(this.resolveCollision(this.ball, this.p2));
-      a = Helpers.rad2Deg(Math.atan(-((this.ball.x + this.ball.radius) - (this.p2.x + this.p2.radius)) / ((this.ball.y + this.ball.radius) - (this.p2.y + this.p2.radius))));
-      this.ball.velocity.x = Helpers.xFromAngle(a) * (6.5 + 1.5 * Constants.AI_DIFFICULTY);
-      this.ball.velocity.y = Helpers.yFromAngle(a) * (6.5 + 1.5 * Constants.AI_DIFFICULTY);
+      this.ball.resolveCollision(this.p2);
+      if (this.onCollision) this.onCollision();
     }
     if (this.ball.x + this.ball.width > this.width) {
       this.ball.x = this.width - this.ball.width;
       this.ball.velocity.x *= -1;
       this.ball.velocity.y = Helpers.yFromAngle(180 - this.ball.velocity.x / this.ball.velocity.y) * this.ball.velocity.y;
       if (Math.abs(this.ball.velocity.x) <= 0.1) this.ball.velocity.x = -1;
+      if (this.onCollision) this.onCollision();
     } else if (this.ball.x < 0) {
       this.ball.x = 0;
       this.ball.velocity.x *= -1;
       this.ball.velocity.y = Helpers.yFromAngle(180 - this.ball.velocity.x / this.ball.velocity.y) * this.ball.velocity.y;
       if (Math.abs(this.ball.velocity.x) <= 0.1) this.ball.velocity.x = 1;
+      if (this.onCollision) this.onCollision();
     }
     borderRadius = 2;
     if (this.ball.x + this.ball.width > this.pole.x && this.ball.x < this.pole.x + this.pole.width && this.ball.y + this.ball.height >= this.pole.y && this.ball.y <= this.pole.y + this.pole.height) {
       if (this.ball.y + this.ball.radius >= this.pole.y + borderRadius) {
         this.ball.x = this.ball.velocity.x > 0 ? this.pole.x - this.ball.width : this.pole.x + this.pole.width;
         this.ball.velocity.x *= -1;
-        return this.ball.velocity.y = Helpers.yFromAngle(180 - (this.ball.velocity.x / this.ball.velocity.y)) * this.ball.velocity.y;
+        this.ball.velocity.y = Helpers.yFromAngle(180 - (this.ball.velocity.x / this.ball.velocity.y)) * this.ball.velocity.y;
       } else {
         if (this.ball.x + this.ball.radius < this.pole.x + borderRadius) {
           circle = {
@@ -1092,7 +1120,7 @@ World = (function() {
             this.ball.setPosition(this.resolveCollision(this.ball, circle));
             a = Helpers.rad2Deg(Math.atan(-((this.ball.x + this.ball.radius) - (circle.x + circle.radius)) / ((this.ball.y + this.ball.radius) - (circle.y + circle.radius))));
             this.ball.velocity.x = Helpers.xFromAngle(a) * 6;
-            return this.ball.velocity.y = Helpers.yFromAngle(a) * 6;
+            this.ball.velocity.y = Helpers.yFromAngle(a) * 7;
           }
         } else if (this.ball.x + this.ball.radius > this.pole.x + this.pole.width - borderRadius) {
           circle = {
@@ -1105,24 +1133,26 @@ World = (function() {
             this.ball.setPosition(this.resolveCollision(this.ball, circle));
             a = Helpers.rad2Deg(Math.atan(-((this.ball.x + this.ball.radius) - (circle.x + circle.radius)) / ((this.ball.y + this.ball.radius) - (circle.y + circle.radius))));
             this.ball.velocity.x = Helpers.xFromAngle(a) * 6;
-            return this.ball.velocity.y = Helpers.yFromAngle(a) * 6;
+            this.ball.velocity.y = Helpers.yFromAngle(a) * 7;
           }
         } else {
           this.ball.velocity.y *= -1;
           if (Math.abs(this.ball.velocity.x) < 0.1) this.ball.velocity.x = .5;
-          return this.ball.y = this.pole.y - this.ball.height;
+          this.ball.y = this.pole.y - this.ball.height;
         }
       }
+      if (this.onCollision) return this.onCollision();
     } else if (this.ball.x < this.pole.x + this.pole.width && this.ball.x > this.pole.x + this.ball.velocity.x && this.ball.y >= this.pole.y && this.ball.y <= this.pole.y + this.pole.height && this.ball.velocity.x < 0) {
       if (this.ball.y + this.ball.height >= this.pole.y + borderRadius) {
         this.ball.x = this.pole.x + this.pole.width;
         this.ball.velocity.x *= -1;
-        return this.ball.velocity.y = Helpers.yFromAngle(180 - (this.ball.velocity.x / this.ball.velocity.y)) * this.ball.velocity.y;
+        this.ball.velocity.y = Helpers.yFromAngle(180 - (this.ball.velocity.x / this.ball.velocity.y)) * this.ball.velocity.y;
       } else {
         this.ball.velocity.y *= -1;
         if (Math.abs(this.ball.velocity.x) < 0.1) this.ball.velocity.x = .5;
-        return this.ball.y = this.pole.y - this.ball.height;
+        this.ball.y = this.pole.y - this.ball.height;
       }
+      if (this.onCollision) return this.onCollision();
     }
   };
 
@@ -1139,9 +1169,22 @@ World = (function() {
     }
   };
 
+  World.prototype.drawBallHelper = function(ctx) {
+    var tmp;
+    this.ctx = ctx;
+    this.ctx.beginPath();
+    tmp = this.ctx.fillStyle;
+    this.ctx.fillStyle = "black";
+    this.ctx.moveTo(this.ball.x + this.ball.radius, 0);
+    this.ctx.lineTo(this.ball.x + this.ball.radius - Constants.HELPER_SIZE, Constants.HELPER_SIZE);
+    this.ctx.lineTo(this.ball.x + this.ball.radius + Constants.HELPER_SIZE, Constants.HELPER_SIZE);
+    this.ctx.fill();
+    return this.ctx.fillStyle = tmp;
+  };
+
   World.prototype.handleInput = function() {
-    this.p1.handleInput(this.input, true);
-    return this.p2.handleInput(this.input, true);
+    this.p1.handleInput(this.input, !this.multiplayer);
+    return this.p2.handleInput(this.input, !this.multiplayer);
   };
 
   World.prototype.injectFrame = function(frame) {
@@ -1229,12 +1272,13 @@ World = (function() {
 
 if (module) module.exports = World;
 
-var LoadingScene;
-var __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
+var LoadingScene,
+  __hasProp = Object.prototype.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
 
-LoadingScene = (function() {
+LoadingScene = (function(_super) {
 
-  __extends(LoadingScene, Scene);
+  __extends(LoadingScene, _super);
 
   function LoadingScene() {
     this.loadStarted = false;
@@ -1288,18 +1332,19 @@ LoadingScene = (function() {
 
   return LoadingScene;
 
-})();
+})(Scene);
 
-var MenuScene;
-var __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
+var MenuScene,
+  __hasProp = Object.prototype.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
 
-MenuScene = (function() {
+MenuScene = (function(_super) {
 
-  __extends(MenuScene, Scene);
+  __extends(MenuScene, _super);
 
   function MenuScene() {
-    var btnHeight, btnWidth, dy, key, labelImgs, loader, yOffset, _fn, _i, _len, _ref;
-    var _this = this;
+    var btnHeight, btnWidth, dy, key, labelImgs, loader, yOffset, _fn, _i, _len, _ref,
+      _this = this;
     MenuScene.__super__.constructor.call(this);
     loader = Globals.Loader;
     this.bg = new StretchySprite(0, 0, this.width, this.height, 1, 1, loader.getAsset('menu_bg'));
@@ -1358,9 +1403,19 @@ MenuScene = (function() {
 
   MenuScene.prototype.buttonPressed = function(btn) {
     if (btn === this.buttons['leaderboards']) {
-      return new Clay.Leaderboard({
+      return (new Clay.Leaderboard({
         id: 6
-      }).show();
+      })).show({
+        filters: ['day', 'month', 'all'],
+        tabs: [
+          {
+            id: 5,
+            filters: ['day', 'month', 'all']
+          }
+        ]
+      }, function(response) {
+        return console.log(response);
+      });
     } else if (btn === this.buttons['onePlayer']) {
       return Globals.Manager.pushScene(new OpponentSelectScene());
     } else if (btn === this.buttons['options']) {
@@ -1372,14 +1427,15 @@ MenuScene = (function() {
 
   return MenuScene;
 
-})();
+})(Scene);
 
-var OpponentSelectScene;
-var __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
+var OpponentSelectScene,
+  __hasProp = Object.prototype.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
 
-OpponentSelectScene = (function() {
+OpponentSelectScene = (function(_super) {
 
-  __extends(OpponentSelectScene, Scene);
+  __extends(OpponentSelectScene, _super);
 
   function OpponentSelectScene() {
     var btnHeight, btnWidth, dy, key, labelImgs, loader, yOffset, _fn, _i, _len, _ref;
@@ -1449,22 +1505,23 @@ OpponentSelectScene = (function() {
 
   return OpponentSelectScene;
 
-})();
+})(Scene);
 
-var SlimeVolleyball;
-var __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
+var SlimeVolleyball,
+  __hasProp = Object.prototype.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
 
-SlimeVolleyball = (function() {
+SlimeVolleyball = (function(_super) {
 
-  __extends(SlimeVolleyball, Scene);
+  __extends(SlimeVolleyball, _super);
 
   function SlimeVolleyball() {
     SlimeVolleyball.__super__.constructor.apply(this, arguments);
   }
 
   SlimeVolleyball.prototype.init = function(dontOverrideInput) {
-    var gamepad, loader;
-    var _this = this;
+    var gamepad, loader,
+      _this = this;
     this.world || (this.world = new World(this.width, this.height, Globals.Input));
     this.world.deterministic = false;
     loader = Globals.Loader;
@@ -1475,6 +1532,13 @@ SlimeVolleyball = (function() {
     this.buttons = {
       back: new Button(this.width / 2 - Constants.BACK_BTN_WIDTH / 2, Constants.SCOREBOARD_PADDING, Constants.BACK_BTN_WIDTH, Constants.BACK_BTN_HEIGHT, loader.getAsset('return'), loader.getAsset('return'), this)
     };
+    try {
+      this.percent = document.cookie.match(/AI_DIFFICULTY=(\d\.\d*)/i)[1];
+    } catch (e) {
+      this.percent = Constants.AI_DIFFICULTY;
+    } finally {
+      Constants.AI_DIFFICULTY = this.percent;
+    }
     this.sprites = [];
     this.sprites.push(this.bg, this.world.pole, this.world.p1, this.world.p2, this.world.ball, this.p1Scoreboard, this.p2Scoreboard, this.buttons.back);
     gamepad = new GamePad({
@@ -1499,7 +1563,10 @@ SlimeVolleyball = (function() {
         if (_this.isLocalMultiplayer) {
           return _this.world.p2.handleInput(Globals.Input);
         } else {
-          return _this.moveCPU.apply(_this.world);
+          _this.moveCPU.apply(_this.world);
+          return _this.world.onCollision = function() {
+            return this.sweetSpot = null;
+          };
         }
       };
     }
@@ -1525,19 +1592,62 @@ SlimeVolleyball = (function() {
   };
 
   SlimeVolleyball.prototype.moveCPU = function() {
-    if (this.ball.x > this.pole.x && this.ball.y < 200 && this.ball.y > 150 && this.p2.velocity.y === 0) {
+    var angle, ball, ballAngle, ballLand, ballPos, floor, offset, p2Pos, pastP1, pastPole, randomOffset, sign, sweetSpot;
+    if (this.freezeGame) return;
+    ball = {
+      x: this.ball.x,
+      y: this.ball.y,
+      velocity: {
+        x: this.ball.velocity.x,
+        y: this.ball.velocity.y
+      },
+      acceleration: {
+        x: this.ball.acceleration.x,
+        y: this.ball.acceleration.y
+      }
+    };
+    floor = this.height - Constants.BOTTOM;
+    while (ball.y < floor - this.p2.height) {
+      if ((ball.x > this.width && ball.velocity.x > 0) || (ball.x < 0 && ball.velocity.x < 0)) {
+        ball.velocity.x *= -1;
+        ball.velocity.y = Helpers.yFromAngle(180 - ball.velocity.x / ball.velocity.y) * ball.velocity.y;
+        if (Math.abs(ball.velocity.x) <= 0.1) ball.velocity.x = 1;
+      }
+      ball.x += ball.velocity.x * Constants.FPS_RATIO;
+      ball.y += ball.velocity.y * Constants.FPS_RATIO;
+      ball.velocity.y += ball.acceleration.y * this.ball.mass * Constants.FPS_RATIO;
+      if (ball.y + ball.height >= floor) {
+        ball.y = this.height - Constants.BOTTOM - ball.height;
+        ball.velocity.y = 0;
+      }
+    }
+    ballPos = this.ball.x + this.ball.radius;
+    p2Pos = this.p2.x + this.p2.width / 2;
+    pastP1 = this.ball.x > this.p1.x + this.p1.width / 2 + this.ball.radius;
+    pastPole = ball.x > this.pole.x;
+    ballLand = ball.x + this.ball.radius;
+    ballAngle = Math.atan2(ballLand - ballPos, this.ball.y);
+    if (!this.sweetSpot) {
+      angle = Math.atan2(ball.velocity.x, ball.velocity.y);
+      sign = ball.velocity.x < 0 ? -1 : 1;
+      randomOffset = 3 * Math.random() * sign;
+      if (Math.random() < 0.25 - (0.23 * Constants.AI_DIFFICULTY)) {
+        randomOffset += (.75 + Math.random() * .25) * 27 * (1.7 - Constants.AI_DIFFICULTY * .7);
+      }
+      offset = Math.atan(angle) * this.p2.height;
+      offset -= randomOffset;
+      offset -= 10 * ((ballLand - this.pole.x) / (this.width / 2));
+      offset -= 12 * Constants.AI_DIFFICULTY + .2 * (1.57 - Math.abs(angle));
+      this.sweetSpot = ballLand - offset;
+    }
+    sweetSpot = this.sweetSpot;
+    if (pastPole && Math.abs(ballPos - ballLand) < 5 && Math.abs(p2Pos - sweetSpot) <= 6 && this.ball.y < 300 && this.ball.y > 50 && this.p2.velocity.y === 0 && ballAngle > -1.2 && ballAngle < 1.2) {
       this.p2.velocity.y = -8;
     }
-    if (this.ball.x > this.pole.x - this.p1.width && this.ball.x < this.p2.x) {
-      this.p2.x -= (Constants.MOVEMENT_SPEED * .75) + (Constants.MOVEMENT_SPEED * Constants.AI_DIFFICULTY);
-    }
-    if (this.ball.x > this.pole.x - this.p1.width && this.ball.x + this.ball.width + (this.ball.velocity.x * Constants.AI_DIFFICULTY) > this.p2.x + this.p2.width && this.ball.x + this.ball.width < this.width) {
-      this.p2.x += (Constants.MOVEMENT_SPEED * .75) + (Constants.MOVEMENT_SPEED * Constants.AI_DIFFICULTY);
-    } else if (this.ball.x > this.pole.x - this.p1.width && this.ball.x + this.ball.width + (this.ball.velocity.x * Constants.AI_DIFFICULTY) > this.p2.x + this.p2.width && this.ball.x + this.ball.width >= this.width) {
-      this.p2.x -= (Constants.MOVEMENT_SPEED * .75) + (Constants.MOVEMENT_SPEED * Constants.AI_DIFFICULTY);
-    }
-    if (this.ball.x + this.ball.radius > this.p2.x + 30 && this.ball.x + this.ball.radius < this.p2.x + 34) {
-      return this.p2.x += (Constants.MOVEMENT_SPEED * .75) + (Constants.MOVEMENT_SPEED * Constants.AI_DIFFICULTY);
+    if (sweetSpot > p2Pos + 5) {
+      return this.p2.x += (Constants.MOVEMENT_SPEED * .55) + (Constants.MOVEMENT_SPEED * Constants.AI_DIFFICULTY * .5);
+    } else if (((pastP1 && pastPole) || (this.ball.velocity.x < 0 && this.ball.x > this.pole.x)) && sweetSpot < p2Pos - 5) {
+      return this.p2.x -= (Constants.MOVEMENT_SPEED * .55) + (Constants.MOVEMENT_SPEED * Constants.AI_DIFFICULTY * .7);
     }
   };
 
@@ -1549,6 +1659,7 @@ SlimeVolleyball = (function() {
       sprite = _ref[_i];
       sprite.draw(this.ctx);
     }
+    if (this.world.ball.y < 0) this.world.drawBallHelper(this.ctx);
     if (this.displayMsg) {
       this.ctx.font = 'bold 14px ' + Constants.MSG_FONT;
       this.ctx.fillStyle = '#ffffff';
@@ -1563,8 +1674,8 @@ SlimeVolleyball = (function() {
   };
 
   SlimeVolleyball.prototype.handleWin = function(winner) {
-    var lb, msgIdx, msgList;
-    var _this = this;
+    var lb, msgIdx, msgList,
+      _this = this;
     this.freezeGame = true;
     winner.score++;
     this.world.ball.y = this.height - Constants.BOTTOM - this.world.ball.height;
@@ -1573,6 +1684,7 @@ SlimeVolleyball = (function() {
       y: 0
     };
     this.world.ball.falling = false;
+    this.world.sweetSpot = null;
     if (winner === this.world.p1) {
       msgList = this.winMsgs;
       if (winner.score >= Constants.WIN_SCORE) {
@@ -1601,8 +1713,22 @@ SlimeVolleyball = (function() {
       return setTimeout((function() {
         _this.world.reset(winner);
         _this.displayMsg = null;
+        _this.stepLen = Constants.TICK_DURATION;
         return _this.freezeGame = false;
       }), 1000);
+    } else {
+      this.displayMsg += "\nPress the enter key to play again";
+      return window.addEventListener('keydown', function(e) {
+        if (e.which === 13) {
+          _this.world.reset();
+          _this.displayMsg = null;
+          _this.stepLen = Constants.TICK_DURATION;
+          _this.freezeGame = false;
+          _this.world.p1.score = 0;
+          _this.world.p2.score = 0;
+          return window.removeEventListener('keydown', arguments.callee);
+        }
+      });
     }
   };
 
@@ -1610,7 +1736,8 @@ SlimeVolleyball = (function() {
     var winner;
     this.next();
     if (this.freezeGame) return this.draw();
-    this.world.step();
+    this.world.step(this.stepLen);
+    this.stepLen = null;
     if (this.world.ball.y + this.world.ball.height >= this.world.height - Constants.BOTTOM) {
       winner = this.world.ball.x + this.world.ball.radius > this.width / 2 ? this.world.p1 : this.world.p2;
       this.handleWin(winner);
@@ -1625,10 +1752,10 @@ SlimeVolleyball = (function() {
 
   return SlimeVolleyball;
 
-})();
+})(Scene);
 
-var InputSnapshot;
-var __hasProp = Object.prototype.hasOwnProperty;
+var InputSnapshot,
+  __hasProp = Object.prototype.hasOwnProperty;
 
 InputSnapshot = (function() {
 
@@ -1691,12 +1818,13 @@ InputSnapshot = (function() {
 
 if (module) module.exports = InputSnapshot;
 
-var NetworkSlimeVolleyball;
-var __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
+var NetworkSlimeVolleyball,
+  __hasProp = Object.prototype.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
 
-NetworkSlimeVolleyball = (function() {
+NetworkSlimeVolleyball = (function(_super) {
 
-  __extends(NetworkSlimeVolleyball, SlimeVolleyball);
+  __extends(NetworkSlimeVolleyball, _super);
 
   function NetworkSlimeVolleyball() {
     NetworkSlimeVolleyball.__super__.constructor.apply(this, arguments);
@@ -1711,6 +1839,7 @@ NetworkSlimeVolleyball = (function() {
     this.step();
     this.receivedFrames = [];
     this.world.deterministic = true;
+    this.world.multiplayer = true;
     this.msAhead = Constants.TARGET_LATENCY;
     this.stepCallback = function() {
       return _this.step();
@@ -1844,6 +1973,7 @@ NetworkSlimeVolleyball = (function() {
     this.p1Scoreboard.draw(this.ctx);
     this.p2Scoreboard.draw(this.ctx);
     this.buttons['back'].draw(this.ctx);
+    if (this.world.ball.y < 0) this.world.drawBallHelper(this.ctx);
     if (this.displayMsg) {
       this.ctx.font = 'bold 14px ' + Constants.MSG_FONT;
       this.ctx.fillStyle = '#ffffff';
@@ -1900,14 +2030,15 @@ NetworkSlimeVolleyball = (function() {
 
   return NetworkSlimeVolleyball;
 
-})();
+})(SlimeVolleyball);
 
-var InstructionsScene;
-var __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
+var InstructionsScene,
+  __hasProp = Object.prototype.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
 
-InstructionsScene = (function() {
+InstructionsScene = (function(_super) {
 
-  __extends(InstructionsScene, Scene);
+  __extends(InstructionsScene, _super);
 
   function InstructionsScene() {
     var backImg;
@@ -1940,14 +2071,15 @@ InstructionsScene = (function() {
 
   return InstructionsScene;
 
-})();
+})(Scene);
 
-var OptionsScene;
-var __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
+var OptionsScene,
+  __hasProp = Object.prototype.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
 
-OptionsScene = (function() {
+OptionsScene = (function(_super) {
 
-  __extends(OptionsScene, Scene);
+  __extends(OptionsScene, _super);
 
   function OptionsScene() {
     var backImg;
@@ -2018,23 +2150,24 @@ OptionsScene = (function() {
 
   return OptionsScene;
 
-})();
+})(Scene);
 
 var scrollTop;
 
 scrollTop = function() {
   var doScrollTop;
   return doScrollTop = setInterval(function() {
-    var pageYOffset;
+    var pageYOffset, pleaseRotate;
     if (document.body) {
       clearInterval(doScrollTop);
       scrollTo(0, 1);
       pageYOffset = 0;
       scrollTo(0, (pageYOffset === document.body.scrollTop ? 1 : 0));
-      if (window.innerWidth < 350) {
-        return document.getElementById('please-rotate').style.display = 'block';
-      } else {
-        return document.getElementById('please-rotate').style.display = 'none';
+      pleaseRotate = document.getElementById('please-rotate');
+      if (window.innerWidth < 350 && pleaseRotate) {
+        return pleaseRotate.style.display = 'block';
+      } else if (pleaseRotate) {
+        return pleaseRotate.style.display = 'none';
       }
     }
   }, 200);
@@ -2044,7 +2177,7 @@ window.addEventListener('orientationchange', function() {
   return scrollTop();
 });
 
-window.addEventListener('load', function() {
+window.fireUpSlime = function() {
   var canvas, loadingScene, pageFill, pixelRatio;
   pixelRatio = window.devicePixelRatio || 1;
   canvas = document.getElementById('canvas');
@@ -2060,4 +2193,8 @@ window.addEventListener('load', function() {
   loadingScene = new LoadingScene();
   Globals.Manager.pushScene(loadingScene);
   return loadingScene.start();
+};
+
+window.addEventListener('load', function() {
+  return window.fireUpSlime();
 });

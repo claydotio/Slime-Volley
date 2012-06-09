@@ -1,9 +1,10 @@
-var Button;
-var __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
+var Button,
+  __hasProp = Object.prototype.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
 
-Button = (function() {
+Button = (function(_super) {
 
-  __extends(Button, Sprite);
+  __extends(Button, _super);
 
   function Button(x, y, width, height, img, downImg, scene) {
     this.x = x;
@@ -45,4 +46,4 @@ Button = (function() {
 
   return Button;
 
-})();
+})(Sprite);

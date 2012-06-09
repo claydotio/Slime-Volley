@@ -21,12 +21,14 @@ window.fireUpSlime = ->
 	pixelRatio = window.devicePixelRatio || 1
 	canvas = document.getElementById('canvas')
 
+
+	### the clay.io play frame does this. reimplement if not using the frame...
 	# Add padded div to make screen scrollable
 	if (document.body.clientHeight - 100) < window.innerHeight
 		pageFill = document.createElement("div")
 		pageFill.style.height = (window.innerHeight - document.body.clientHeight + 100) + "px"
 		document.getElementsByTagName("body")[0].appendChild pageFill
-	
+	###
 	scrollTop()
 
 	Globals.Manager.canvas = canvas

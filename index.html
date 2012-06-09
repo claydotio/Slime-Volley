@@ -7,18 +7,18 @@
 	<link rel='shortcut icon' href='/assets/images/favicon.ico' />
 
 	<script type="text/javascript" src="build/client/game.js"></script>
-	<script type='text/javascript'>
-	  Clay = {};
-	  Clay.gameKey = 'slime'
-	  Clay.ready = function( fn ) {
-		  Clay.readyFunction = fn;
-	  };
-	  ( function() {
-		  var clay = document.createElement("script");
-		  clay.src = "http://clay.io/api/api.js"; 
-		  var tag = document.getElementsByTagName("script")[0]; 
-		  tag.parentNode.insertBefore(clay, tag);
-	  } )();
+	<script type="text/javascript">
+	Clay = {};
+	Clay.gameKey = "slime";
+	Clay.readyFunctions = [];
+	Clay.ready = function( fn ) {
+	    Clay.readyFunctions.push( fn );
+	};
+	( function() {
+	    var clay = document.createElement("script");
+	    clay.src = ( "https:" == document.location.protocol ? "https://" : "http://" ) + "clay.io/api/api.js"; 
+	    var tag = document.getElementsByTagName("script")[0]; tag.parentNode.insertBefore(clay, tag);
+	} )();
 	</script>
 	<style>
 		body, html {
@@ -111,6 +111,8 @@
 			</div>
 			<div class='instructions'>Instructions: <br />
 				Use the arrow keys to move (or WASD), hit the ball over the net.
+				<div><a href='javascript: void( 0 );' onclick='Social.showDemo();'>Demo Video of Multiplayer</a></div>
+				<div><a href='https://github.com/claydotio/Slime-Volley' target='_BLANK'>Source Code</a></div>
 			</div>
 		</div>
 	</div>

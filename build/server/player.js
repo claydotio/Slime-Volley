@@ -36,7 +36,7 @@ Player = (function() {
     var playerID, roomID, secret;
     roomID = obj.roomID;
     playerID = obj.playerID;
-    secret = 'SECRETKEYHERE';
+    secret = 'amAiFpm3mFYEsF2TDbWgHtmcPdajVM';
     this.clay = new Clay(playerID, secret);
     if (this.room) this.room.stopGame;
     this.room = Room.AllRooms[roomID] || new Room(2);

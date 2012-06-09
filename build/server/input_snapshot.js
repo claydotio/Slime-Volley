@@ -1,5 +1,5 @@
-var InputSnapshot;
-var __hasProp = Object.prototype.hasOwnProperty;
+var InputSnapshot,
+  __hasProp = Object.prototype.hasOwnProperty;
 
 InputSnapshot = (function() {
 

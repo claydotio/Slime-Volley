@@ -1,9 +1,10 @@
-var NetworkSlimeVolleyball;
-var __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
+var NetworkSlimeVolleyball,
+  __hasProp = Object.prototype.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
 
-NetworkSlimeVolleyball = (function() {
+NetworkSlimeVolleyball = (function(_super) {
 
-  __extends(NetworkSlimeVolleyball, SlimeVolleyball);
+  __extends(NetworkSlimeVolleyball, _super);
 
   function NetworkSlimeVolleyball() {
     NetworkSlimeVolleyball.__super__.constructor.apply(this, arguments);
@@ -18,6 +19,7 @@ NetworkSlimeVolleyball = (function() {
     this.step();
     this.receivedFrames = [];
     this.world.deterministic = true;
+    this.world.multiplayer = true;
     this.msAhead = Constants.TARGET_LATENCY;
     this.stepCallback = function() {
       return _this.step();
@@ -151,6 +153,7 @@ NetworkSlimeVolleyball = (function() {
     this.p1Scoreboard.draw(this.ctx);
     this.p2Scoreboard.draw(this.ctx);
     this.buttons['back'].draw(this.ctx);
+    if (this.world.ball.y < 0) this.world.drawBallHelper(this.ctx);
     if (this.displayMsg) {
       this.ctx.font = 'bold 14px ' + Constants.MSG_FONT;
       this.ctx.fillStyle = '#ffffff';
@@ -207,4 +210,4 @@ NetworkSlimeVolleyball = (function() {
 
   return NetworkSlimeVolleyball;
 
-})();
+})(SlimeVolleyball);

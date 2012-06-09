@@ -43,9 +43,11 @@ if !window.addEventListener
 		else
 			window['on'+event] = callback
 
+### the clay.io play frame does this. reimplement if not using the frame...
 # # iphone specific: hide address bar
 window.addEventListener "load", ->
    setTimeout (-> window.scrollTo(0, 1)), 0
+###
 
 # to prevent our node-js code from failing in the browser
 window.module ||= false 	

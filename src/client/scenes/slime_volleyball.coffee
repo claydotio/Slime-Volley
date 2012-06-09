@@ -172,8 +172,8 @@ class SlimeVolleyball extends Scene
 			msgList = @winMsgs
 			if winner.score >= Constants.WIN_SCORE # p1 won the game
 				# Clay Leaderboard - TODO: JWT encryption
-				lb = new Clay.Leaderboard( 5 )
-				lb.post 1 # increment win total by 1
+				lb = new Clay.Leaderboard( { id: 5 } )
+				lb.post { score: 1 } # increment win total by 1
 		else
 			msgList = @failMsgs
 		msgIdx    = if winner.score < Constants.WIN_SCORE then Helpers.rand(msgList.length-2) else msgList.length-1

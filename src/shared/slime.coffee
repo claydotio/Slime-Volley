@@ -21,13 +21,13 @@ class Slime extends Sprite
 				@acceleration.x = -Constants.MOVEMENT_SPEED / 15
 			else
 				@acceleration.x = 0
-				@velocity.x = -Constants.MOVEMENT_SPEED
+				@velocity.x = -Constants.MOVEMENT_SPEED * .85
 		else if input.right(pNum)
 			if accelerate && @velocity.x < Constants.MOVEMENT_SPEED
 				@acceleration.x = Constants.MOVEMENT_SPEED / 15
 			else
 				@acceleration.x = 0
-				@velocity.x = Constants.MOVEMENT_SPEED
+				@velocity.x = Constants.MOVEMENT_SPEED * .85
 		else
 			@acceleration.x = 0
 			@velocity.x = 0

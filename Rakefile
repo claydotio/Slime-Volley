@@ -3,12 +3,12 @@ require 'rubygems'
 require 'uglifier'
 require 'fssm'
 
-CLI_SRC_PATH = './src/client'
-SVR_SRC_PATH = './src/server'
-SHARED_SRC_PATH = './src/shared'
-CLI_BUILD_PATH = './build/client'
-SVR_BUILD_PATH = './build/server'
-CLI_OUT_PATH = './build/client/game'
+CLI_SRC_PATH = './src/client' # path to source code for client side
+SVR_SRC_PATH = './src/server' # path to source code for server side
+SHARED_SRC_PATH = './src/shared' # path to source code that is shared between client & server
+CLI_BUILD_PATH = './build/client' # all individual coffeescript files are compiled to indiv. js files in this path
+SVR_BUILD_PATH = './build/server' # all individual coffeescript files are compiled to indiv. js files in this path
+CLI_OUT_PATH = './build/client/game' # produces game.js and game.min.js in that build/client
 
 # read_manifest: accepts a directory containing a manifest.js 
 # file, and returns an array of the files required in the manifest

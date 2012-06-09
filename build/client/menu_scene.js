@@ -1,13 +1,14 @@
-var MenuScene;
-var __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
+var MenuScene,
+  __hasProp = Object.prototype.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
 
-MenuScene = (function() {
+MenuScene = (function(_super) {
 
-  __extends(MenuScene, Scene);
+  __extends(MenuScene, _super);
 
   function MenuScene() {
-    var btnHeight, btnWidth, dy, key, labelImgs, loader, yOffset, _fn, _i, _len, _ref;
-    var _this = this;
+    var btnHeight, btnWidth, dy, key, labelImgs, loader, yOffset, _fn, _i, _len, _ref,
+      _this = this;
     MenuScene.__super__.constructor.call(this);
     loader = Globals.Loader;
     this.bg = new StretchySprite(0, 0, this.width, this.height, 1, 1, loader.getAsset('menu_bg'));
@@ -66,9 +67,19 @@ MenuScene = (function() {
 
   MenuScene.prototype.buttonPressed = function(btn) {
     if (btn === this.buttons['leaderboards']) {
-      return new Clay.Leaderboard({
+      return (new Clay.Leaderboard({
         id: 6
-      }).show();
+      })).show({
+        filters: ['day', 'month', 'all'],
+        tabs: [
+          {
+            id: 5,
+            filters: ['day', 'month', 'all']
+          }
+        ]
+      }, function(response) {
+        return console.log(response);
+      });
     } else if (btn === this.buttons['onePlayer']) {
       return Globals.Manager.pushScene(new OpponentSelectScene());
     } else if (btn === this.buttons['options']) {
@@ -80,4 +91,4 @@ MenuScene = (function() {
 
   return MenuScene;
 
-})();
+})(Scene);

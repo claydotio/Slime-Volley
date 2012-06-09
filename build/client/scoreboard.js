@@ -1,9 +1,10 @@
-var Scoreboard;
-var __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
+var Scoreboard,
+  __hasProp = Object.prototype.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
 
-Scoreboard = (function() {
+Scoreboard = (function(_super) {
 
-  __extends(Scoreboard, Sprite);
+  __extends(Scoreboard, _super);
 
   function Scoreboard(x, y, bgImg, slime) {
     this.x = x;
@@ -29,4 +30,4 @@ Scoreboard = (function() {
 
   return Scoreboard;
 
-})();
+})(Sprite);

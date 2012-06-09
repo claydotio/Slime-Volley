@@ -22,6 +22,8 @@ World = (function() {
     this.p2 = new Slime(3 * this.width / 4 - Constants.SLIME_RADIUS, this.height - Constants.SLIME_START_HEIGHT, this.ball, true);
     this.pole = new Sprite(this.width / 2 - Constants.POLE_WIDTH / 2, this.height - Constants.BOTTOM - Constants.POLE_HEIGHT - 1, Constants.POLE_WIDTH, Constants.POLE_HEIGHT);
     this.deterministic = true;
+    this.multiplayer = false;
+    this.onCollision = false;
   }
 
   World.prototype.reset = function(servingPlayer) {
@@ -90,14 +92,14 @@ World = (function() {
     if (this.lastStep) interval || (interval = now - this.lastStep);
     interval || (interval = tick);
     if (!dontIncrementClock) this.lastStep = now;
-    if (interval >= 1.3 * tick) {
+    if (interval >= 1.3 * tick && this.deterministic) {
       while (interval > 0) {
         newInterval = interval >= 1.3 * tick ? tick : interval;
         this.step(newInterval, dontIncrementClock);
         interval -= newInterval;
       }
       return;
-    } else {
+    } else if (this.deterministic) {
       interval = tick;
     }
     this.numFrames = interval / tick;
@@ -119,35 +121,35 @@ World = (function() {
       this.ball.y = this.height - Constants.BOTTOM - this.ball.height;
       this.ball.velocity.y = 0;
     }
-    if (this.ball.y + this.ball.height < this.p1.y + this.p1.height && Math.sqrt(Math.pow((this.ball.x + this.ball.radius) - (this.p1.x + this.p1.radius), 2) + Math.pow((this.ball.y + this.ball.radius) - (this.p1.y + this.p1.radius), 2)) < this.ball.radius + this.p1.radius) {
+    if (this.ball.collidesWith(this.p1)) {
       this.ball.setPosition(this.resolveCollision(this.ball, this.p1));
-      a = Helpers.rad2Deg(Math.atan(-((this.ball.x + this.ball.radius) - (this.p1.x + this.p1.radius)) / ((this.ball.y + this.ball.radius) - (this.p1.y + this.p1.radius))));
-      this.ball.velocity.x = Helpers.xFromAngle(a) * (6.5 + 1.5 * Constants.AI_DIFFICULTY);
-      this.ball.velocity.y = Helpers.yFromAngle(a) * (6.5 + 1.5 * Constants.AI_DIFFICULTY);
+      this.ball.resolveCollision(this.p1);
+      if (this.onCollision) this.onCollision();
     }
-    if (this.ball.y + this.ball.height < this.p2.y + this.p2.radius && Math.sqrt(Math.pow((this.ball.x + this.ball.radius) - (this.p2.x + this.p2.radius), 2) + Math.pow((this.ball.y + this.ball.radius) - (this.p2.y + this.p2.radius), 2)) < this.ball.radius + this.p2.radius) {
+    if (this.ball.collidesWith(this.p2)) {
       this.ball.setPosition(this.resolveCollision(this.ball, this.p2));
-      a = Helpers.rad2Deg(Math.atan(-((this.ball.x + this.ball.radius) - (this.p2.x + this.p2.radius)) / ((this.ball.y + this.ball.radius) - (this.p2.y + this.p2.radius))));
-      this.ball.velocity.x = Helpers.xFromAngle(a) * (6.5 + 1.5 * Constants.AI_DIFFICULTY);
-      this.ball.velocity.y = Helpers.yFromAngle(a) * (6.5 + 1.5 * Constants.AI_DIFFICULTY);
+      this.ball.resolveCollision(this.p2);
+      if (this.onCollision) this.onCollision();
     }
     if (this.ball.x + this.ball.width > this.width) {
       this.ball.x = this.width - this.ball.width;
       this.ball.velocity.x *= -1;
       this.ball.velocity.y = Helpers.yFromAngle(180 - this.ball.velocity.x / this.ball.velocity.y) * this.ball.velocity.y;
       if (Math.abs(this.ball.velocity.x) <= 0.1) this.ball.velocity.x = -1;
+      if (this.onCollision) this.onCollision();
     } else if (this.ball.x < 0) {
       this.ball.x = 0;
       this.ball.velocity.x *= -1;
       this.ball.velocity.y = Helpers.yFromAngle(180 - this.ball.velocity.x / this.ball.velocity.y) * this.ball.velocity.y;
       if (Math.abs(this.ball.velocity.x) <= 0.1) this.ball.velocity.x = 1;
+      if (this.onCollision) this.onCollision();
     }
     borderRadius = 2;
     if (this.ball.x + this.ball.width > this.pole.x && this.ball.x < this.pole.x + this.pole.width && this.ball.y + this.ball.height >= this.pole.y && this.ball.y <= this.pole.y + this.pole.height) {
       if (this.ball.y + this.ball.radius >= this.pole.y + borderRadius) {
         this.ball.x = this.ball.velocity.x > 0 ? this.pole.x - this.ball.width : this.pole.x + this.pole.width;
         this.ball.velocity.x *= -1;
-        return this.ball.velocity.y = Helpers.yFromAngle(180 - (this.ball.velocity.x / this.ball.velocity.y)) * this.ball.velocity.y;
+        this.ball.velocity.y = Helpers.yFromAngle(180 - (this.ball.velocity.x / this.ball.velocity.y)) * this.ball.velocity.y;
       } else {
         if (this.ball.x + this.ball.radius < this.pole.x + borderRadius) {
           circle = {
@@ -160,7 +162,7 @@ World = (function() {
             this.ball.setPosition(this.resolveCollision(this.ball, circle));
             a = Helpers.rad2Deg(Math.atan(-((this.ball.x + this.ball.radius) - (circle.x + circle.radius)) / ((this.ball.y + this.ball.radius) - (circle.y + circle.radius))));
             this.ball.velocity.x = Helpers.xFromAngle(a) * 6;
-            return this.ball.velocity.y = Helpers.yFromAngle(a) * 6;
+            this.ball.velocity.y = Helpers.yFromAngle(a) * 7;
           }
         } else if (this.ball.x + this.ball.radius > this.pole.x + this.pole.width - borderRadius) {
           circle = {
@@ -173,24 +175,26 @@ World = (function() {
             this.ball.setPosition(this.resolveCollision(this.ball, circle));
             a = Helpers.rad2Deg(Math.atan(-((this.ball.x + this.ball.radius) - (circle.x + circle.radius)) / ((this.ball.y + this.ball.radius) - (circle.y + circle.radius))));
             this.ball.velocity.x = Helpers.xFromAngle(a) * 6;
-            return this.ball.velocity.y = Helpers.yFromAngle(a) * 6;
+            this.ball.velocity.y = Helpers.yFromAngle(a) * 7;
           }
         } else {
           this.ball.velocity.y *= -1;
           if (Math.abs(this.ball.velocity.x) < 0.1) this.ball.velocity.x = .5;
-          return this.ball.y = this.pole.y - this.ball.height;
+          this.ball.y = this.pole.y - this.ball.height;
         }
       }
+      if (this.onCollision) return this.onCollision();
     } else if (this.ball.x < this.pole.x + this.pole.width && this.ball.x > this.pole.x + this.ball.velocity.x && this.ball.y >= this.pole.y && this.ball.y <= this.pole.y + this.pole.height && this.ball.velocity.x < 0) {
       if (this.ball.y + this.ball.height >= this.pole.y + borderRadius) {
         this.ball.x = this.pole.x + this.pole.width;
         this.ball.velocity.x *= -1;
-        return this.ball.velocity.y = Helpers.yFromAngle(180 - (this.ball.velocity.x / this.ball.velocity.y)) * this.ball.velocity.y;
+        this.ball.velocity.y = Helpers.yFromAngle(180 - (this.ball.velocity.x / this.ball.velocity.y)) * this.ball.velocity.y;
       } else {
         this.ball.velocity.y *= -1;
         if (Math.abs(this.ball.velocity.x) < 0.1) this.ball.velocity.x = .5;
-        return this.ball.y = this.pole.y - this.ball.height;
+        this.ball.y = this.pole.y - this.ball.height;
       }
+      if (this.onCollision) return this.onCollision();
     }
   };
 
@@ -207,9 +211,22 @@ World = (function() {
     }
   };
 
+  World.prototype.drawBallHelper = function(ctx) {
+    var tmp;
+    this.ctx = ctx;
+    this.ctx.beginPath();
+    tmp = this.ctx.fillStyle;
+    this.ctx.fillStyle = "black";
+    this.ctx.moveTo(this.ball.x + this.ball.radius, 0);
+    this.ctx.lineTo(this.ball.x + this.ball.radius - Constants.HELPER_SIZE, Constants.HELPER_SIZE);
+    this.ctx.lineTo(this.ball.x + this.ball.radius + Constants.HELPER_SIZE, Constants.HELPER_SIZE);
+    this.ctx.fill();
+    return this.ctx.fillStyle = tmp;
+  };
+
   World.prototype.handleInput = function() {
-    this.p1.handleInput(this.input, true);
-    return this.p2.handleInput(this.input, true);
+    this.p1.handleInput(this.input, !this.multiplayer);
+    return this.p2.handleInput(this.input, !this.multiplayer);
   };
 
   World.prototype.injectFrame = function(frame) {

@@ -1,10 +1,12 @@
-var Constants, GameRunner, InputSnapshot, World;
+var Constants, GameRunner, Helpers, InputSnapshot, World;
 
 World = require('./world');
 
 InputSnapshot = require('./input_snapshot');
 
 Constants = require('./constants');
+
+Helpers = require('./helpers');
 
 GameRunner = (function() {
 
@@ -14,6 +16,7 @@ GameRunner = (function() {
     this.width = 480;
     this.height = 268;
     this.world = new World(this.width, this.height, new InputSnapshot());
+    this.world.multiplayer = true;
     this.running = false;
     this.loopCount = 0;
     this.stepCallback = function() {
@@ -37,8 +40,8 @@ GameRunner = (function() {
   };
 
   GameRunner.prototype.handleWin = function(winner) {
-    var gameOver, jwt, p1Won;
-    var _this = this;
+    var gameOver, jwt, p1Won,
+      _this = this;
     this.freezeGame = true;
     this.stop();
     this.world.ball.y = this.height - Constants.BOTTOM - this.world.ball.height;
@@ -77,6 +80,8 @@ GameRunner = (function() {
         if (this.room.p2) this.room.p2.socket.emit('gameWin', jwt);
         gameOver = true;
       }
+      this.world.p1.score = 0;
+      this.world.p2.score = 0;
     }
     return this.lastTimeout = setTimeout(function() {
       _this.freezeGame = false;

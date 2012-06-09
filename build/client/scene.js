@@ -1,5 +1,5 @@
-var Scene;
-var __hasProp = Object.prototype.hasOwnProperty;
+var Scene,
+  __hasProp = Object.prototype.hasOwnProperty;
 
 Scene = (function() {
 

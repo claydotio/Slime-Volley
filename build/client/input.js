@@ -1,13 +1,12 @@
-var Input;
-var __hasProp = Object.prototype.hasOwnProperty;
+var Input,
+  __hasProp = Object.prototype.hasOwnProperty;
 
 Input = (function() {
 
   function Input() {
-    var canvas, handleClick, handleKeyDown, handleKeyUp, handleMouseDown, handleMouseMove, handleMouseOut, handleMouseUp, multitouchShim, normalizeCoordinates, normalizeKeyEvent, normalizeMouseEvent;
-    var _this = this;
+    var canvas, handleClick, handleKeyDown, handleKeyUp, handleMouseDown, handleMouseMove, handleMouseOut, handleMouseUp, multitouchShim, normalizeCoordinates, normalizeKeyEvent, normalizeMouseEvent,
+      _this = this;
     this.keys = {};
-    this.anyInput = false;
     this.wasdEnabled = true;
     normalizeKeyEvent = function(e) {
       e.which || (e.which = e.charCode);
@@ -34,20 +33,16 @@ Input = (function() {
       });
     };
     handleKeyDown = function(e) {
-      _this.anyInput = true;
       return _this.keys['key' + normalizeKeyEvent(e).which] = true;
     };
     handleKeyUp = function(e) {
-      _this.anyInput = false;
       return _this.keys['key' + normalizeKeyEvent(e).which] = false;
     };
     handleMouseUp = function(e) {
-      _this.anyInput = false;
       e = normalizeMouseEvent(e);
       return Globals.Manager.currScene.mouseup(e);
     };
     handleMouseDown = function(e) {
-      _this.anyInput = true;
       e = normalizeMouseEvent(e);
       return Globals.Manager.currScene.mousedown(e);
     };
@@ -100,15 +95,15 @@ Input = (function() {
   }
 
   Input.prototype.left = function(p2) {
-    return this.keys[this.shortcuts['left'][p2]] || (this.wasdEnabled && this.keys[this.shortcuts['left'][1 - p2]]) || false;
+    return this.keys[this.shortcuts['left'][1 - p2]] || (this.wasdEnabled && this.keys[this.shortcuts['left'][p2]]) || false;
   };
 
   Input.prototype.right = function(p2) {
-    return this.keys[this.shortcuts['right'][p2]] || (this.wasdEnabled && this.keys[this.shortcuts['right'][1 - p2]]) || false;
+    return this.keys[this.shortcuts['right'][1 - p2]] || (this.wasdEnabled && this.keys[this.shortcuts['right'][p2]]) || false;
   };
 
   Input.prototype.up = function(p2) {
-    return this.keys[this.shortcuts['up'][p2]] || (this.wasdEnabled && this.keys[this.shortcuts['up'][1 - p2]]) || false;
+    return this.keys[this.shortcuts['up'][1 - p2]] || (this.wasdEnabled && this.keys[this.shortcuts['up'][p2]]) || false;
   };
 
   Input.prototype.reset = function() {

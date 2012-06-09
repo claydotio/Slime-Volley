@@ -2,7 +2,6 @@ class Input
 	constructor: ->
 		# bind to dom key events (and touch, if available)
 		@keys = {}
-		@anyInput = false
 		@wasdEnabled = true
 		normalizeKeyEvent = (e) =>
 			e.which ||= e.charCode
@@ -22,20 +21,16 @@ class Input
 			normalizeCoordinates { x: x, y: y, identifier: e.identifier }
 
 		handleKeyDown = (e) =>
-			@anyInput = true
 			@keys['key'+normalizeKeyEvent(e).which] = true
 
 		handleKeyUp = (e) =>
-			@anyInput = false
 			@keys['key'+normalizeKeyEvent(e).which] = false
 
 		handleMouseUp = (e) =>
-			@anyInput = false
 			e = normalizeMouseEvent(e)
 			Globals.Manager.currScene.mouseup(e)
 
 		handleMouseDown = (e) =>
-			@anyInput = true
 			e = normalizeMouseEvent(e)
 			Globals.Manager.currScene.mousedown(e)
 

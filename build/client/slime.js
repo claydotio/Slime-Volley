@@ -1,14 +1,15 @@
-var Constants, Slime, Sprite;
-var __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
+var Constants, Slime, Sprite,
+  __hasProp = Object.prototype.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
 
 if (module) {
   Sprite = require('./sprite');
   Constants = require('./constants');
 }
 
-Slime = (function() {
+Slime = (function(_super) {
 
-  __extends(Slime, Sprite);
+  __extends(Slime, _super);
 
   function Slime(x, y, ball, isP2) {
     this.x = x;
@@ -25,14 +26,26 @@ Slime = (function() {
     Slime.__super__.constructor.call(this, this.x, this.y, this.radius * 2, this.radius, this.bg);
   }
 
-  Slime.prototype.handleInput = function(input) {
+  Slime.prototype.handleInput = function(input, accelerate) {
     var pNum;
+    if (accelerate == null) accelerate = true;
     pNum = this.isP2 ? 1 : 0;
     if (input.left(pNum)) {
-      this.velocity.x = -Constants.MOVEMENT_SPEED;
+      if (accelerate && this.velocity.x > -Constants.MOVEMENT_SPEED) {
+        this.acceleration.x = -Constants.MOVEMENT_SPEED / 15;
+      } else {
+        this.acceleration.x = 0;
+        this.velocity.x = -Constants.MOVEMENT_SPEED;
+      }
     } else if (input.right(pNum)) {
-      this.velocity.x = Constants.MOVEMENT_SPEED;
+      if (accelerate && this.velocity.x < Constants.MOVEMENT_SPEED) {
+        this.acceleration.x = Constants.MOVEMENT_SPEED / 15;
+      } else {
+        this.acceleration.x = 0;
+        this.velocity.x = Constants.MOVEMENT_SPEED;
+      }
     } else {
+      this.acceleration.x = 0;
       this.velocity.x = 0;
     }
     if (input.up(pNum)) {
@@ -62,6 +75,6 @@ Slime = (function() {
 
   return Slime;
 
-})();
+})(Sprite);
 
 if (module) module.exports = Slime;
