@@ -30,7 +30,7 @@ Constants =
 	AI_DIFFICULTY: 0.45
 	MSG_FONT: 'Courier, monospace, sans-serif'
 	FPS_RATIO: 24 / 16 # in relation to what the initial speeds were set for (16ms)
-	TICK_DURATION: 24 #ms
+	TICK_DURATION: 30 #ms
 	FRAME_DELAY: 5
 	STATE_SAVE: 200
 	SAVE_LIFETIME: 5000 # save for 2s
