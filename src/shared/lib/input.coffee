@@ -51,13 +51,16 @@ class Input
 			return ((cb) ->  # create a scope to protect the callback param
 				return (e) ->
 					e.preventDefault()
-					cb( x: t.clientX, y: t.clientY, identifier: t.identifier ) for t in e.changedTouches
+					touchPoints = if (typeof e.changedTouches != 'undefined') then e.changedTouches else [e]
+					for t in touchPoints
+						touchPointId = (typeof t.identifier != 'undefined') ? t.identifier : (typeof t.pointerId != 'undefined') ? t.pointerId : 1;
+						cb( x: t.clientX, y: t.clientY, identifier: touchPointId )
 					return
 			).call(this, callback)
 		# filter + pass all events to the current scene
 		canvas = Globals.Manager.canvas
-		document.addEventListener 'keydown', handleKeyDown, true
-		document.addEventListener 'keyup', handleKeyUp, true
+		window.addEventListener 'keydown', handleKeyDown, true
+		window.addEventListener 'keyup', handleKeyUp, true
 		canvas.addEventListener 'mouseup', handleMouseUp, true
 		canvas.addEventListener 'mousedown', handleMouseDown, true
 		canvas.addEventListener 'mousemove', handleMouseMove, true
@@ -67,8 +70,10 @@ class Input
 		canvas.addEventListener 'touchend',  multitouchShim(handleMouseUp), true
 		canvas.addEventListener 'touchmove', multitouchShim(handleMouseMove), true
 		canvas.addEventListener 'touchcancel', multitouchShim(handleMouseUp), true
+		canvas.addEventListener 'MSPointerDown', multitouchShim(handleMouseDown), true
+		canvas.addEventListener 'MSPointerUp',  multitouchShim(handleMouseUp), true
+		canvas.addEventListener 'MSPointerMove', multitouchShim(handleMouseMove), true
 
-		
 		@shortcuts =
 			left: ['key37', 'key65']  # left arrow, 'a'
 			right: ['key39', 'key68']

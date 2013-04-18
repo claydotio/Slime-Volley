@@ -17,6 +17,25 @@ scrollTop = ->
 	
 window.addEventListener 'orientationchange', ->
 	scrollTop()
+	
+window.scaleGame = ->
+	if !Globals.Manager.canvas
+		return
+	# Fullscreen slime
+	scaleX = window.innerHeight / Globals.Manager.canvas.height
+	scaleY = window.innerWidth / Globals.Manager.canvas.width
+	if scaleY < scaleX
+		scale = scaleY
+	else
+		scale = scaleX
+	Globals.Manager.canvas.style.webkitTransform = "scale(" + scale + ", " + scale + ")"
+	Globals.Manager.canvas.style.webkitTransformOrigin = "center 0"
+	Globals.Manager.canvas.style.mozTransform = "scale(" + scale + ", " + scale + ")"
+	Globals.Manager.canvas.style.mozTransformOrigin = "center 0"
+	Globals.Manager.canvas.style.msTransform = "scale(" + scale + ", " + scale + ")"
+	Globals.Manager.canvas.style.msTransformOrigin = "center 0"
+	Globals.Manager.canvas.style.transform = "scale(" + scale + ", " + scale + ")"
+	Globals.Manager.canvas.style.transformOrigin = "center 0"
 
 window.fireUpSlime = ->
 	pixelRatio = window.devicePixelRatio || 1
@@ -41,3 +60,7 @@ window.fireUpSlime = ->
 # run the game when the dom loads
 window.addEventListener 'load', ->
 	window.fireUpSlime()
+	window.scaleGame()
+	
+window.addEventListener 'resize', ->
+	window.scaleGame()

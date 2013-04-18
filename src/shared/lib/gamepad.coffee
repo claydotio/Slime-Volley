@@ -21,9 +21,10 @@ class GamePad
 		box = this.findRect(e)
 		Globals.Input.set(box, true) if box
 		this.savePreviousPos(e)
+		@mouseDown = true
 
 	handleMouseMove: (e) -> 
-		return if !e.identifier # only use this method on mobile!
+		return if !e.identifier || !@mouseDown # only use this method on mobile!
 		box = this.findRect(e)
 		prevPos = this.getPreviousPos(e)
 		prevBox = if prevPos then this.findRect(prevPos) else null
@@ -39,5 +40,6 @@ class GamePad
 		box = this.findRect(e)
 		Globals.Input.set(box, false) if box
 		this.savePreviousPos(e)
+		@mouseDown = false
 
 	handleClick: -> # do nothing.
